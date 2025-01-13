@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.templatepackagename.integration
+package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 
 import io.swagger.v3.parser.OpenAPIV3Parser
 import net.minidev.json.JSONArray
@@ -75,7 +75,7 @@ class OpenApiDocsTest : IntegrationTestBase() {
   }
 
   @ParameterizedTest
-  @CsvSource(value = ["template-kotlin-ui-role, ROLE_TEMPLATE_KOTLIN__UI"])
+  @CsvSource(value = ["visit-allocation-api-ui-role, ROLE_TEMPLATE_KOTLIN__UI"])
   fun `the security scheme is setup for bearer tokens`(key: String, role: String) {
     webTestClient.get()
       .uri("/v3/api-docs")

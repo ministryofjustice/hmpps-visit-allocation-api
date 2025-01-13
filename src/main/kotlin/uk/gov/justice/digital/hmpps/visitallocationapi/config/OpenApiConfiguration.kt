@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.templatepackagename.config
+package uk.gov.justice.digital.hmpps.visitallocationapi.config
 
 import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
@@ -20,9 +20,9 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
   fun customOpenAPI(): OpenAPI = OpenAPI()
     .servers(
       listOf(
-        Server().url("https://template-kotlin-dev.hmpps.service.justice.gov.uk").description("Development"),
-        Server().url("https://template-kotlin-preprod.hmpps.service.justice.gov.uk").description("Pre-Production"),
-        Server().url("https://template-kotlin.hmpps.service.justice.gov.uk").description("Production"),
+        Server().url("https://visit-allocation-api-dev.hmpps.service.justice.gov.uk").description("Development"),
+        Server().url("https://visit-allocation-api-preprod.hmpps.service.justice.gov.uk").description("Pre-Production"),
+        Server().url("https://visit-allocation-api.hmpps.service.justice.gov.uk").description("Production"),
         Server().url("http://localhost:8080").description("Local"),
       ),
     )
@@ -35,18 +35,18 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
       ),
     )
     .info(
-      Info().title("HMPPS Template Kotlin").version(version)
+      Info().title("HMPPS Visit Allocation Api").version(version)
         .contact(Contact().name("HMPPS Digital Studio").email("feedback@digital.justice.gov.uk")),
     )
     // TODO: Remove the default security schema and start adding your own schemas and roles to describe your
     // service authorisation requirements
     .components(
       Components().addSecuritySchemes(
-        "template-kotlin-ui-role",
+        "visit-allocation-api-ui-role",
         SecurityScheme().addBearerJwtRequirement("ROLE_TEMPLATE_KOTLIN__UI"),
       ),
     )
-    .addSecurityItem(SecurityRequirement().addList("template-kotlin-ui-role", listOf("read")))
+    .addSecurityItem(SecurityRequirement().addList("visit-allocation-api-ui-role", listOf("read")))
 }
 
 private fun SecurityScheme.addBearerJwtRequirement(role: String): SecurityScheme =

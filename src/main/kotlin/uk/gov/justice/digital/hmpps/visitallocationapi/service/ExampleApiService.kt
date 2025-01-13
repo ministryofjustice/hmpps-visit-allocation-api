@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.templatepackagename.service
+package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient

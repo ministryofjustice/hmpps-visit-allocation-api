@@ -1,18 +1,18 @@
 generic-service:
-  nameOverride: hmpps-template-kotlin
-  productId: "UNASSIGNED" # productId for the product that this belongs too, i.e. DPS001, see README.md for details
+  nameOverride: hmpps-visit-allocation-api
+  productId: "DPS035" # productId for the product that this belongs too, i.e. DPS001, see README.md for details
 
   replicaCount: 4
 
   image:
-    repository: ghcr.io/ministryofjustice/hmpps-template-kotlin
+    repository: ghcr.io/ministryofjustice/hmpps-visit-allocation-api
     tag: app_version # override at deployment time
     port: 8080
 
   ingress:
     enabled: true
     host: app-hostname.local # override per environment
-    tlsSecretName: hmpps-template-kotlin-cert
+    tlsSecretName: hmpps-visit-allocation-api-cert
 
   # Environment variables to load into the deployment
   env:
@@ -26,7 +26,7 @@ generic-service:
   #     [name of environment variable as seen by app]: [key of kubernetes secret to load]
 
   namespace_secrets:
-    hmpps-template-kotlin:
+    hmpps-visit-allocation-api:
       # Example client registration secrets
       EXAMPLE_API_CLIENT_ID: "TEMPLATE_KOTLIN_API_CLIENT_ID"
       EXAMPLE_API_CLIENT_SECRET: "TEMPLATE_KOTLIN_API_CLIENT_SECRET"
@@ -38,4 +38,4 @@ generic-service:
       - internal
 
 generic-prometheus-alerts:
-  targetApplication: hmpps-template-kotlin
+  targetApplication: hmpps-visit-allocation-api
