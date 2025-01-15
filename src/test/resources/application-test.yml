@@ -5,6 +5,18 @@ management.endpoint:
   health.cache.time-to-live: 0
   info.cache.time-to-live: 0
 
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5445/visit_allocation
+    username: visit_allocation
+    password: visit_allocation
+    hikari:
+      maximum-pool-size: 2
+
+  jpa:
+    show-sql: true
+
+
 hmpps-auth:
   url: "http://localhost:8090/auth"
 
