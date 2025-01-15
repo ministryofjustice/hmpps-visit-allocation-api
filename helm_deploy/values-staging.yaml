@@ -5,7 +5,7 @@ generic-service:
   replicaCount: 2
 
   ingress:
-    host: visit-allocation-api-staging.hmpps.service.justice.gov.uk
+    host: hmpps-visit-allocation-api-staging.prison.service.justice.gov.uk
 
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: "applicationinsights.dev.json"
