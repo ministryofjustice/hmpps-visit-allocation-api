@@ -8,7 +8,6 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.ExampleApiExtension
-import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.ExampleApiExtension.Companion.exampleApi
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
@@ -32,6 +31,5 @@ abstract class IntegrationTestBase {
 
   protected fun stubPingWithResponse(status: Int) {
     hmppsAuth.stubHealthPing(status)
-    exampleApi.stubHealthPing(status)
   }
 }

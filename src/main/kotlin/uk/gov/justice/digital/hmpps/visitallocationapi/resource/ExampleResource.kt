@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ExampleApiService
@@ -44,34 +43,4 @@ class ExampleResource(private val exampleApiService: ExampleApiService) {
     ],
   )
   fun getTime(): LocalDateTime = exampleApiService.getTime()
-
-  @GetMapping("/message/{parameter}")
-  @Tag(name = "Popular")
-  @Operation(
-    summary = "Example message endpoint to call another API",
-    description = """This is an example endpoint that calls back to the kotlin template.
-      It will return a 404 response as the /example-external-api endpoint hasn't been implemented, so we use wiremock
-      in integration tests to simulate other responses.
-      Requires role ROLE_TEMPLATE_KOTLIN__UI""",
-    security = [SecurityRequirement(name = "visit-allocation-api-ui-role")],
-    responses = [
-      ApiResponse(responseCode = "200", description = "a message with a parameter"),
-      ApiResponse(
-        responseCode = "401",
-        description = "Unauthorized to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "403",
-        description = "Forbidden to access this endpoint",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Not found",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-    ],
-  )
-  fun getMessage(@PathVariable parameter: String) = exampleApiService.exampleGetExternalApiCall(parameter)
 }

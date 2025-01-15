@@ -31,7 +31,7 @@ jobs:
   helm_lint:
     strategy:
       matrix:
-        environments: ['dev', 'preprod', 'prod']
+        environments: ['dev', 'staging', 'preprod', 'prod']
     name: helm lint
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/test_helm_lint.yml@v2 # WORKFLOW VERSION
     secrets: inherit
@@ -43,7 +43,6 @@ jobs:
     secrets: inherit
   build:
     name: Build docker image from hmpps-github-actions
-    if: github.ref == 'refs/heads/main'
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/docker_build.yml@v2 # WORKFLOW_VERSION
     needs:
       - kotlin_validate
@@ -63,23 +62,35 @@ jobs:
     with:
       environment: 'dev'
       app_version: '${{ needs.build.outputs.app_version }}'
-  # deploy_preprod:
-  #   name: Deploy to pre-production environment
-  #   needs:
-  #     - build
-  #     - deploy_dev
-  #   uses: ministryofjustice/hmpps-github-actions/.github/workflows/deploy_env.yml@v2 # WORKFLOW_VERSION
-  #   secrets: inherit
-  #   with:
-  #     environment: 'preprod'
-  #     app_version: '${{ needs.build.outputs.app_version }}'
-  # deploy_prod:
-  #   name: Deploy to production environment
-  #   needs:
-  #     - build
-  #     - deploy_preprod
-  #   uses: ministryofjustice/hmpps-github-actions/.github/workflows/deploy_env.yml@v2 # WORKFLOW_VERSION
-  #   secrets: inherit
-  #   with:
-  #     environment: 'prod'
-  #     app_version: '${{ needs.build.outputs.app_version }}'
+  deploy_staging:
+    name: Deploy to the staging environment
+    needs:
+      - build
+      - deploy_dev
+    uses: ministryofjustice/hmpps-github-actions/.github/workflows/deploy_env.yml@v2 # WORKFLOW_VERSION
+    secrets: inherit
+    with:
+      environment: 'staging'
+      app_version: '${{ needs.build.outputs.app_version }}'
+  deploy_preprod:
+    if: github.ref == 'refs/heads/main'
+    name: Deploy to the preprod environment
+    needs:
+      - build
+      - deploy_staging
+    uses: ministryofjustice/hmpps-github-actions/.github/workflows/deploy_env.yml@v2 # WORKFLOW_VERSION
+    secrets: inherit
+    with:
+      environment: 'preprod'
+      app_version: '${{ needs.build.outputs.app_version }}'
+  deploy_prod:
+    if: github.ref == 'refs/heads/main'
+    name: Deploy to the prod environment
+    needs:
+      - build
+      - deploy_preprod
+    uses: ministryofjustice/hmpps-github-actions/.github/workflows/deploy_env.yml@v2 # WORKFLOW_VERSION
+    secrets: inherit
+    with:
+      environment: 'prod'
+      app_version: '${{ needs.build.outputs.app_version }}'
