@@ -24,7 +24,7 @@ Run:
 ## Running
 
 The hmpps-visit-allocation-api uses the deployed dev environment to connect to most of the required services,
-with an exception of the <insert_db_name_here>.
+with an exception of the visit-allocation-db.
 
 To run the hmpps-visit-allocation-api, first start the required local services using docker-compose.
 
@@ -45,7 +45,7 @@ Ports
 | Service                    | Port |  
 |----------------------------|------|
 | hmpps-visit-allocation-api | 8079 |
-| <insert_db_name_here>      | 5432 |
+| visit-allocation-db        | 5445 |
 
 ### Populating local Db with data
 TODO

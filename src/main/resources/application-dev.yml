@@ -2,5 +2,11 @@ server:
   shutdown: immediate
   port: 8079
 
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5445/visit_allocation
+    username: visit_allocation
+    password: visit_allocation
+
 hmpps-auth:
   url: "https://sign-in-dev.hmpps.service.justice.gov.uk/auth"

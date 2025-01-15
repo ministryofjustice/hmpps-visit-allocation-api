@@ -11,6 +11,11 @@ dependencies {
   implementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter:1.1.0")
   implementation("org.springframework.boot:spring-boot-starter-webflux")
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+  implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
+  runtimeOnly("org.postgresql:postgresql:42.7.4")
+  runtimeOnly("org.flywaydb:flyway-core")
+  runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:1.1.0")
   testImplementation("org.wiremock:wiremock-standalone:3.9.2")
