@@ -39,7 +39,7 @@ jobs:
       environment: ${{ matrix.environments }}
   setup_postgres:
     name: Set up PostgreSQL Database
-    uses: ./.github/workflows/setup-database.yml
+    uses: ./.github/workflows/start_db.yml
     with:
       postgres_user: visit_allocation
       postgres_password: visit_allocation
