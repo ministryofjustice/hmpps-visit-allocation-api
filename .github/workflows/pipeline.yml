@@ -37,28 +37,15 @@ jobs:
     secrets: inherit
     with:
       environment: ${{ matrix.environments }}
-  validate_and_setup:
-    name: Set up Database and Validate Kotlin
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Call setup-database workflow
-        uses: ./.github/workflows/start_db.yml
-        with:
-          postgres_user: visit_allocation
-          postgres_password: visit_allocation
-          postgres_db: visit_allocation
-          secrets: inherit
-
-      - name: Call Kotlin validate workflow
-        uses: ministryofjustice/hmpps-github-actions/.github/workflows/kotlin_validate.yml@v2
-        with:
-          secrets: inherit
+  kotlin_validate:
+    name: Validate the kotlin
+    uses: ./.github/workflows/start_db.yml
+    secrets: inherit
   build:
     name: Build docker image from hmpps-github-actions
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/docker_build.yml@v2 # WORKFLOW_VERSION
     needs:
-      - validate_and_setup
+      - kotlin_validate
     with:
       docker_registry: 'ghcr.io'
       registry_org: 'ministryofjustice'

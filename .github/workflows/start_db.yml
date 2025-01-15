@@ -1,50 +1,38 @@
-name: Setup Database
+name: Setup PostgreSQL and Validate Kotlin
 
 on:
   workflow_call:
-    inputs:
-      postgres_user:
-        description: 'PostgreSQL username'
-        required: true
-        type: string
-        default: 'test_user'
-      postgres_password:
-        description: 'PostgreSQL password'
-        required: true
-        type: string
-        default: 'test_password'
-      postgres_db:
-        description: 'PostgreSQL database name'
-        required: true
-        type: string
-        default: 'test_db'
 
 jobs:
-  setup-postgres:
+  setup_postgresql_and_validate:
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:15.7
-        ports:
-          - 5445:5432
-        env:
-          POSTGRES_USER: ${{ inputs.postgres_user }}
-          POSTGRES_PASSWORD: ${{ inputs.postgres_password }}
-          POSTGRES_DB: ${{ inputs.postgres_db }}
         options: >-
-          --health-cmd="pg_isready -U ${{ inputs.postgres_user }} -d ${{ inputs.postgres_db }}"
-          --health-interval=10s
+          --health-cmd="pg_isready -U postgres" 
+          --health-interval=10s 
           --health-timeout=5s
           --health-retries=5
-
-    outputs:
-      db_url: ${{ inputs.postgres_user }}:${{ inputs.postgres_password }}@localhost:5432/${{ inputs.postgres_db }}
-
+        env:
+          POSTGRES_USER: visit_allocation
+          POSTGRES_PASSWORD: visit_allocation
+          POSTGRES_DB: visit_allocation
+        ports:
+          - 5445:5432
     steps:
-      - name: Checkout repository
+      - name: Checkout the repository
         uses: actions/checkout@v4
 
-      - name: Verify PostgreSQL is Running
+      - name: Set up PostgreSQL database and wait for it to be ready
         run: |
-          until pg_isready -h localhost -U ${{ inputs.postgres_user }} -d ${{ inputs.postgres_db }};
+          echo "Waiting for PostgreSQL to be ready..."
+          until docker exec ${GITHUB_JOB} pg_isready -U postgres; do
+            sleep 5
+          done
+          echo "PostgreSQL is up and running!"
+
+      - name: Run Kotlin Validate Workflow
+        uses: ministryofjustice/hmpps-github-actions/.github/workflows/kotlin_validate.yml@v2
+        with:
+          secrets: inherit
