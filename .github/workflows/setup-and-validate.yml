@@ -28,7 +28,7 @@ jobs:
           POSTGRES_PASSWORD: visit_allocation
           POSTGRES_DB: visit_allocation
         ports:
-          - 5432:5432
+          - 5445:5432
         options: >-
           --health-cmd="pg_isready -U postgres -d visit_allocation"
           --health-interval=10s
