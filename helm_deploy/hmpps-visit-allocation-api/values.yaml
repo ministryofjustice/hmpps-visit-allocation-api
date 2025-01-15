@@ -1,6 +1,6 @@
 generic-service:
   nameOverride: hmpps-visit-allocation-api
-  productId: "DPS035" # productId for the product that this belongs too, i.e. DPS001, see README.md for details
+  productId: "DPS035"
 
   replicaCount: 4
 
@@ -20,16 +20,10 @@ generic-service:
     SERVER_PORT: "8080"
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
 
-  # Pre-existing kubernetes secrets to load as environment variables in the deployment.
-  # namespace_secrets:
-  #   [name of kubernetes secret]:
-  #     [name of environment variable as seen by app]: [key of kubernetes secret to load]
-
   namespace_secrets:
     hmpps-visit-allocation-api:
-      # Example client registration secrets
-      EXAMPLE_API_CLIENT_ID: "TEMPLATE_KOTLIN_API_CLIENT_ID"
-      EXAMPLE_API_CLIENT_SECRET: "TEMPLATE_KOTLIN_API_CLIENT_SECRET"
+      SYSTEM_CLIENT_ID: "SYSTEM_CLIENT_ID"
+      SYSTEM_CLIENT_SECRET: "SYSTEM_CLIENT_SECRET"
     application-insights:
       APPLICATIONINSIGHTS_CONNECTION_STRING: "APPLICATIONINSIGHTS_CONNECTION_STRING"
 

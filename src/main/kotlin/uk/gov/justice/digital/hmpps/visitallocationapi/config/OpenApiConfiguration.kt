@@ -7,7 +7,6 @@ import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
-import io.swagger.v3.oas.models.tags.Tag
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -21,17 +20,10 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     .servers(
       listOf(
         Server().url("https://visit-allocation-api-dev.hmpps.service.justice.gov.uk").description("Development"),
+        Server().url("https://visit-allocation-api-staging.hmpps.service.justice.gov.uk").description("Staging"),
         Server().url("https://visit-allocation-api-preprod.hmpps.service.justice.gov.uk").description("Pre-Production"),
         Server().url("https://visit-allocation-api.hmpps.service.justice.gov.uk").description("Production"),
         Server().url("http://localhost:8080").description("Local"),
-      ),
-    )
-    .tags(
-      listOf(
-        // TODO: Remove the Popular and Examples tag and start adding your own tags to group your resources
-        Tag().name("Popular")
-          .description("The most popular endpoints. Look here first when deciding which endpoint to use."),
-        Tag().name("Examples").description("Endpoints for searching for a prisoner within a prison"),
       ),
     )
     .info(
