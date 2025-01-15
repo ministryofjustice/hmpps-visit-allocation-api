@@ -37,6 +37,13 @@ jobs:
     secrets: inherit
     with:
       environment: ${{ matrix.environments }}
+  setup_postgres:
+    name: Set up PostgreSQL Database
+    uses: ./.github/workflows/setup-database.yml
+    with:
+      postgres_user: visit_allocation
+      postgres_password: visit_allocation
+      postgres_db: visit_allocation
   kotlin_validate:
     name: Validate the kotlin
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/kotlin_validate.yml@v2 # WORKFLOW_VERSION
