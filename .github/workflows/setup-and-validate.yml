@@ -55,13 +55,6 @@ jobs:
           cache-dependency-path: |
             *.gradle*
             **/gradle-wrapper.properties
-      - name: Wait for PostgreSQL to start
-        run: |
-          until docker exec $(docker ps -qf "ancestor=postgres:13") pg_isready -U postgres -d mydb; do
-            echo "Waiting for PostgreSQL to be ready..."
-            sleep 2
-          done
-          echo "PostgreSQL is ready"
       - name: gradlew check
         shell: bash
         run: |
