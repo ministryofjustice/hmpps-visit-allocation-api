@@ -39,7 +39,7 @@ jobs:
       environment: ${{ matrix.environments }}
   kotlin_validate:
     name: Validate the kotlin
-    uses: ministryofjustice/hmpps-github-actions/.github/workflows/kotlin_validate.yml@v2 # WORKFLOW_VERSION
+    uses: ./.github/workflows/setup-and-validate.yml
     secrets: inherit
   build:
     name: Build docker image from hmpps-github-actions

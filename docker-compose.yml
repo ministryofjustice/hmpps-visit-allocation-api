@@ -1,33 +1,16 @@
 version: "3"
 services:
-  hmpps-visit-allocation-api:
-    build:
-      context: .
+  visit-allocation-db:
+    image: postgres:15.7
     networks:
       - hmpps
-    container_name: hmpps-visit-allocation-api
+    container_name: visit-allocation-db
+    restart: always
     ports:
-      - "8080:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ping"]
+      - "5445:5432"
     environment:
-      - SERVER_PORT=8080
-      - HMPPS_AUTH_URL=http://hmpps-auth:8080/auth
-      - SPRING_PROFILES_ACTIVE=dev
-
-  hmpps-auth:
-    image: quay.io/hmpps/hmpps-auth:latest
-    networks:
-      - hmpps
-    container_name: hmpps-auth
-    ports:
-      - "8090:8080"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/auth/health"]
-    environment:
-      - SERVER_PORT=8080
-      - SPRING_PROFILES_ACTIVE=dev
-      - APPLICATION_AUTHENTICATION_UI_ALLOWLIST=0.0.0.0/0
-
+      - POSTGRES_PASSWORD=visit_allocation
+      - POSTGRES_USER=visit_allocation
+      - POSTGRES_DB=visit_allocation
 networks:
   hmpps:
