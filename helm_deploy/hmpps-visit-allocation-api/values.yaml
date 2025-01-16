@@ -24,7 +24,7 @@ generic-service:
     hmpps-visit-allocation-api:
       SYSTEM_CLIENT_ID: "SYSTEM_CLIENT_ID"
       SYSTEM_CLIENT_SECRET: "SYSTEM_CLIENT_SECRET"
-    visit_allocation_rds:
+    visit-allocation-rds:
       SPRING_DATASOURCE_USERNAME: "database_username"
       SPRING_DATASOURCE_PASSWORD: "database_password"
       DATABASE_NAME: "database_name"
