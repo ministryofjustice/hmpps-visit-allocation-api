@@ -19,10 +19,10 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
   fun customOpenAPI(): OpenAPI = OpenAPI()
     .servers(
       listOf(
-        Server().url("https://visit-allocation-api-dev.hmpps.service.justice.gov.uk").description("Development"),
-        Server().url("https://visit-allocation-api-staging.hmpps.service.justice.gov.uk").description("Staging"),
-        Server().url("https://visit-allocation-api-preprod.hmpps.service.justice.gov.uk").description("Pre-Production"),
-        Server().url("https://visit-allocation-api.hmpps.service.justice.gov.uk").description("Production"),
+        Server().url("https://hmpps-visit-allocation-api-dev.prison.service.justice.gov.uk").description("Development"),
+        Server().url("https://hmpps-visit-allocation-api-staging.prison.service.justice.gov.uk").description("Staging"),
+        Server().url("https://hmpps-visit-allocation-api-preprod.prison.service.justice.gov.uk").description("Pre-Production"),
+        Server().url("https://hmpps-visit-allocation-api.prison.service.justice.gov.uk").description("Production"),
         Server().url("http://localhost:8080").description("Local"),
       ),
     )
