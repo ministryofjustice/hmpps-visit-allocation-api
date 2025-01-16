@@ -15,6 +15,10 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
 class VisitAllocationApiExceptionHandler {
+  private companion object {
+    private val log = LoggerFactory.getLogger(this::class.java)
+  }
+
   @ExceptionHandler(ValidationException::class)
   fun handleValidationException(e: ValidationException): ResponseEntity<ErrorResponse> = ResponseEntity
     .status(BAD_REQUEST)
@@ -58,8 +62,4 @@ class VisitAllocationApiExceptionHandler {
         developerMessage = e.message,
       ),
     ).also { log.error("Unexpected exception", e) }
-
-  private companion object {
-    private val log = LoggerFactory.getLogger(this::class.java)
-  }
 }
