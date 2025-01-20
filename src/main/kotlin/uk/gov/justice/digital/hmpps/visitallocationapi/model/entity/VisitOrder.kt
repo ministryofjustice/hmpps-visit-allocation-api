@@ -8,7 +8,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.CreatedType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.CreatedByType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import java.time.LocalDate
@@ -25,7 +25,7 @@ data class VisitOrder(
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val createdType: CreatedType,
+  val createdByType: CreatedByType,
 
   @Column(nullable = false)
   val createdBy: String,
