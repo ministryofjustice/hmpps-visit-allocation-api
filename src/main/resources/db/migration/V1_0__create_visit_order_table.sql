@@ -5,5 +5,5 @@ CREATE TABLE visit_order
     type                    VARCHAR(20)     NOT NULL,
     status                  VARCHAR(20)     NOT NULL,
     created_date            DATE            default current_date,
-    expiry_date             DATE,
+    expiry_date             DATE
 );
