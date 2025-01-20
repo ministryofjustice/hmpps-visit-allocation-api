@@ -8,7 +8,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.CreatedByType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import java.time.LocalDate
@@ -25,31 +24,15 @@ data class VisitOrder(
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val createdByType: CreatedByType,
-
-  @Column(nullable = false)
-  val createdBy: String,
-
-  @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
   val type: VisitOrderType,
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
   val status: VisitOrderStatus,
 
-  @Column(nullable = false, columnDefinition = "TEXT")
-  val staffComment: String,
-
   @Column(nullable = false)
   val createdDate: LocalDate = LocalDate.now(),
 
   @Column(nullable = false)
   val expiryDate: LocalDate? = null,
-
-  @Column(nullable = false)
-  val outcomeReasonCode: String? = null,
-
-  @Column(nullable = false)
-  val mailedDate: LocalDate? = null,
 )
