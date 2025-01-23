@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.domainevents.LocalStackContainer.setLocalStackProperties
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusChangeProcessor
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsTopic
@@ -54,6 +54,9 @@ abstract class EventsIntegrationTestBase {
   @MockitoSpyBean
   lateinit var domainEventListenerSpy: DomainEventListener
 
+  @MockitoSpyBean
+  lateinit var prisonerConvictionStatusChangeProcessorSpy: PrisonerConvictionStatusChangeProcessor
+
   @BeforeEach
   fun cleanQueue() {
     purgeQueue(sqsClient, queueUrl)
@@ -64,17 +67,51 @@ abstract class EventsIntegrationTestBase {
     client.purgeQueue(PurgeQueueRequest.builder().queueUrl(url).build()).get()
   }
 
-  fun createDomainEvent(eventType: String, additionalInformation: String = "test"): DomainEvent {
-    return DomainEvent(eventType = eventType, additionalInformation)
-  }
-
-  fun createDomainEventPublishRequest(eventType: String): PublishRequest? {
+  fun createDomainEventPublishRequest(eventType: String, domainEvent: String): PublishRequest? {
     return PublishRequest.builder()
       .topicArn(topicArn)
-      .message(objectMapper.writeValueAsString(createDomainEvent(eventType, ""))).build()
+      .message(domainEvent).build()
   }
 
   fun createDomainEventJson(eventType: String, additionalInformation: String): String {
     return "{\"eventType\":\"$eventType\",\"additionalInformation\":$additionalInformation}"
+  }
+
+  fun createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId: String): String {
+    val jsonValues = HashMap<String, String>()
+
+    jsonValues["nomsNumber"] = prisonerId
+
+    return createAdditionalInformationJson(jsonValues)
+  }
+
+  private fun createAdditionalInformationJson(jsonValues: Map<String, Any>): String {
+    val builder = StringBuilder()
+    builder.append("{")
+    jsonValues.entries.forEachIndexed { index, entry ->
+      builder.append(getJsonString(entry))
+
+      if (index < jsonValues.size - 1) {
+        builder.append(",")
+      }
+    }
+    builder.append("}")
+    return builder.toString()
+  }
+
+  private fun getJsonString(entry: Map.Entry<String, Any>): String {
+    return when (entry.value) {
+      is List<*> -> {
+        ("\"${entry.key}\":[${(entry.value as List<*>).joinToString { "\"" + it + "\"" }}]")
+      }
+
+      is Number -> {
+        ("\"${entry.key}\":${entry.value}")
+      }
+
+      else -> {
+        ("\"${entry.key}\":\"${entry.value}\"")
+      }
+    }
   }
 }

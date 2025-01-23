@@ -14,9 +14,13 @@ import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 class EventsSqsTest : EventsIntegrationTestBase() {
 
   @Test
-  fun `test sqs message is processed`() {
+  fun `test prisoner-conviction-status-changed event is processed`() {
     // Given
-    val publishRequest = createDomainEventPublishRequest(CONVICTION_STATUS_CHANGED_EVENT_TYPE)
+    val domainEvent = createDomainEventJson(
+      CONVICTION_STATUS_CHANGED_EVENT_TYPE,
+      createPrisonerConvictionStatusChangedAdditionalInformationJson("TEST"),
+    )
+    val publishRequest = createDomainEventPublishRequest(CONVICTION_STATUS_CHANGED_EVENT_TYPE, domainEvent)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -24,5 +28,6 @@ class EventsSqsTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { sqsClient.countMessagesOnQueue(queueUrl).get() } matches { it == 0 }
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(prisonerConvictionStatusChangeProcessorSpy, times(1)).processEvent(any()) }
   }
 }
