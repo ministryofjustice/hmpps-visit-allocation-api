@@ -31,6 +31,7 @@ class ResourceSecurityTest : IntegrationTestBase() {
     }.filterNotNull().flatMap { path -> listOf("GET", "POST", "PUT", "DELETE").map { "$it $path" } }
       .toMutableSet().also {
         it.addAll(unprotectedDefaultMethods)
+        it.addAll(listOf("PUT /queue-admin/retry-all-dlqs"))
       }
 
     val beans = context.getBeansOfType(RequestMappingHandlerMapping::class.java)

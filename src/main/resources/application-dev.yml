@@ -17,7 +17,7 @@ hmpps:
     enabled: true
     provider: localstack
     queues:
-      prisonvisitsallocationalerts:
+      prisonvisitsallocationevents:
         queueName: sqs_hmpps_visits_allocation_events_queue
         dlqName: sqs_hmpps_visits_allocation_events_dlq
         subscribeTopicId: domainevents

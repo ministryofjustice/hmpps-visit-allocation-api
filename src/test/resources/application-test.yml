@@ -25,7 +25,7 @@ hmpps:
     enabled: true
     provider: localstack
     queues:
-      prisonvisitsallocationalerts:
+      prisonvisitsallocationevents:
         queueName: ${random.uuid}
         dlqName: ${random.uuid}
         subscribeTopicId: domainevents

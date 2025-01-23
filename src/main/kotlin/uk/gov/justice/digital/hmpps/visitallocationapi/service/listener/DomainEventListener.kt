@@ -18,7 +18,7 @@ class DomainEventListener(
   private val objectMapper: ObjectMapper,
 ) {
   companion object {
-    const val PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY = "prisonvisitsallocationalerts"
+    const val PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY = "prisonvisitsallocationevents"
   }
 
   @SqsListener(PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy")

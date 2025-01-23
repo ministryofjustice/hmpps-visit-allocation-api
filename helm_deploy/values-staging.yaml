@@ -20,7 +20,7 @@ generic-prometheus-alerts:
   businessHoursOnly: true
   alertSeverity: visits-alerts-nonprod
   sqsAlertsQueueNames:
-    - "book-a-prison-visit-staging-hmpps_prison_visits_allocation_alerts_queue"
-    - "book-a-prison-visit-staging-hmpps_prison_visits_allocation_alerts_dlq"
+    - "book-a-prison-visit-staging-hmpps_prison_visits_allocation_events_queue"
+    - "book-a-prison-visit-staging-hmpps_prison_visits_allocation_events_dlq"
   sqsAlertsOldestThreshold: 1
   sqsAlertsTotalMessagesThreshold: 1

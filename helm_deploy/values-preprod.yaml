@@ -16,7 +16,7 @@ generic-service:
 generic-prometheus-alerts:
   alertSeverity: visits-alerts-nonprod
   sqsAlertsQueueNames:
-    - "book-a-prison-visit-preprod-hmpps_prison_visits_allocation_alerts_queue"
-    - "book-a-prison-visit-preprod-hmpps_prison_visits_allocation_alerts_dlq"
+    - "book-a-prison-visit-preprod-hmpps_prison_visits_allocation_events_queue"
+    - "book-a-prison-visit-preprod-hmpps_prison_visits_allocation_events_dlq"
   sqsAlertsOldestThreshold: 1
   sqsAlertsTotalMessagesThreshold: 1
