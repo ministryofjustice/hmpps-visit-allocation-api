@@ -28,6 +28,6 @@ class EventsSqsTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { sqsClient.countMessagesOnQueue(queueUrl).get() } matches { it == 0 }
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(prisonerConvictionStatusChangeProcessorSpy, times(1)).processEvent(any()) }
+    await untilAsserted { verify(prisonerConvictionStatusUpdatedProcessorSpy, times(1)).processEvent(any()) }
   }
 }

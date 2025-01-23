@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.domainevents.LocalStackContainer.setLocalStackProperties
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusChangeProcessor
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusUpdatedProcessor
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsTopic
@@ -55,7 +55,7 @@ abstract class EventsIntegrationTestBase {
   lateinit var domainEventListenerSpy: DomainEventListener
 
   @MockitoSpyBean
-  lateinit var prisonerConvictionStatusChangeProcessorSpy: PrisonerConvictionStatusChangeProcessor
+  lateinit var prisonerConvictionStatusUpdatedProcessorSpy: PrisonerConvictionStatusUpdatedProcessor
 
   @BeforeEach
   fun cleanQueue() {

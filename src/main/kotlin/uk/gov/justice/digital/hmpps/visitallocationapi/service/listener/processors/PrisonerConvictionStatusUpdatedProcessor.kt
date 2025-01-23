@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.D
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerConvictionStatusChangedInfo
 
 @Component
-class PrisonerConvictionStatusChangeProcessor(val objectMapper: ObjectMapper) {
+class PrisonerConvictionStatusUpdatedProcessor(val objectMapper: ObjectMapper) {
 
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)

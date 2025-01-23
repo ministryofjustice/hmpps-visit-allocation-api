@@ -4,11 +4,11 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusChangeProcessor
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusUpdatedProcessor
 
 @Service
 class DomainEventListenerService(
-  val prisonerConvictionStatusChangeProcessor: PrisonerConvictionStatusChangeProcessor,
+  val prisonerConvictionStatusUpdatedProcessor: PrisonerConvictionStatusUpdatedProcessor,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -19,7 +19,7 @@ class DomainEventListenerService(
     log.info("received event: {}", domainEvent)
 
     when (domainEvent.eventType) {
-      CONVICTION_STATUS_CHANGED_EVENT_TYPE -> prisonerConvictionStatusChangeProcessor.processEvent(domainEvent)
+      CONVICTION_STATUS_CHANGED_EVENT_TYPE -> prisonerConvictionStatusUpdatedProcessor.processEvent(domainEvent)
       else -> log.info("invalid message type: {}", domainEvent)
     }
   }
