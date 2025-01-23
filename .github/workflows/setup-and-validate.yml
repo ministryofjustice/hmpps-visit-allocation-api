@@ -21,6 +21,16 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+      localstack:
+        image: localstack/localstack:latest
+        env:
+          SERVICES: sqs, sns
+          DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+        ports:
+          - 4566:4566
+          - 4571:4571
       postgres:
         image: postgres:15.7
         env:
