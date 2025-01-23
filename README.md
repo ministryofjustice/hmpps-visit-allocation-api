@@ -24,7 +24,7 @@ Run:
 ## Running
 
 The hmpps-visit-allocation-api uses the deployed dev environment to connect to most of the required services,
-with an exception of the visit-allocation-db.
+with the exception of the visit-allocation-db and localstack (for AWS SNS/SQS services locally).
 
 To run the hmpps-visit-allocation-api, first start the required local services using docker-compose.
 
@@ -46,6 +46,7 @@ Ports
 |----------------------------|------|
 | hmpps-visit-allocation-api | 8079 |
 | visit-allocation-db        | 5445 |
+| localstack                 | 4566 |
 
 ### Populating local Db with data
 TODO
@@ -68,7 +69,7 @@ Client Authentication: "Send as Basic Auth Header"
 
 Call info endpoint:
 ```
-$ curl 'http://localhost:8081/info' -i -X GET
+$ curl 'http://localhost:8079/info' -i -X GET
 ```
 
 ### Send event notifications locally (AWS SNS, SQS / LocalStack)
