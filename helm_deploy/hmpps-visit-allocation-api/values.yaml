@@ -31,6 +31,12 @@ generic-service:
       DATABASE_ENDPOINT: "rds_instance_endpoint"
     application-insights:
       APPLICATIONINSIGHTS_CONNECTION_STRING: "APPLICATIONINSIGHTS_CONNECTION_STRING"
+    hmpps-domain-events-topic:
+      HMPPS_SQS_TOPICS_DOMAINEVENTS_ARN: "topic_arn"
+    sqs-prison-visits-allocation-alerts-secret:
+      HMPPS_SQS_QUEUES_PRISONVISITSALLOCATIONALERTS_QUEUE_NAME: "sqs_queue_name"
+    sqs-hmpps-prison-visits-allocation-alerts-dlq-secret:
+      HMPPS_SQS_QUEUES_PRISONVISITSALLOCATIONALERTS_DLQ_NAME: "sqs_queue_name"
 
   allowlist:
     groups:
