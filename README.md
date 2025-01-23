@@ -70,3 +70,36 @@ Call info endpoint:
 ```
 $ curl 'http://localhost:8081/info' -i -X GET
 ```
+
+### Send event notifications locally (AWS SNS, SQS / LocalStack)
+To help test notification events locally we can send events to localstack to replicate what NOMIS would do.
+
+#### Step 1 - Start visit-allocation-api service locally
+Follow steps for set-up / running at top of README
+
+#### Step 2 - Install awscli (if not already installed)
+```
+brew install awscli
+```
+
+#### Step 3 - configure aws with dummy values (if not already configured)
+```
+aws configure
+```
+Put any dummy value for AWS_ACCESS_KEY=test and AWS_SECRET_KEY=test and eu-west-2 as default region.
+The queueName is the value of hmpps.sqs.queues.prisonvisitsallocationevents.queueName on the application-<env>.yml file.
+So the queue URL should be - http://localhost:4566/000000000000/{queueName}
+
+#### Step 4 - Send a message to the queue. The below is a prisoner.conviction-status-updated event for prisoner A8713DY.
+```
+aws sqs send-message \
+  --endpoint-url=http://localhost:4566 \
+  --queue-url=http://localhost:4566/000000000000/sqs_hmpps_visits_allocation_events_queue \
+  --message-body \
+    '{"Type":"Notification", "Message": "{\"eventType\":\"prisoner-offender-search.prisoner.conviction-status.updated\",\"additionalInformation\":{\"NomsNumber\":\"A8713DY\", "MessageId": "123"}'
+```
+
+If you are unsure about the queue name you can check the queue names using the following command and replace it in the above --queue-url value parameter
+```
+aws sqs list-queues --endpoint-url=http://localhost:4566
+```
