@@ -8,19 +8,19 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService.Companion.CONVICTION_STATUS_CHANGED_EVENT_TYPE
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService.Companion.CONVICTION_STATUS_UPDATED_EVENT_TYPE
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 class EventsSqsTest : EventsIntegrationTestBase() {
 
   @Test
-  fun `test prisoner-conviction-status-changed event is processed`() {
+  fun `test prisoner-conviction-status-updated event is processed`() {
     // Given
     val domainEvent = createDomainEventJson(
-      CONVICTION_STATUS_CHANGED_EVENT_TYPE,
+      CONVICTION_STATUS_UPDATED_EVENT_TYPE,
       createPrisonerConvictionStatusChangedAdditionalInformationJson("TEST"),
     )
-    val publishRequest = createDomainEventPublishRequest(CONVICTION_STATUS_CHANGED_EVENT_TYPE, domainEvent)
+    val publishRequest = createDomainEventPublishRequest(CONVICTION_STATUS_UPDATED_EVENT_TYPE, domainEvent)
 
     // When
     awsSnsClient.publish(publishRequest).get()
