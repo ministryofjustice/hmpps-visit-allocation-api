@@ -20,7 +20,9 @@ class PrisonerConvictionStatusUpdatedProcessor(
   fun processEvent(domainEvent: DomainEvent) {
     LOG.info("received conviction status changed event: {}", domainEvent)
     val additionalInfo = getAdditionalInfo(domainEvent)
-    allocationService.startAllocation(additionalInfo.prisonerNumber)
+    if (additionalInfo.convictedStatus == "Convicted") { // TODO: Confirm how the string will come through
+      allocationService.startAllocation(additionalInfo.prisonerNumber)
+    }
   }
 
   private fun getAdditionalInfo(domainEvent: DomainEvent): PrisonerConvictionStatusChangedInfo {

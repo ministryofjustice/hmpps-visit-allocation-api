@@ -21,9 +21,11 @@ class WebClientConfiguration(
   @Value("\${hmpps-auth.url}") val hmppsAuthBaseUri: String,
   @Value("\${api.health-timeout:2s}") val healthTimeout: Duration,
   @Value("\${prisoner.search.url}") private val prisonSearchBaseUrl: String,
+  @Value("\${incentives.api.url}") private val incentivesBaseUrl: String,
 ) {
   private enum class HmppsAuthClientRegistrationId(val clientRegistrationId: String) {
     PRISONER_SEARCH("other-hmpps-apis"),
+    INCENTIVES("other-hmpps-apis"),
   }
 
   @Bean
@@ -35,6 +37,12 @@ class WebClientConfiguration(
   fun prisonerSearchWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
     val oauth2Client = getOauth2Client(authorizedClientManager, HmppsAuthClientRegistrationId.PRISONER_SEARCH.clientRegistrationId)
     return getWebClient(prisonSearchBaseUrl, oauth2Client)
+  }
+
+  @Bean
+  fun incentivesWebClient(authorizedClientManager: OAuth2AuthorizedClientManager): WebClient {
+    val oauth2Client = getOauth2Client(authorizedClientManager, HmppsAuthClientRegistrationId.INCENTIVES.clientRegistrationId)
+    return getWebClient(incentivesBaseUrl, oauth2Client)
   }
 
   private fun getOauth2Client(authorizedClientManager: OAuth2AuthorizedClientManager, clientRegistrationId: String): ServletOAuth2AuthorizedClientExchangeFilterFunction {

@@ -8,7 +8,4 @@ data class PrisonerDto(
 
   @Schema(description = "Prison ID", example = "MDI")
   val prisonId: String?,
-
-  @Schema(description = "Incentive level")
-  val currentIncentive: CurrentIncentive? = null,
 )

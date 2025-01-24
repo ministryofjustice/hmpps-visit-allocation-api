@@ -23,6 +23,10 @@ prisoner:
   search:
     url: http://localhost:8094
 
+incentives:
+  api:
+    url: http://localhost:8095
+
 hmpps:
   sqs:
     enabled: true
