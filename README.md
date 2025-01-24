@@ -24,7 +24,7 @@ Run:
 ## Running
 
 The hmpps-visit-allocation-api uses the deployed dev environment to connect to most of the required services,
-with an exception of the visit-allocation-db.
+with the exception of the visit-allocation-db and localstack (for AWS SNS/SQS services locally).
 
 To run the hmpps-visit-allocation-api, first start the required local services using docker-compose.
 
@@ -46,6 +46,7 @@ Ports
 |----------------------------|------|
 | hmpps-visit-allocation-api | 8079 |
 | visit-allocation-db        | 5445 |
+| localstack                 | 4566 |
 
 ### Populating local Db with data
 TODO
@@ -68,5 +69,38 @@ Client Authentication: "Send as Basic Auth Header"
 
 Call info endpoint:
 ```
-$ curl 'http://localhost:8081/info' -i -X GET
+$ curl 'http://localhost:8079/info' -i -X GET
+```
+
+### Send event notifications locally (AWS SNS, SQS / LocalStack)
+To help test notification events locally we can send events to localstack to replicate what NOMIS would do.
+
+#### Step 1 - Start visit-allocation-api service locally
+Follow steps for set-up / running at top of README
+
+#### Step 2 - Install awscli (if not already installed)
+```
+brew install awscli
+```
+
+#### Step 3 - configure aws with dummy values (if not already configured)
+```
+aws configure
+```
+Put any dummy value for AWS_ACCESS_KEY=test and AWS_SECRET_KEY=test and eu-west-2 as default region.
+The queueName is the value of hmpps.sqs.queues.prisonvisitsallocationevents.queueName on the application-<env>.yml file.
+So the queue URL should be - http://localhost:4566/000000000000/{queueName}
+
+#### Step 4 - Send a message to the queue. The below is a prisoner.conviction-status-updated event for prisoner A8713DY.
+```
+aws sqs send-message \
+  --endpoint-url=http://localhost:4566 \
+  --queue-url=http://localhost:4566/000000000000/sqs_hmpps_visits_allocation_events_queue \
+  --message-body \
+    '{"Type":"Notification", "Message": "{\"eventType\":\"prisoner-offender-search.prisoner.conviction-status.updated\",\"additionalInformation\":{\"NomsNumber\":\"A8713DY\", "MessageId": "123"}'
+```
+
+If you are unsure about the queue name you can check the queue names using the following command and replace it in the above --queue-url value parameter
+```
+aws sqs list-queues --endpoint-url=http://localhost:4566
 ```

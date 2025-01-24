@@ -18,7 +18,22 @@ spring:
 
 
 hmpps-auth:
-  url: "http://localhost:8090/auth"
+    url: "http://localhost:8090/auth"
+
+hmpps:
+  sqs:
+    enabled: true
+    provider: localstack
+    queues:
+      prisonvisitsallocationevents:
+        queueName: ${random.uuid}
+        dlqName: ${random.uuid}
+        subscribeTopicId: domainevents
+        dlqMaxReceiveCount: 1
+        visibilityTimeout: 1
+    topics:
+      domainevents:
+        arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
 
 # example client configuration for calling out to other services
 # TODO: Remove / replace this configuration
