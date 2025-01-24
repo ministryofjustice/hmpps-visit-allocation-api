@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService.Companion.CONVICTION_STATUS_UPDATED_EVENT_TYPE
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
@@ -27,7 +25,6 @@ class EventsSqsTest : EventsIntegrationTestBase() {
 
     // When
     awsSnsClient.publish(publishRequest).get()
-    prisonerSearchMockServer.stubGetPrisonerById("TEST", prisoner = PrisonerDto(prisonId = "MDI", prisonerNumber = "TEST"))
 
     // Then
     await untilCallTo { sqsClient.countMessagesOnQueue(queueUrl).get() } matches { it == 0 }
