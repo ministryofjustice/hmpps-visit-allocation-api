@@ -31,11 +31,10 @@ class AllocationService(
   private fun generatePrisonerVoAndPvo(prisonerId: String): List<VisitOrder> {
     val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
     val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerNumber)
-
-    val prisonerIncentiveAmounts = incentivesClient.getPrisonIncentiveLevels(prisoner.prisonId!!, prisonerIncentive.iepCode)
+    val prisonIncentiveAmounts = incentivesClient.getPrisonIncentiveLevels(prisoner.prisonId!!, prisonerIncentive.iepCode)
 
     val visitOrders = mutableListOf<VisitOrder>()
-    for (i in 1..prisonerIncentiveAmounts.visitOrders) {
+    for (i in 1..prisonIncentiveAmounts.visitOrders) {
       visitOrders.add(
         VisitOrder(
           prisonerId = prisonerId,
@@ -46,9 +45,7 @@ class AllocationService(
         ),
       )
     }
-
-    // Generate VisitOrder objects for PVO
-    for (i in 1..prisonerIncentiveAmounts.privilegedVisitOrders) {
+    for (i in 1..prisonIncentiveAmounts.privilegedVisitOrders) {
       visitOrders.add(
         VisitOrder(
           prisonerId = prisonerId,
