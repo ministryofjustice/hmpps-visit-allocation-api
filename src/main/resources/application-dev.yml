@@ -11,6 +11,9 @@ spring:
 hmpps-auth:
   url: "https://sign-in-dev.hmpps.service.justice.gov.uk/auth"
 
+prisoner:
+  search:
+    url: https://prisoner-search-dev.prison.service.justice.gov.uk
 
 hmpps:
   sqs:
