@@ -16,9 +16,12 @@ spring:
   jpa:
     show-sql: true
 
-
 hmpps-auth:
     url: "http://localhost:8090/auth"
+
+prisoner:
+  search:
+    url: http://localhost:8094
 
 hmpps:
   sqs:
@@ -34,11 +37,3 @@ hmpps:
     topics:
       domainevents:
         arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
-
-# example client configuration for calling out to other services
-# TODO: Remove / replace this configuration
-example-api:
-  url: "http://localhost:8091"
-  client:
-    id: "example-api-client"
-    secret: "example-api-client-secret"
