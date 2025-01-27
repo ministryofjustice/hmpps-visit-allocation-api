@@ -37,21 +37,22 @@ class AllocationServiceTest {
 
   @Test
   fun `Given a prisoner has STANDARD incentive level for HEI prison, should generate and save 2 VO and 1 PVO when startAllocation is called`() {
-    // Arrange
+    // GIVEN - A prisoner with Standard incentive level, in prison Hewell
     val prisonerId = "AA123456"
     val prisonId = "HEI"
     val prisoner = PrisonerDto(prisonerNumber = prisonerId, prisonId = prisonId)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1)
 
+    // WHEN
     whenever(prisonerSearchClient.getPrisonerById(prisonerId)).thenReturn(prisoner)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerNumber)).thenReturn(prisonerIncentive)
     whenever(incentivesClient.getPrisonIncentiveLevels(prisoner.prisonId!!, prisonerIncentive.iepCode)).thenReturn(prisonIncentiveAmounts)
 
-    // Act
+    // Begin test
     allocationService.startAllocation(prisonerId)
 
-    // Assert
+    // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
     verify(prisonerSearchClient).getPrisonerById(prisonerId)
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisoner.prisonerNumber)
     verify(incentivesClient).getPrisonIncentiveLevels(prisoner.prisonId!!, prisonerIncentive.iepCode)

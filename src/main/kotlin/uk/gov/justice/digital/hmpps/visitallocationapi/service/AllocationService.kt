@@ -35,26 +35,10 @@ class AllocationService(
 
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(prisonIncentiveAmounts.visitOrders) {
-      visitOrders.add(
-        VisitOrder(
-          prisonerId = prisonerId,
-          type = VisitOrderType.VO,
-          status = VisitOrderStatus.AVAILABLE,
-          createdDate = LocalDate.now(),
-          expiryDate = null,
-        ),
-      )
+      visitOrders.add(createVisitOrder(prisonerId, VisitOrderType.VO))
     }
     repeat(prisonIncentiveAmounts.privilegedVisitOrders) {
-      visitOrders.add(
-        VisitOrder(
-          prisonerId = prisonerId,
-          type = VisitOrderType.PVO,
-          status = VisitOrderStatus.AVAILABLE,
-          createdDate = LocalDate.now(),
-          expiryDate = null,
-        ),
-      )
+      visitOrders.add(createVisitOrder(prisonerId, VisitOrderType.PVO))
     }
 
     LOG.info(
@@ -62,5 +46,15 @@ class AllocationService(
     )
 
     return visitOrders
+  }
+
+  private fun createVisitOrder(prisonerId: String, type: VisitOrderType): VisitOrder {
+    return VisitOrder(
+      prisonerId = prisonerId,
+      type = type,
+      status = VisitOrderStatus.AVAILABLE,
+      createdDate = LocalDate.now(),
+      expiryDate = null,
+    )
   }
 }
