@@ -57,7 +57,9 @@ class AllocationService(
       )
     }
 
-    LOG.info("Successfully generated ${visitOrders.size} visit orders for prisonerId $prisonerId")
+    LOG.info(
+      "Successfully generated ${visitOrders.size} visit orders for prisoner prisoner $prisonerId: " + "${visitOrders.count { it.type == VisitOrderType.PVO }} PVOs and ${visitOrders.count { it.type == VisitOrderType.VO }} VOs",
+    )
 
     return visitOrders
   }

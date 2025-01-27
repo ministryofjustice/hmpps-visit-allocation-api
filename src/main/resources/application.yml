@@ -79,9 +79,8 @@ management:
       cache:
         time-to-live: 2000ms
 
-prisoner:
-  search:
-    timeout: 10s
+api:
+  timeout: 10s
 
 hmpps:
   sqs:
