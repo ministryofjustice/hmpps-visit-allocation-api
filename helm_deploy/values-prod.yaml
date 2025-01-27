@@ -7,8 +7,15 @@ generic-service:
 
   env:
     HMPPS_AUTH_URL: "https://sign-in.hmpps.service.justice.gov.uk/auth"
+    PRISONER_SEARCH_URL: "https://prisoner-search.prison.service.justice.gov.uk"
+    INCENTIVES_API_URL: "https://incentives-api.hmpps.service.justice.gov.uk"
 
 # CloudPlatform AlertManager receiver to route prometheus alerts to slack
 # See https://user-guide.cloud-platform.service.justice.gov.uk/documentation/monitoring-an-app/how-to-create-alarms.html#creating-your-own-custom-alerts
 generic-prometheus-alerts:
   alertSeverity: visits-alerts
+  sqsAlertsQueueNames:
+    - "book-a-prison-visit-prod-hmpps_prison_visits_allocation_events_queue"
+    - "book-a-prison-visit-prod-hmpps_prison_visits_allocation_events_dlq"
+  sqsAlertsOldestThreshold: 1
+  sqsAlertsTotalMessagesThreshold: 1

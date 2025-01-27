@@ -10,3 +10,22 @@ spring:
 
 hmpps-auth:
   url: "https://sign-in-dev.hmpps.service.justice.gov.uk/auth"
+
+prisoner:
+  search:
+    url: https://prisoner-search-dev.prison.service.justice.gov.uk
+
+hmpps:
+  sqs:
+    enabled: true
+    provider: localstack
+    queues:
+      prisonvisitsallocationevents:
+        queueName: sqs_hmpps_visits_allocation_events_queue
+        dlqName: sqs_hmpps_visits_allocation_events_dlq
+        subscribeTopicId: domainevents
+        dlqMaxReceiveCount: 1
+        visibilityTimeout: 1
+    topics:
+      domainevents:
+        arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}

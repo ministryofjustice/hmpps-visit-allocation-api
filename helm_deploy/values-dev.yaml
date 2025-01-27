@@ -10,6 +10,8 @@ generic-service:
   env:
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: "applicationinsights.dev.json"
     HMPPS_AUTH_URL: "https://sign-in-dev.hmpps.service.justice.gov.uk/auth"
+    PRISONER_SEARCH_URL: "https://prisoner-search-dev.prison.service.justice.gov.uk"
+    INCENTIVES_API_URL: "https://incentives-api-dev.hmpps.service.justice.gov.uk"
 
   scheduledDowntime:
     enabled: true
@@ -19,3 +21,8 @@ generic-service:
 generic-prometheus-alerts:
   businessHoursOnly: true
   alertSeverity: visits-alerts-nonprod
+  sqsAlertsQueueNames:
+    - "book-a-prison-visit-dev-hmpps_prison_visits_allocation_events_queue"
+    - "book-a-prison-visit-dev-hmpps_prison_visits_allocation_events_dlq"
+  sqsAlertsOldestThreshold: 1
+  sqsAlertsTotalMessagesThreshold: 1

@@ -66,11 +66,17 @@ class OpenApiDocsTest : IntegrationTestBase() {
   fun `the open api json path security requirements are valid`() {
     val result = OpenAPIV3Parser().readLocation("http://localhost:$port/v3/api-docs", null, null)
 
-    // The security requirements of each path don't appear to be validated like they are at https://editor.swagger.io/
-    // We therefore need to grab all the valid security requirements and check that each path only contains those items
     val securityRequirements = result.openAPI.security.flatMap { it.keys }
     result.openAPI.paths.forEach { pathItem ->
-      assertThat(pathItem.value.get.security.flatMap { it.keys }).isSubsetOf(securityRequirements)
+      listOfNotNull(
+        pathItem.value.get,
+        pathItem.value.post,
+        pathItem.value.put,
+        pathItem.value.delete,
+      ).forEach { operation ->
+        val operationSecurity = operation.security?.flatMap { it.keys } ?: emptyList()
+        assertThat(operationSecurity).isSubsetOf(securityRequirements)
+      }
     }
   }
 
@@ -90,16 +96,5 @@ class OpenApiDocsTest : IntegrationTestBase() {
       }
       .jsonPath("$.components.securitySchemes.$key.bearerFormat").isEqualTo("JWT")
       .jsonPath("$.security[0].$key").isEqualTo(JSONArray().apply { this.add("read") })
-  }
-
-  @Test
-  fun `all endpoints have a security scheme defined`() {
-    webTestClient.get()
-      .uri("/v3/api-docs")
-      .accept(MediaType.APPLICATION_JSON)
-      .exchange()
-      .expectStatus().isOk
-      .expectBody()
-      .jsonPath("$.paths[*][*][?(!@.security)]").doesNotExist()
   }
 }

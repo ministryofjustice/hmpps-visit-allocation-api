@@ -16,14 +16,28 @@ spring:
   jpa:
     show-sql: true
 
-
 hmpps-auth:
-  url: "http://localhost:8090/auth"
+    url: "http://localhost:8090/auth"
 
-# example client configuration for calling out to other services
-# TODO: Remove / replace this configuration
-example-api:
-  url: "http://localhost:8091"
-  client:
-    id: "example-api-client"
-    secret: "example-api-client-secret"
+prisoner:
+  search:
+    url: http://localhost:8094
+
+incentives:
+  api:
+    url: http://localhost:8095
+
+hmpps:
+  sqs:
+    enabled: true
+    provider: localstack
+    queues:
+      prisonvisitsallocationevents:
+        queueName: ${random.uuid}
+        dlqName: ${random.uuid}
+        subscribeTopicId: domainevents
+        dlqMaxReceiveCount: 1
+        visibilityTimeout: 1
+    topics:
+      domainevents:
+        arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
