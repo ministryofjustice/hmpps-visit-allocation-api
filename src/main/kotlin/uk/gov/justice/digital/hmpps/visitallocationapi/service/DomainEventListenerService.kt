@@ -11,16 +11,16 @@ class DomainEventListenerService(
   val prisonerConvictionStatusUpdatedProcessor: PrisonerConvictionStatusUpdatedProcessor,
 ) {
   companion object {
-    private val log: Logger = LoggerFactory.getLogger(this::class.java)
+    private val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     const val CONVICTION_STATUS_UPDATED_EVENT_TYPE = "prisoner-offender-search.prisoner.conviction-status.updated"
   }
 
   suspend fun handleMessage(domainEvent: DomainEvent) {
-    log.info("received event: {}", domainEvent)
+    LOG.info("received event: {}", domainEvent)
 
     when (domainEvent.eventType) {
       CONVICTION_STATUS_UPDATED_EVENT_TYPE -> prisonerConvictionStatusUpdatedProcessor.processEvent(domainEvent)
-      else -> log.info("invalid message type: {}", domainEvent)
+      else -> LOG.info("invalid message type: {}", domainEvent)
     }
   }
 }
