@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.integration.domainevents
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
@@ -12,6 +13,10 @@ import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.domainevents.LocalStackContainer.setLocalStackProperties
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusUpdatedProcessor
@@ -21,8 +26,12 @@ import uk.gov.justice.hmpps.sqs.HmppsTopic
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@ExtendWith(
+  HmppsAuthApiExtension::class,
+  PrisonerSearchMockExtension::class,
+  IncentivesMockExtension::class,
+)
 abstract class EventsIntegrationTestBase {
-
   companion object {
     private val localStackContainer = LocalStackContainer.instance
 
@@ -57,6 +66,9 @@ abstract class EventsIntegrationTestBase {
   @MockitoSpyBean
   lateinit var prisonerConvictionStatusUpdatedProcessorSpy: PrisonerConvictionStatusUpdatedProcessor
 
+  @MockitoSpyBean
+  lateinit var visitOrderRepository: VisitOrderRepository
+
   @BeforeEach
   fun cleanQueue() {
     purgeQueue(sqsClient, queueUrl)
@@ -77,10 +89,11 @@ abstract class EventsIntegrationTestBase {
     return "{\"eventType\":\"$eventType\",\"additionalInformation\":$additionalInformation}"
   }
 
-  fun createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId: String): String {
+  fun createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId: String, convictedStatus: String): String {
     val jsonValues = HashMap<String, String>()
 
     jsonValues["nomsNumber"] = prisonerId
+    jsonValues["convictedStatus"] = convictedStatus
 
     return createAdditionalInformationJson(jsonValues)
   }

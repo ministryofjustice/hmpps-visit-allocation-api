@@ -20,7 +20,7 @@ spring:
           jwk-set-uri: ${hmpps-auth.url}/.well-known/jwks.json
       client:
         registration:
-          hmpps-apis:
+          other-hmpps-apis:
             provider: hmpps-auth
             client-id: ${system.client.id}
             client-secret: ${system.client.secret}
@@ -78,6 +78,9 @@ management:
     info:
       cache:
         time-to-live: 2000ms
+
+api:
+  timeout: 10s
 
 hmpps:
   sqs:
