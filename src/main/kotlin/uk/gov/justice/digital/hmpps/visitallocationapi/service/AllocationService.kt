@@ -34,7 +34,7 @@ class AllocationService(
     val prisonIncentiveAmounts = incentivesClient.getPrisonIncentiveLevels(prisoner.prisonId!!, prisonerIncentive.iepCode)
 
     val visitOrders = mutableListOf<VisitOrder>()
-    for (i in 1..prisonIncentiveAmounts.visitOrders) {
+    repeat(prisonIncentiveAmounts.visitOrders) {
       visitOrders.add(
         VisitOrder(
           prisonerId = prisonerId,
@@ -45,7 +45,7 @@ class AllocationService(
         ),
       )
     }
-    for (i in 1..prisonIncentiveAmounts.privilegedVisitOrders) {
+    repeat(prisonIncentiveAmounts.privilegedVisitOrders) {
       visitOrders.add(
         VisitOrder(
           prisonerId = prisonerId,
