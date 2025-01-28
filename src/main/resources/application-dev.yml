@@ -13,7 +13,11 @@ hmpps-auth:
 
 prisoner:
   search:
-    url: https://prisoner-search-dev.prison.service.justice.gov.uk
+    url: "https://prisoner-search-dev.prison.service.justice.gov.uk"
+
+incentives:
+  api:
+    url: "https://incentives-api-dev.hmpps.service.justice.gov.uk"
 
 hmpps:
   sqs:
