@@ -97,10 +97,16 @@ aws sqs send-message \
   --endpoint-url=http://localhost:4566 \
   --queue-url=http://localhost:4566/000000000000/sqs_hmpps_visits_allocation_events_queue \
   --message-body \
-    '{"Type":"Notification", "Message": "{\"eventType\":\"prisoner-offender-search.prisoner.conviction-status.updated\",\"additionalInformation\":{\"NomsNumber\":\"A8713DY\", "MessageId": "123"}'
+    '{"Type":"Notification", "Message": "{\"eventType\": \"prisoner-offender-search.prisoner.conviction-status.updated\", \"additionalInformation\": {\"nomsNumber\": \"A8713DY\", \"convictedStatus\": \"Convicted\"}}", "MessageId": "123"}'
 ```
 
 If you are unsure about the queue name you can check the queue names using the following command and replace it in the above --queue-url value parameter
 ```
 aws sqs list-queues --endpoint-url=http://localhost:4566
+```
+
+to check messages on the actual queues on localstack (queue and dead-letter queue), visit the following URL.
+```
+http://localhost.localstack.cloud:4566/_aws/sqs/messages?QueueUrl=http://sqs.eu-west-2.loca[…]000000000000/sqs_hmpps_visits_allocation_events_queue
+http://localhost.localstack.cloud:4566/_aws/sqs/messages?QueueUrl=http://sqs.eu-west-2.loca[…]6/000000000000/sqs_hmpps_visits_allocation_events_dlq
 ```
