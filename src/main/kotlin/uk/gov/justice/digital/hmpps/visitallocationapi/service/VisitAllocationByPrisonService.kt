@@ -20,12 +20,16 @@ class VisitAllocationByPrisonService(
     log.info("Total active prisons for visit allocation job = ${activePrisons.size}")
 
     activePrisons.forEach {
-      log.info("Adding message to event job queue for prisonCode: ${it.prisonCode}")
-      try {
-        visitAllocationEventJobSqsService.sendVisitAllocationEventToAllocationJobQueue(prisonCode = it.prisonCode)
-      } catch (e: RuntimeException) {
-        log.error("Sending message to event job queue for prisonCode: ${it.prisonCode} failed with error message - ${e.message}")
-      }
+      sendSqsMessageForPrison(it.prisonCode)
+    }
+  }
+
+  private fun sendSqsMessageForPrison(prisonCode: String) {
+    log.info("Adding message to event job queue for prisonCode: $prisonCode")
+    try {
+      visitAllocationEventJobSqsService.sendVisitAllocationEventToAllocationJobQueue(prisonCode)
+    } catch (e: RuntimeException) {
+      log.error("Sending message to event job queue for prisonCode: $prisonCode failed with error message - ${e.message}")
     }
   }
 }

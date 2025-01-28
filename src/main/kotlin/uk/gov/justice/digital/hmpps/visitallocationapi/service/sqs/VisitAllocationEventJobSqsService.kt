@@ -28,14 +28,9 @@ class VisitAllocationEventJobSqsService(
     log.info("Sending visit allocation job with prisonCode - $prisonCode")
 
     try {
-      val visitsAllocation = VisitAllocationEventJob(prisonCode)
-
       // drop the message on the visit allocation event job queue
       visitsAllocationEventJobSqsClient.sendMessage(
-        SendMessageRequest.builder()
-          .queueUrl(visitsAllocationEventJobQueueUrl)
-          .messageBody(objectMapper.writeValueAsString(visitsAllocation))
-          .build(),
+        buildVisitAllocationEventToAllocationJobMessage(prisonCode),
       )
     } catch (e: Throwable) {
       val message = "Failed to send visit allocation job with prisonCode - $prisonCode"
@@ -43,6 +38,13 @@ class VisitAllocationEventJobSqsService(
       throw PublishEventException(message, e)
     }
     log.info("Successfully sent visit allocation job with prisonCode - $prisonCode")
+  }
+
+  private fun buildVisitAllocationEventToAllocationJobMessage(prisonCode: String): SendMessageRequest {
+    return SendMessageRequest.builder()
+      .queueUrl(visitsAllocationEventJobQueueUrl)
+      .messageBody(objectMapper.writeValueAsString(VisitAllocationEventJob(prisonCode)))
+      .build()
   }
 }
 
