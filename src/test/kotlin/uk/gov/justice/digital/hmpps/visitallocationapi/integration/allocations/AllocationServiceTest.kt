@@ -152,7 +152,7 @@ class AllocationServiceTest {
    */
   @Test
   fun `Continue Allocation - Given an existing prisoner has STD incentive level for MDI prison and has PVO already, should generate and save 2 VO but no PVOs`() {
-    // GIVEN - A new prisoner with Standard incentive level, in prison MDI
+    // GIVEN - An existing prisoner with Standard incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
@@ -189,8 +189,8 @@ class AllocationServiceTest {
    * Scenario 4: Existing prisoner is eligible for PVO as they have changed incentive level recently, but we wait for VO date before assigning.
    */
   @Test
-  fun `Continue Allocation - Given an existing prisoner has ENHANCED incentive level for MDI prison and has PVO already, should generate and save 2 VO but no PVOs`() {
-    // GIVEN - A new prisoner with Enhanced incentive level, in prison MDI
+  fun `Continue Allocation - Given an existing prisoner has ENHANCED incentive level for MDI prison and is due PVO but not VO renewal date, no VO or PVO generated`() {
+    // GIVEN - An existing prisoner with Enhanced incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
@@ -208,7 +208,7 @@ class AllocationServiceTest {
     // Begin test
     allocationService.continueAllocation(prisonId)
 
-    // THEN - 3 Visit orders should be generated (3 VOs but no PVOs).
+    // THEN - No VO / PVOs are saved.
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
     verify(incentivesClient).getPrisonIncentiveLevels(prisonId)
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
@@ -243,7 +243,7 @@ class AllocationServiceTest {
     // Begin test
     allocationService.continueAllocation(prisonId)
 
-    // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
+    // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
     verify(incentivesClient).getPrisonIncentiveLevels(prisonId)
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
