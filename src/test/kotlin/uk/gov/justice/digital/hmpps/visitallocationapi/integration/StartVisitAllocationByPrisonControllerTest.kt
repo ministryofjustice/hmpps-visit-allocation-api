@@ -23,7 +23,7 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
   @Test
   fun `when allocation job started then sqs messages are sent for each active prison`() {
     // Given
-    val prison1Active = VisitOrderPrison(prisonCode =  prisonCode1, active = true)
+    val prison1Active = VisitOrderPrison(prisonCode = prisonCode1, active = true)
     val prison2Active = VisitOrderPrison(prisonCode = prisonCode2, active = true)
     val prison3Inactive = VisitOrderPrison(prisonCode = prisonCode3, active = false)
     entityHelper.savePrison(prison1Active)
