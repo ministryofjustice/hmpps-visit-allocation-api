@@ -10,8 +10,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
-import uk.gov.justice.digital.hmpps.visitallocationapi.config.ErrorResponse
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitAllocationByPrisonService
+import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 const val VO_START_VISIT_ALLOCATION_JOB: String = "/visits/allocation/job/start"
 

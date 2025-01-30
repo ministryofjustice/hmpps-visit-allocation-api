@@ -23,9 +23,9 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
   @Test
   fun `when allocation job started then sqs messages are sent for each active prison`() {
     // Given
-    val prison1Active = VisitOrderPrison(prisonCode1, true)
-    val prison2Active = VisitOrderPrison(prisonCode2, true)
-    val prison3Inactive = VisitOrderPrison(prisonCode3, false)
+    val prison1Active = VisitOrderPrison(prisonCode =  prisonCode1, active = true)
+    val prison2Active = VisitOrderPrison(prisonCode = prisonCode2, active = true)
+    val prison3Inactive = VisitOrderPrison(prisonCode = prisonCode3, active = false)
     entityHelper.savePrison(prison1Active)
     entityHelper.savePrison(prison2Active)
     entityHelper.savePrison(prison3Inactive)
@@ -43,9 +43,9 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
   @Test
   fun `when no active prisons allocation job started then no sqs messages are sent`() {
     // Given
-    val prison1Inactive = VisitOrderPrison(prisonCode1, false)
-    val prison2Inactive = VisitOrderPrison(prisonCode2, false)
-    val prison3Inactive = VisitOrderPrison(prisonCode3, false)
+    val prison1Inactive = VisitOrderPrison(prisonCode = prisonCode1, active = false)
+    val prison2Inactive = VisitOrderPrison(prisonCode = prisonCode2, active = false)
+    val prison3Inactive = VisitOrderPrison(prisonCode = prisonCode3, active = false)
     entityHelper.savePrison(prison1Inactive)
     entityHelper.savePrison(prison2Inactive)
     entityHelper.savePrison(prison3Inactive)

@@ -29,8 +29,8 @@ class VisitAllocationByPrisonServiceTest {
   @Test
   fun `Given 2 active prisons then trigger allocation sends 2 SQS messages to the allocation job queue`() {
     // given - 2 prisons are active - ABC and XYZ
-    val activePrison1 = VisitOrderPrison("ABC", true)
-    val activePrison2 = VisitOrderPrison("XYZ", true)
+    val activePrison1 = VisitOrderPrison(1, "ABC", true)
+    val activePrison2 = VisitOrderPrison(2, "XYZ", true)
 
     // when
     whenever(visitOrderPrisonRepository.findByActive(true)).thenReturn(listOf(activePrison1, activePrison2))
@@ -61,8 +61,8 @@ class VisitAllocationByPrisonServiceTest {
   @Test
   fun `Given exception thrown when writing the first SQS message then trigger allocation ignores and still sends SQS message to the allocation job queue for the second prison`() {
     // given - 2 prisons are active - ABC and XYZ
-    val activePrison1 = VisitOrderPrison("ABC", true)
-    val activePrison2 = VisitOrderPrison("XYZ", true)
+    val activePrison1 = VisitOrderPrison(1, "ABC", true)
+    val activePrison2 = VisitOrderPrison(2, "XYZ", true)
 
     // when
     whenever(visitOrderPrisonRepository.findByActive(true)).thenReturn(listOf(activePrison1, activePrison2))
