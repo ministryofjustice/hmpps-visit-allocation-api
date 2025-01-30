@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.visitallocationapi.integration.domainevents
+package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
@@ -18,7 +18,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListen
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
-class EventsSqsTest : EventsIntegrationTestBase() {
+class DomainEventsSqsTest : EventsIntegrationTestBase() {
 
   @Test
   fun `test prisoner-conviction-status-updated event is processed`() {
@@ -36,7 +36,7 @@ class EventsSqsTest : EventsIntegrationTestBase() {
     incentivesMockServer.stubGetPrisonIncentiveLevels(prisonId = "HEI", levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1))
 
     // Then
-    await untilCallTo { sqsClient.countMessagesOnQueue(queueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(prisonerConvictionStatusUpdatedProcessorSpy, times(1)).processEvent(objectMapper.readValue(domainEvent, DomainEvent::class.java)) }
     await untilAsserted { verify(visitOrderRepository, times(1)).saveAll(any<List<VisitOrder>>()) }
