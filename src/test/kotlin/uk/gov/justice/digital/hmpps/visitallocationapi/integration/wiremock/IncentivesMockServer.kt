@@ -30,6 +30,23 @@ class IncentivesMockServer : WireMockServer(8095) {
     )
   }
 
+  fun stubGetAllPrisonIncentiveLevels(prisonId: String, prisonIncentiveAmountsDtoList: List<PrisonIncentiveAmountsDto>?, httpStatus: HttpStatus = HttpStatus.NOT_FOUND) {
+    val responseBuilder = createJsonResponseBuilder()
+    stubFor(
+      get("/incentive/prison-levels/$prisonId")
+        .willReturn(
+          if (prisonIncentiveAmountsDtoList == null) {
+            responseBuilder
+              .withStatus(httpStatus.value())
+          } else {
+            responseBuilder
+              .withStatus(HttpStatus.OK.value())
+              .withBody(getJsonString(prisonIncentiveAmountsDtoList))
+          },
+        ),
+    )
+  }
+
   fun stubGetPrisonIncentiveLevels(prisonId: String, levelCode: String, prisonIncentiveAmountsDto: PrisonIncentiveAmountsDto?, httpStatus: HttpStatus = HttpStatus.NOT_FOUND) {
     val responseBuilder = createJsonResponseBuilder()
     stubFor(

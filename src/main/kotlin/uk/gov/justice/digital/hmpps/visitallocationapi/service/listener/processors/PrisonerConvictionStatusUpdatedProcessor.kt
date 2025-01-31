@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import kotlinx.coroutines.runBlocking
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
@@ -22,7 +23,9 @@ class PrisonerConvictionStatusUpdatedProcessor(
     LOG.info("received conviction status changed event: {}", domainEvent)
     val additionalInfo = getAdditionalInfo(domainEvent)
     if (additionalInfo.convictedStatus == ConvictedStatus.CONVICTED.value) { // TODO: Confirm how the string will come through
-      allocationService.startAllocation(additionalInfo.prisonerId)
+      runBlocking {
+        allocationService.startAllocation(additionalInfo.prisonerId)
+      }
     }
   }
 

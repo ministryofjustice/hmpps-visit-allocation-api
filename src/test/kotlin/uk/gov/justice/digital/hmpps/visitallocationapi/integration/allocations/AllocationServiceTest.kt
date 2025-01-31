@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.allocations
 
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -56,7 +57,9 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)).thenReturn(prisonIncentiveAmounts)
 
     // Begin test
-    allocationService.startAllocation(prisonerId)
+    runBlocking {
+      allocationService.startAllocation(prisonerId)
+    }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
     verify(prisonerSearchClient).getPrisonerById(prisonerId)
@@ -94,7 +97,9 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
     // Begin test
-    allocationService.continueAllocation(prisonId)
+    runBlocking {
+      allocationService.continueAllocation(prisonId)
+    }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
@@ -130,7 +135,9 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
     // Begin test
-    allocationService.continueAllocation(prisonId)
+    runBlocking {
+      allocationService.continueAllocation(prisonId)
+    }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
@@ -168,7 +175,9 @@ class AllocationServiceTest {
     lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
 
     // Begin test
-    allocationService.continueAllocation(prisonId)
+    runBlocking {
+      allocationService.continueAllocation(prisonId)
+    }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
@@ -206,7 +215,9 @@ class AllocationServiceTest {
     whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(null)
 
     // Begin test
-    allocationService.continueAllocation(prisonId)
+    runBlocking {
+      allocationService.continueAllocation(prisonId)
+    }
 
     // THEN - No VO / PVOs are saved.
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
@@ -241,7 +252,9 @@ class AllocationServiceTest {
     lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(28))
 
     // Begin test
-    allocationService.continueAllocation(prisonId)
+    runBlocking {
+      allocationService.continueAllocation(prisonId)
+    }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
