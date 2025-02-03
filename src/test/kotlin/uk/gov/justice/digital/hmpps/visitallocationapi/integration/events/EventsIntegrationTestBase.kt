@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.visitallocationapi.integration.domainevents
+package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.BeforeEach
@@ -12,13 +12,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
-import uk.gov.justice.digital.hmpps.visitallocationapi.integration.domainevents.LocalStackContainer.setLocalStackProperties
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalStackContainer.setLocalStackProperties
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener.Companion.PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusUpdatedProcessor
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
@@ -51,11 +53,16 @@ abstract class EventsIntegrationTestBase {
   internal val topic by lazy { hmppsQueueService.findByTopicId("domainevents") as HmppsTopic }
 
   internal val prisonVisitsAllocationsQueue by lazy { hmppsQueueService.findByQueueId(PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY) as HmppsQueue }
+  internal val prisonVisitsAllocationEventJobQueue by lazy { hmppsQueueService.findByQueueId(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY) as HmppsQueue }
 
-  internal val sqsClient by lazy { prisonVisitsAllocationsQueue.sqsClient }
-  internal val sqsDlqClient by lazy { prisonVisitsAllocationsQueue.sqsDlqClient }
-  internal val queueUrl by lazy { prisonVisitsAllocationsQueue.queueUrl }
-  internal val dlqUrl by lazy { prisonVisitsAllocationsQueue.dlqUrl }
+  internal val domainEventsSqsClient by lazy { prisonVisitsAllocationsQueue.sqsClient }
+  internal val domainEventsSqsDlqClient by lazy { prisonVisitsAllocationsQueue.sqsDlqClient }
+  internal val domainEventsQueueUrl by lazy { prisonVisitsAllocationsQueue.queueUrl }
+  internal val domainEventsDlqUrl by lazy { prisonVisitsAllocationsQueue.dlqUrl }
+  internal val prisonVisitsAllocationEventJobSqsClient by lazy { prisonVisitsAllocationEventJobQueue.sqsClient }
+  internal val prisonVisitsAllocationEventJobQueueUrl by lazy { prisonVisitsAllocationEventJobQueue.queueUrl }
+  internal val prisonVisitsAllocationEventJobSqsDlqClient by lazy { prisonVisitsAllocationEventJobQueue.sqsDlqClient }
+  internal val prisonVisitsAllocationEventJobDlqUrl by lazy { prisonVisitsAllocationEventJobQueue.dlqUrl }
 
   internal val awsSnsClient by lazy { topic.snsClient }
   internal val topicArn by lazy { topic.arn }
@@ -69,10 +76,15 @@ abstract class EventsIntegrationTestBase {
   @MockitoSpyBean
   lateinit var visitOrderRepository: VisitOrderRepository
 
+  @MockitoSpyBean
+  lateinit var visitAllocationByPrisonJobListenerSpy: VisitAllocationByPrisonJobListener
+
   @BeforeEach
   fun cleanQueue() {
-    purgeQueue(sqsClient, queueUrl)
-    purgeQueue(sqsDlqClient!!, dlqUrl!!)
+    purgeQueue(domainEventsSqsClient, domainEventsQueueUrl)
+    purgeQueue(domainEventsSqsDlqClient!!, domainEventsDlqUrl!!)
+    purgeQueue(prisonVisitsAllocationEventJobSqsClient, prisonVisitsAllocationEventJobQueueUrl)
+    purgeQueue(prisonVisitsAllocationEventJobSqsDlqClient!!, prisonVisitsAllocationEventJobDlqUrl!!)
   }
 
   fun purgeQueue(client: SqsAsyncClient, url: String) {

@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -23,20 +25,21 @@ class AllocationService(
   }
 
   @Transactional
-  fun startAllocation(prisonerId: String) {
-    LOG.info("Entered AllocationService - startAllocation with prisonerId $prisonerId")
+  suspend fun processPrisonerAllocation(prisonerId: String, prisonerDto: PrisonerDto? = null, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>? = null) {
+    LOG.info("Entered AllocationService - processPrisonerAllocation with prisonerId $prisonerId")
 
-    val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
+    val prisoner = prisonerDto ?: prisonerSearchClient.getPrisonerById(prisonerId)
     val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
-    val prisonIncentiveAmounts = incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)
+    val prisonIncentiveAmounts = allPrisonIncentiveAmounts?.first { it.levelCode == prisonerIncentive.iepCode }
+      ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)
 
     val visitOrders = mutableListOf<VisitOrder>()
-    repeat(prisonIncentiveAmounts.visitOrders) {
-      visitOrders.add(createVisitOrder(prisonerId, VisitOrderType.VO))
-    }
-    repeat(prisonIncentiveAmounts.privilegedVisitOrders) {
-      visitOrders.add(createVisitOrder(prisonerId, VisitOrderType.PVO))
-    }
+
+    // add VOs
+    visitOrders.addAll(generateVos(prisoner, prisonIncentiveAmounts))
+
+    // add PVOs
+    visitOrders.addAll(generatePVos(prisoner, prisonIncentiveAmounts))
 
     visitOrderRepository.saveAll(visitOrders)
 
@@ -46,40 +49,17 @@ class AllocationService(
   }
 
   @Transactional
-  fun continueAllocation(prisonId: String) {
-    LOG.info("Entered AllocationService - continueAllocation with prisonCode: $prisonId")
+  suspend fun processPrisonAllocation(prisonId: String) {
+    LOG.info("Entered AllocationService - processPrisonAllocation with prisonCode: $prisonId")
 
     val allPrisoners = prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)
     val allIncentiveLevels = incentivesClient.getPrisonIncentiveLevels(prisonId)
 
     for (prisoner in allPrisoners) {
-      val prisonerIncentiveLevel = incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
-      val prisonIncentivesForPrisonerLevel = allIncentiveLevels.first { it.levelCode == prisonerIncentiveLevel.iepCode }
-
-      val visitOrders = mutableListOf<VisitOrder>()
-      // Generate VOs
-      if (isDueVO(prisoner.prisonerId)) {
-        repeat(prisonIncentivesForPrisonerLevel.visitOrders) {
-          visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.VO))
-        }
-      }
-
-      // Generate PVOs
-      if (prisonIncentivesForPrisonerLevel.privilegedVisitOrders != 0) {
-        if (isDuePVO(prisoner.prisonerId)) {
-          repeat(prisonIncentivesForPrisonerLevel.privilegedVisitOrders) {
-            visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.PVO))
-          }
-        }
-      }
-
-      // Save all to DB
-      visitOrderRepository.saveAll(visitOrders)
-
-      LOG.info(
-        "Successfully generated ${visitOrders.size} visit orders for prisoner prisoner ${prisoner.prisonerId}: " + "${visitOrders.count { it.type == VisitOrderType.PVO }} PVOs and ${visitOrders.count { it.type == VisitOrderType.VO }} VOs",
-      )
+      processPrisonerAllocation(prisoner.prisonerId, prisoner, allIncentiveLevels)
     }
+
+    LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
   }
 
   private fun createVisitOrder(prisonerId: String, type: VisitOrderType): VisitOrder {
@@ -106,5 +86,31 @@ class AllocationService(
     }
 
     return lastPVODate <= LocalDate.now().minusDays(28)
+  }
+
+  private fun generateVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
+    // Generate VOs
+    val visitOrders = mutableListOf<VisitOrder>()
+    if (isDueVO(prisoner.prisonerId)) {
+      repeat(prisonIncentivesForPrisonerLevel.visitOrders) {
+        visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.VO))
+      }
+    }
+
+    return visitOrders.toList()
+  }
+
+  private fun generatePVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
+    // Generate PVOs
+    val visitOrders = mutableListOf<VisitOrder>()
+
+    if (prisonIncentivesForPrisonerLevel.privilegedVisitOrders != 0) {
+      if (isDuePVO(prisoner.prisonerId)) {
+        repeat(prisonIncentivesForPrisonerLevel.privilegedVisitOrders) {
+          visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.PVO))
+        }
+      }
+    }
+    return visitOrders.toList()
   }
 }

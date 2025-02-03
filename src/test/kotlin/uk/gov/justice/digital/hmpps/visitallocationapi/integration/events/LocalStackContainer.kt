@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.visitallocationapi.integration.domainevents
+package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
 import org.slf4j.LoggerFactory
 import org.springframework.test.context.DynamicPropertyRegistry
