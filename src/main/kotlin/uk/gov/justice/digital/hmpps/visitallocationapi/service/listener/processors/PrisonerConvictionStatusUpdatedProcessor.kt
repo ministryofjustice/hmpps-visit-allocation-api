@@ -22,7 +22,7 @@ class PrisonerConvictionStatusUpdatedProcessor(
     LOG.info("received conviction status changed event: {}", domainEvent)
     val additionalInfo = getAdditionalInfo(domainEvent)
     if (additionalInfo.convictedStatus == ConvictedStatus.CONVICTED.value) { // TODO: Confirm how the string will come through
-      allocationService.startAllocation(additionalInfo.prisonerNumber)
+      allocationService.startAllocation(additionalInfo.prisonerId)
     }
   }
 
