@@ -25,8 +25,8 @@ class AllocationService(
   }
 
   @Transactional
-  suspend fun startAllocation(prisonerId: String, prisonerDto: PrisonerDto? = null, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>? = null) {
-    LOG.info("Entered AllocationService - startAllocation with prisonerId $prisonerId")
+  suspend fun processPrisonerAllocation(prisonerId: String, prisonerDto: PrisonerDto? = null, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>? = null) {
+    LOG.info("Entered AllocationService - processPrisonerAllocation with prisonerId $prisonerId")
 
     val prisoner = prisonerDto ?: prisonerSearchClient.getPrisonerById(prisonerId)
     val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
@@ -49,17 +49,17 @@ class AllocationService(
   }
 
   @Transactional
-  suspend fun continueAllocation(prisonId: String) {
-    LOG.info("Entered AllocationService - continueAllocation with prisonCode: $prisonId")
+  suspend fun processPrisonAllocation(prisonId: String) {
+    LOG.info("Entered AllocationService - processPrisonAllocation with prisonCode: $prisonId")
 
     val allPrisoners = prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)
     val allIncentiveLevels = incentivesClient.getPrisonIncentiveLevels(prisonId)
 
     for (prisoner in allPrisoners) {
-      startAllocation(prisoner.prisonerId, prisoner, allIncentiveLevels)
+      processPrisonerAllocation(prisoner.prisonerId, prisoner, allIncentiveLevels)
     }
 
-    LOG.info("Finished AllocationService - continueAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
+    LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
   }
 
   private fun createVisitOrder(prisonerId: String, type: VisitOrderType): VisitOrder {

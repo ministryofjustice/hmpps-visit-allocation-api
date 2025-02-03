@@ -24,7 +24,7 @@ class PrisonerConvictionStatusUpdatedProcessor(
     val additionalInfo = getAdditionalInfo(domainEvent)
     if (additionalInfo.convictedStatus == ConvictedStatus.CONVICTED.value) { // TODO: Confirm how the string will come through
       runBlocking {
-        allocationService.startAllocation(additionalInfo.prisonerId)
+        allocationService.processPrisonerAllocation(additionalInfo.prisonerId)
       }
     }
   }

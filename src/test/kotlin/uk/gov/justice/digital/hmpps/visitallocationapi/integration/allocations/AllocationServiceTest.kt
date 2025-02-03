@@ -58,7 +58,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.startAllocation(prisonerId)
+      allocationService.processPrisonerAllocation(prisonerId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
@@ -98,7 +98,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.continueAllocation(prisonId)
+      allocationService.processPrisonAllocation(prisonId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
@@ -136,7 +136,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.continueAllocation(prisonId)
+      allocationService.processPrisonAllocation(prisonId)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -176,7 +176,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.continueAllocation(prisonId)
+      allocationService.processPrisonAllocation(prisonId)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -216,7 +216,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.continueAllocation(prisonId)
+      allocationService.processPrisonAllocation(prisonId)
     }
 
     // THEN - No VO / PVOs are saved.
@@ -253,7 +253,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.continueAllocation(prisonId)
+      allocationService.processPrisonAllocation(prisonId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
