@@ -48,7 +48,7 @@ class VisitAllocationEventJobSqsService(
   }
 }
 
-data class VisitAllocationEventJob(
+internal data class VisitAllocationEventJob(
   val prisonCode: String,
 )
 
