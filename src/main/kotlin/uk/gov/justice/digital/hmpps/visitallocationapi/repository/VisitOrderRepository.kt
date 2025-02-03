@@ -10,7 +10,7 @@ import java.time.LocalDate
 @Repository
 interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   @Query(
-    "SELECT vo.createdDate FROM VisitOrder vo WHERE vo.type = :type AND vo.prisonerId = :prisonerId ORDER BY vo.createdDate DESC LIMIT 1",
+    "SELECT vo.createdDate FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type ORDER BY vo.createdDate DESC LIMIT 1",
   )
   fun findLastAllocatedDate(
     prisonerId: String,
