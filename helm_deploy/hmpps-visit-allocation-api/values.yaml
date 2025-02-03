@@ -48,3 +48,6 @@ generic-service:
 
 generic-prometheus-alerts:
   targetApplication: hmpps-visit-allocation-api
+
+cron:
+  visitAllocationJob: "0 1 * * *" // 1 AM every day
