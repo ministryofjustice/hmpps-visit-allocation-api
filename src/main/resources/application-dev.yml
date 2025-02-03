@@ -30,6 +30,9 @@ hmpps:
         subscribeTopicId: domainevents
         dlqMaxReceiveCount: 1
         visibilityTimeout: 1
+      visitsallocationeventjob:
+        queueName: sqs_hmpps_prison_visit_allocation_event_job_queue
+        dlqName: sqs_hmpps_prison_visit_allocation_event_job_dlq
     topics:
       domainevents:
         arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}

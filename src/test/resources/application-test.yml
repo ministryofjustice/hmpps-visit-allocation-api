@@ -38,6 +38,9 @@ hmpps:
         subscribeTopicId: domainevents
         dlqMaxReceiveCount: 1
         visibilityTimeout: 1
+      visitsallocationeventjob:
+        queueName: ${random.uuid}
+        dlqName: ${random.uuid}
     topics:
       domainevents:
         arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
