@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.Awaitility
 import org.awaitility.kotlin.await
@@ -72,22 +71,10 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3, prisoner4)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
-    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(
-      prisoner1.prisonerId,
-      prisonerIncentivesDto = PrisonerIncentivesDto("STD")
-    )
-    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(
-      prisoner2.prisonerId,
-      prisonerIncentivesDto = PrisonerIncentivesDto("ENH")
-    )
-    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(
-      prisoner3.prisonerId,
-      prisonerIncentivesDto = PrisonerIncentivesDto("ENH2")
-    )
-    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(
-      prisoner4.prisonerId,
-      prisonerIncentivesDto = PrisonerIncentivesDto("ENH3")
-    )
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner4.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH3"))
 
     incentivesMockServer.stubGetAllPrisonIncentiveLevels(
       prisonId = PRISON_CODE,
@@ -101,16 +88,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
 
+    // Then
     Awaitility.await()
       .atMost(5, TimeUnit.SECONDS)
       .untilAsserted {
-
         // Then
-        await untilCallTo {
-          prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(
-            prisonVisitsAllocationEventJobQueueUrl
-          ).get()
-        } matches { it == 0 }
+        await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
         await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
         await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
         val visitOrders = visitOrderRepository.findAll()
@@ -134,6 +117,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.PVO, 3)
       }
   }
+
   private fun assertVisitOrdersAssignedBy(visitOrders: List<VisitOrder>, prisonerId: String, type: VisitOrderType, total: Int) {
     assertThat(visitOrders.count { it.prisonerId == prisonerId && it.type == type }).isEqualTo(total)
   }
