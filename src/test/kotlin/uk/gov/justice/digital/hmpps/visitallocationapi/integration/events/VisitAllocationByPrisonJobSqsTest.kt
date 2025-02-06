@@ -89,7 +89,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
     val visitOrders = visitOrderRepository.findAll()
 
-    assertThat(visitOrders.size).isEqualTo(36)
+    assertThat(visitOrders.size).isEqualTo(42)
 
     // as prisoner1 is STD he should only get 1 VO and 0 PVOs
     assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, 1)

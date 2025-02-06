@@ -333,7 +333,7 @@ class AllocationServiceTest {
     lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1))
     lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
 
-    whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE)).thenReturn(28)
+    whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)).thenReturn(28)
 
     // Begin test
     runBlocking {
