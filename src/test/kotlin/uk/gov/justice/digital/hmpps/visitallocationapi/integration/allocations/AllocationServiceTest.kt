@@ -300,7 +300,7 @@ class AllocationServiceTest {
     lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1))
     lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
 
-    whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE)).thenReturn(4)
+    whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)).thenReturn(4)
 
     // Begin test
     runBlocking {
@@ -309,7 +309,7 @@ class AllocationServiceTest {
 
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
     verify(visitOrderRepository).updateAvailableVisitOrdersOver28DaysToAccumulated(prisoner.prisonerId, VisitOrderType.VO)
-    verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE)
+    verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
     verify(visitOrderRepository, never()).expireOldestAccumulatedVisitOrders(any(), any(), any())
   }
 
@@ -341,7 +341,7 @@ class AllocationServiceTest {
     }
 
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
-    verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE)
+    verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
     verify(visitOrderRepository).expireOldestAccumulatedVisitOrders(prisoner.prisonerId, VisitOrderType.VO, 2)
   }
 }
