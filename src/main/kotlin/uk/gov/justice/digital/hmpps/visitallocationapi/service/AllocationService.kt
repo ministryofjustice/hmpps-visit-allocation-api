@@ -67,7 +67,7 @@ class AllocationService(
   private fun processPrisonerAccumulationAndExpiration(prisonerId: String) {
     visitOrderRepository.updateAvailableVisitOrdersOver28DaysToAccumulated(prisonerId, VisitOrderType.VO)
 
-    val currentVOCount = visitOrderRepository.countAllVisitOrders(prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE)
+    val currentVOCount = visitOrderRepository.countAllVisitOrders(prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
     if (currentVOCount > maxVisitOrders) {
       visitOrderRepository.expireOldestAccumulatedVisitOrders(prisonerId, VisitOrderType.VO, (currentVOCount - maxVisitOrders))
     }

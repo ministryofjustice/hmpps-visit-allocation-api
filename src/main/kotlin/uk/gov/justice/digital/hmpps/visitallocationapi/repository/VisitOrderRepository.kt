@@ -43,7 +43,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
             ORDER BY created_date ASC 
             LIMIT :amount)
     """,
-    nativeQuery = true
+    nativeQuery = true,
   )
   fun expireOldestAccumulatedVisitOrders(
     prisonerId: String,
@@ -64,7 +64,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
               AND status = 'AVAILABLE'
               AND created_date < CURRENT_DATE - INTERVAL '28 days')
     """,
-    nativeQuery = true
+    nativeQuery = true,
   )
   fun updateAvailableVisitOrdersOver28DaysToAccumulated(
     prisonerId: String,
