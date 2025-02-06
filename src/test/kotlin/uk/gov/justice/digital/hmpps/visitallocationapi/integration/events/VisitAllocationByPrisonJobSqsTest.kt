@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
+import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
@@ -14,17 +15,34 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJob
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import java.time.LocalDate
+
+/**
+ * Scenario: Visit allocation job is run, and all prisoners are processed for visit order allocations (VO / PVO).
+ * Prisoner1 - Standard incentive, Gets 1 VO, 0 PVO. Has no existing VOs, so no accumulation / expiry occurs.
+ * Prisoner2 - Enhanced incentive, Gets 2 VO, 1 PVO. Has no existing VOs, so no accumulation / expiry occurs.
+ * Prisoner3 - Enhanced2 incentive, Gets 3 VO, 2 PVOs. Has 2 existing VOs older than 28 days, so accumulation occurs but no expiry.
+ * Prisoner4 - Enhanced3 incentive, Gets 4 VO, 3 PVOs. Has 24 existing VOs, so expiry occurs for 2 VOs (4 added, 2 over 26 get expired).
+ */
 
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   @BeforeEach
   fun setup() {
     visitOrderRepository.deleteAll()
+
+    val visitOrders = mutableListOf<VisitOrder>().apply {
+      addAll(List(2) { createVisitOrder(prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29)) })
+      addAll(List(24) { createVisitOrder(prisoner4.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDate.now().minusDays(15)) })
+    }
+
+    visitOrderRepository.saveAll(visitOrders)
   }
 
   companion object {
@@ -36,7 +54,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   }
 
   @Test
-  fun `when visit allocation job run for a prison then processMessage is called and visit orders are created for convisted prisoners`() {
+  fun `when visit allocation job run for a prison then processMessage is called and visit orders are created for convicted prisoners`() {
     // Given - message sent to start allocation job for prison
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val event = VisitAllocationEventJob(PRISON_CODE)
@@ -61,16 +79,17 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
       ),
     )
 
-    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+    runBlocking {
+      prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+    }
 
     // Then
     await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
     await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
-    await untilAsserted { verify(visitOrderRepository, times(4)).saveAll(any<List<VisitOrder>>()) }
     val visitOrders = visitOrderRepository.findAll()
 
-    assertThat(visitOrders.size).isEqualTo(16)
+    assertThat(visitOrders.size).isEqualTo(36)
 
     // as prisoner1 is STD he should only get 1 VO and 0 PVOs
     assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, 1)
@@ -80,16 +99,20 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, 2)
     assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, 1)
 
-    // as prisoner3 is ENH2 he should get 3 VOs and 2 PVO
-    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.VO, 3)
+    // as prisoner3 is ENH2 he should get 3 VOs and 2 PVO (+2 existing expired VOs)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.VO, 5)
     assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, 2)
 
-    // as prisoner4 is ENH3 he should get 4 VOs and 3 PVO
-    assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.VO, 4)
+    // as prisoner4 is ENH3 he should get 4 VOs and 3 PVO (+24 existing accumulated VOs).
+    assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.VO, 28)
     assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.PVO, 3)
   }
 
   private fun assertVisitOrdersAssignedBy(visitOrders: List<VisitOrder>, prisonerId: String, type: VisitOrderType, total: Int) {
     assertThat(visitOrders.count { it.prisonerId == prisonerId && it.type == type }).isEqualTo(total)
+  }
+
+  private fun createVisitOrder(prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, createdDate: LocalDate): VisitOrder {
+    return VisitOrder(prisonerId = prisonerId, type = type, status = status, createdDate = createdDate)
   }
 }
