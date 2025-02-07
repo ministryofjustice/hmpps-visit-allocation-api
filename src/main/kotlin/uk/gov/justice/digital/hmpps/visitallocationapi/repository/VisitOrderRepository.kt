@@ -55,14 +55,12 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   @Modifying
   @Query(
     value = """
-        UPDATE visit_order 
+        UPDATE visit_order
         SET status = 'ACCUMULATED'
-        WHERE id IN (SELECT id 
-            FROM visit_order 
-            WHERE prisoner_id = :prisonerId 
+            WHERE prisoner_id = :prisonerId
               AND type = :#{#type.name()}
               AND status = 'AVAILABLE'
-              AND created_date < CURRENT_DATE - INTERVAL '28 days')
+              AND created_date < CURRENT_DATE - INTERVAL '28 days'
     """,
     nativeQuery = true,
   )
