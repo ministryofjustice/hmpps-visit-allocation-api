@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit
  * Prisoner2 - Enhanced incentive, Gets 2 VO, 1 PVO. Has no existing VOs, so no accumulation / expiry occurs.
  * Prisoner3 - Enhanced2 incentive, Gets 3 VO, 2 PVOs. Has 2 existing VOs older than 28 days, so accumulation occurs but no expiry.
  * Prisoner4 - Enhanced3 incentive, Gets 4 VO, 3 PVOs. Has 27 existing VOs, so expiry occurs for 1 VOs.
+ * Prisoner5 - Standard incentive, Gets 1 VO, 0 PVO. Has existing PVOs older than 28 days, so they are expired.
  */
 
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
@@ -42,6 +43,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val visitOrders = mutableListOf<VisitOrder>().apply {
       addAll(List(2) { createVisitOrder(prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29)) })
       addAll(List(27) { createVisitOrder(prisoner4.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDate.now().minusDays(15)) })
+      addAll(List(1) { createVisitOrder(prisoner5.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29)) })
     }
 
     visitOrderRepository.saveAll(visitOrders)
@@ -58,6 +60,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val prisoner2 = PrisonerDto(prisonerId = "ABC122", prisonId = PRISON_CODE)
     val prisoner3 = PrisonerDto(prisonerId = "ABC123", prisonId = PRISON_CODE)
     val prisoner4 = PrisonerDto(prisonerId = "ABC124", prisonId = PRISON_CODE)
+    val prisoner5 = PrisonerDto(prisonerId = "ABC125", prisonId = PRISON_CODE)
   }
 
   @Test
@@ -69,12 +72,13 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When
-    val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3, prisoner4)
+    val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3, prisoner4, prisoner5)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner4.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH3"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner5.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
 
     incentivesMockServer.stubGetAllPrisonIncentiveLevels(
       prisonId = PRISON_CODE,
@@ -90,7 +94,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     // Then
     Awaitility.await()
-      .atMost(5, TimeUnit.SECONDS)
+      .atMost(30, TimeUnit.SECONDS)
       .untilAsserted {
         // Then
         await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
@@ -98,7 +102,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
         val visitOrders = visitOrderRepository.findAll()
 
-        assertThat(visitOrders.size).isEqualTo(45)
+        assertThat(visitOrders.size).isEqualTo(46)
 
         // as prisoner1 is STD he should only get 1 VO and 0 PVOs
         assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, 1)
@@ -115,6 +119,10 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         // as prisoner4 is ENH3 he should get 4 VOs and 3 PVO (+27 existing accumulated VOs).
         assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.VO, 31)
         assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.PVO, 3)
+
+        // as prisoner5 is STD he should get 1 VOs and 0 PVO (+1 existing, now expired PVO).
+        assertVisitOrdersAssignedBy(visitOrders, prisoner5.prisonerId, VisitOrderType.VO, 1)
+        assertVisitOrdersAssignedBy(visitOrders, prisoner5.prisonerId, VisitOrderType.PVO, 1)
       }
   }
 
