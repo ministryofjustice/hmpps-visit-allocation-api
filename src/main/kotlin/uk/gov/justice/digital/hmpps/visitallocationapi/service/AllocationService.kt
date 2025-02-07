@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
@@ -14,17 +15,33 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDate
 
+@Transactional
 @Service
 class AllocationService(
   private val prisonerSearchClient: PrisonerSearchClient,
   private val incentivesClient: IncentivesClient,
   private val visitOrderRepository: VisitOrderRepository,
+  @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Transactional
+  suspend fun processPrison(prisonId: String) {
+    LOG.info("Entered AllocationService - processPrisonAllocation with prisonCode: $prisonId")
+
+    val allPrisoners = prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)
+    val allIncentiveLevels = incentivesClient.getPrisonIncentiveLevels(prisonId)
+
+    for (prisoner in allPrisoners) {
+      processPrisonerAllocation(prisoner.prisonerId, prisoner, allIncentiveLevels)
+      processPrisonerAccumulation(prisoner.prisonerId)
+      processPrisonerExpiration(prisoner.prisonerId)
+    }
+
+    LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
+  }
+
   suspend fun processPrisonerAllocation(prisonerId: String, prisonerDto: PrisonerDto? = null, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>? = null) {
     LOG.info("Entered AllocationService - processPrisonerAllocation with prisonerId $prisonerId")
 
@@ -48,18 +65,21 @@ class AllocationService(
     )
   }
 
-  @Transactional
-  suspend fun processPrisonAllocation(prisonId: String) {
-    LOG.info("Entered AllocationService - processPrisonAllocation with prisonCode: $prisonId")
+  private fun processPrisonerAccumulation(prisonerId: String) {
+    LOG.info("Entered AllocationService - processPrisonerAccumulation with prisonerId: $prisonerId")
 
-    val allPrisoners = prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)
-    val allIncentiveLevels = incentivesClient.getPrisonIncentiveLevels(prisonId)
+    visitOrderRepository.updateAvailableVisitOrdersOver28DaysToAccumulated(prisonerId, VisitOrderType.VO)
+  }
 
-    for (prisoner in allPrisoners) {
-      processPrisonerAllocation(prisoner.prisonerId, prisoner, allIncentiveLevels)
+  private fun processPrisonerExpiration(prisonerId: String) {
+    LOG.info("Entered AllocationService - processPrisonerExpiration with prisonerId: $prisonerId")
+
+    val currentAccumulatedVoCount = visitOrderRepository.countAllVisitOrders(prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
+    if (currentAccumulatedVoCount > maxAccumulatedVisitOrders) {
+      val amountToExpire = currentAccumulatedVoCount - maxAccumulatedVisitOrders
+      LOG.info("prisoner $prisonerId has $currentAccumulatedVoCount VOs. This is more than maximum allowed accumulated VOs $maxAccumulatedVisitOrders. Expiring $amountToExpire VOs")
+      visitOrderRepository.expireOldestAccumulatedVisitOrders(prisonerId, VisitOrderType.VO, amountToExpire)
     }
-
-    LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
   }
 
   private fun createVisitOrder(prisonerId: String, type: VisitOrderType): VisitOrder {
