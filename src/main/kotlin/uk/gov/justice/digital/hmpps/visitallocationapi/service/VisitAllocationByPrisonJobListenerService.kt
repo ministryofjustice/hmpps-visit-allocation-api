@@ -14,6 +14,6 @@ class VisitAllocationByPrisonJobListenerService(
 
   suspend fun handleVisitAllocationJob(prisonCode: String) {
     log.info("received allocation job event: {}", prisonCode)
-    allocationService.processPrisonAllocation(prisonCode)
+    allocationService.processPrison(prisonCode)
   }
 }

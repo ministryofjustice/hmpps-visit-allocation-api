@@ -104,7 +104,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
@@ -142,7 +142,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -182,7 +182,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -222,7 +222,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - No VO / PVOs are saved.
@@ -259,7 +259,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
@@ -304,7 +304,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
@@ -337,7 +337,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
