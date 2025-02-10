@@ -1,14 +1,16 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.allocations
 
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.lenient
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.never
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
@@ -34,8 +36,12 @@ class AllocationServiceTest {
   @Mock
   private lateinit var visitOrderRepository: VisitOrderRepository
 
-  @InjectMocks
   private lateinit var allocationService: AllocationService
+
+  @BeforeEach
+  fun setUp() {
+    allocationService = AllocationService(prisonerSearchClient, incentivesClient, visitOrderRepository, 26)
+  }
 
   // --- Start Allocation Tests --- \\
 
@@ -98,7 +104,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
@@ -136,7 +142,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -176,7 +182,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -203,8 +209,8 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
-    val prisonerIncentive = PrisonerIncentivesDto(iepCode = "Enhanced")
-    val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "Enhanced")
+    val prisonerIncentive = PrisonerIncentivesDto(iepCode = "ENH")
+    val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH")
 
     // WHEN
     whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
@@ -216,7 +222,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - No VO / PVOs are saved.
@@ -232,7 +238,7 @@ class AllocationServiceTest {
   }
 
   /**
-   * Scenario 5: Existing prisoner is given VO and PVO as it was last given within 14days & 28 days.
+   * Scenario 5: Existing prisoner is given VO and PVO as it was last given 14days & 28 days ago.
    */
   @Test
   fun `Continue Allocation - Given an existing prisoner has STD incentive level for MDI prison and is due VO and PVO`() {
@@ -253,7 +259,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrisonAllocation(prisonId)
+      allocationService.processPrison(prisonId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
@@ -270,5 +276,75 @@ class AllocationServiceTest {
           visitOrders.all { it.createdDate == LocalDate.now() }
       },
     )
+  }
+
+  // --- Accumulation --- \\
+
+  /**
+   * Scenario 1: Existing prisoner with VOs older than 28 days, has VO status updated form 'Available' to 'Accumulated'. But no VOs are expired.
+   */
+  @Test
+  fun `Accumulation - Given an existing prisoner has existing VOs older than 28 days, they are moved to accumulated`() {
+    // GIVEN - A new prisoner with Standard incentive level, in prison MDI
+    val prisonerId = "AA123456"
+    val prisonId = "MDI"
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
+    val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
+
+    // WHEN
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
+    whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
+
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1))
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
+
+    whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)).thenReturn(4)
+
+    // Begin test
+    runBlocking {
+      allocationService.processPrison(prisonId)
+    }
+
+    // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
+    verify(visitOrderRepository).updateAvailableVisitOrdersOver28DaysToAccumulated(prisoner.prisonerId, VisitOrderType.VO)
+    verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
+    verify(visitOrderRepository, never()).expireOldestAccumulatedVisitOrders(any(), any())
+  }
+
+  // --- Expiration --- \\
+
+  /**
+   * Scenario 1: Existing prisoner with more than 26 VOs has their oldest VOs over 26 days expired and PVOs older than 28days are expired.
+   */
+  @Test
+  fun `Expiration - Given an existing prisoner has more than 26 VOs, the extra VOs are moved to expired`() {
+    // GIVEN - An existing prisoner with Standard incentive level, in prison MDI
+    val prisonerId = "AA123456"
+    val prisonId = "MDI"
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
+    val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
+
+    // WHEN
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
+    whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
+
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1))
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
+
+    whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)).thenReturn(28)
+
+    // Begin test
+    runBlocking {
+      allocationService.processPrison(prisonId)
+    }
+
+    // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
+    verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
+    verify(visitOrderRepository).expireOldestAccumulatedVisitOrders(prisoner.prisonerId, 2)
+    verify(visitOrderRepository).expirePrivilegedVisitOrdersOver28Days(prisoner.prisonerId)
   }
 }
