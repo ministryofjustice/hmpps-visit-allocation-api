@@ -19,7 +19,8 @@ class StartVisitAllocationByPrisonController(
   private val objectMapper: ObjectMapper,
   private val visitAllocationByPrisonService: VisitAllocationByPrisonService,
 ) {
-  // this endpoint is secured by ingress
+  // This endpoint is secured in the ingress rather than the app so that they can be called from
+  // within the namespace without requiring authentication
   @PostMapping(VO_START_VISIT_ALLOCATION_JOB)
   @Operation(
     summary = "Endpoint to trigger adding prisons enabled for VO allocation to allocations queue.",
