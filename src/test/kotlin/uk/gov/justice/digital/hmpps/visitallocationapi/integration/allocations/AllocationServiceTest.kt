@@ -345,6 +345,6 @@ class AllocationServiceTest {
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
     verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
     verify(visitOrderRepository).expireOldestAccumulatedVisitOrders(prisoner.prisonerId, 2)
-    verify(visitOrderRepository).expirePrivilegedVisitOrdersOver28DaysToAccumulated(prisoner.prisonerId)
+    verify(visitOrderRepository).expirePrivilegedVisitOrdersOver28Days(prisoner.prisonerId)
   }
 }

@@ -1,10 +1,7 @@
--- Create an index on the type column
-CREATE INDEX idx_visit_order_type ON visit_order(type);
+CREATE INDEX idx_visit_order_composite
+    ON visit_order (prisoner_id, type, status, created_date);
 
--- Create an index on the status column
-CREATE INDEX idx_visit_order_status ON visit_order(status);
+CREATE INDEX idx_visit_order_last_allocated
+    ON visit_order (prisoner_id, type, created_date DESC);
 
-CREATE INDEX idx_visit_order_created_date ON visit_order(created_date);
-
-CREATE INDEX idx_visit_order_prisoner_id ON visit_order(prisoner_id);
-
+CREATE INDEX idx_visit_order_id ON visit_order (id);

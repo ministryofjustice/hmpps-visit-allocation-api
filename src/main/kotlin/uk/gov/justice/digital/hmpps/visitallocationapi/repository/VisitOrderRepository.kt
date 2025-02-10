@@ -55,7 +55,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   @Query(
     value = """
         UPDATE visit_order
-        SET status = 'EXPIRED'
+        SET status = 'EXPIRED', expiry_date = CURRENT_DATE
             WHERE prisoner_id = :prisonerId
               AND type = 'PVO'
               AND status = 'AVAILABLE'
@@ -63,9 +63,9 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
     """,
     nativeQuery = true,
   )
-  fun expirePrivilegedVisitOrdersOver28DaysToAccumulated(
+  fun expirePrivilegedVisitOrdersOver28Days(
     prisonerId: String,
-  )
+  ): Int
 
   @Transactional
   @Modifying

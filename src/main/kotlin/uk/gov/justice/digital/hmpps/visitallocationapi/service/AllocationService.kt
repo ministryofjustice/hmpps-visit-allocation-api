@@ -83,7 +83,8 @@ class AllocationService(
     }
 
     // Expire all PVOs older than 28 days.
-    visitOrderRepository.expirePrivilegedVisitOrdersOver28DaysToAccumulated(prisonerId)
+    val pvosExpired = visitOrderRepository.expirePrivilegedVisitOrdersOver28Days(prisonerId)
+    LOG.info("Expired $pvosExpired  for prisoner $prisonerId")
   }
 
   private fun createVisitOrder(prisonerId: String, type: VisitOrderType): VisitOrder {
