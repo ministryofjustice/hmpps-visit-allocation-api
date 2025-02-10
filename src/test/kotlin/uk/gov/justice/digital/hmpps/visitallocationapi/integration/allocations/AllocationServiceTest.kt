@@ -278,10 +278,10 @@ class AllocationServiceTest {
     )
   }
 
-  // --- Accumulation & Expiration Tests --- \\
+  // --- Accumulation --- \\
 
   /**
-   * Scenario 1: Existing prisoner with VOs older than 28 days, has VO status updated form Available to Accumulated. But no VOs are expired.
+   * Scenario 1: Existing prisoner with VOs older than 28 days, has VO status updated form 'Available' to 'Accumulated'. But no VOs are expired.
    */
   @Test
   fun `Accumulation - Given an existing prisoner has existing VOs older than 28 days, they are moved to accumulated`() {
@@ -310,15 +310,17 @@ class AllocationServiceTest {
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
     verify(visitOrderRepository).updateAvailableVisitOrdersOver28DaysToAccumulated(prisoner.prisonerId, VisitOrderType.VO)
     verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
-    verify(visitOrderRepository, never()).expireOldestAccumulatedVisitOrders(any(), any(), any())
+    verify(visitOrderRepository, never()).expireOldestAccumulatedVisitOrders(any(), any())
   }
 
+  // --- Expiration --- \\
+
   /**
-   * Scenario 2: Existing prisoner with more than 26 VOs has their oldest VOs over 26 days expired.
+   * Scenario 1: Existing prisoner with more than 26 VOs has their oldest VOs over 26 days expired and PVOs older than 28days are expired.
    */
   @Test
   fun `Expiration - Given an existing prisoner has more than 26 VOs, the extra VOs are moved to expired`() {
-    // GIVEN - A new prisoner with Standard incentive level, in prison MDI
+    // GIVEN - An existing prisoner with Standard incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
@@ -342,6 +344,7 @@ class AllocationServiceTest {
 
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
     verify(visitOrderRepository).countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)
-    verify(visitOrderRepository).expireOldestAccumulatedVisitOrders(prisoner.prisonerId, VisitOrderType.VO, 2)
+    verify(visitOrderRepository).expireOldestAccumulatedVisitOrders(prisoner.prisonerId, 2)
+    verify(visitOrderRepository).expirePrivilegedVisitOrdersOver28Days(prisoner.prisonerId)
   }
 }
