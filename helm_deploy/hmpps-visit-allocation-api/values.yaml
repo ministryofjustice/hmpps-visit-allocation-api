@@ -13,6 +13,13 @@ generic-service:
     enabled: true
     host: app-hostname.local # override per environment
     tlsSecretName: hmpps-visit-allocation-api-cert
+    annotations:
+      nginx.ingress.kubernetes.io/server-snippet: |
+        server_tokens off;
+        location /visits/allocation/job/start {
+          deny all;
+          return 401;
+        }
 
   # Environment variables to load into the deployment
   env:
@@ -50,4 +57,4 @@ generic-prometheus-alerts:
   targetApplication: hmpps-visit-allocation-api
 
 cron:
-  visitAllocationJob: "0 1 * * *" # 1 AM every day
+  visitOrderAllocationJob: "0 1 * * *" # 1 AM every day

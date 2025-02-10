@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: hmpps-visit-allocation-api-allocate-visits-job
+  name: hmpps-visit-allocation-api-allocate-visit-orders-job
 spec:
-  schedule: "{{ .Values.cron.visitAllocationJob }}"
+  schedule: "{{ .Values.cron.visitOrderAllocationJob }}"
   concurrencyPolicy: Forbid
   failedJobsHistoryLimit: 5
   startingDeadlineSeconds: 6000
@@ -13,7 +13,7 @@ spec:
       template:
         spec:
           containers:
-            - name: allocate-visits
+            - name: allocate-visit-orders-job
               image: ghcr.io/ministryofjustice/hmpps-devops-tools
               args:
                 - /bin/sh
