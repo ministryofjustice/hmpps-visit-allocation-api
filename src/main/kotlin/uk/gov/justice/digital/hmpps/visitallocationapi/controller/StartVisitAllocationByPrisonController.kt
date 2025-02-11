@@ -43,7 +43,7 @@ class StartVisitAllocationByPrisonController(
     ],
   )
   fun triggerVisitAllocationByPrison(): ResponseEntity<String> {
-    visitAllocationByPrisonService.triggerAllocationByPrison()
-    return ResponseEntity.status(HttpStatus.OK).body(objectMapper.writeValueAsString("Visit Allocation triggered"))
+    val allocationJobReference = visitAllocationByPrisonService.triggerAllocationByPrison()
+    return ResponseEntity.status(HttpStatus.OK).body(objectMapper.writeValueAsString("Visit Allocation triggered with reference - $allocationJobReference"))
   }
 }

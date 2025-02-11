@@ -12,8 +12,10 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Priso
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Transactional
 @Service
@@ -21,15 +23,16 @@ class AllocationService(
   private val prisonerSearchClient: PrisonerSearchClient,
   private val incentivesClient: IncentivesClient,
   private val visitOrderRepository: VisitOrderRepository,
+  private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  suspend fun processPrison(prisonId: String) {
-    LOG.info("Entered AllocationService - processPrisonAllocation with prisonCode: $prisonId")
-
+  suspend fun processPrison(jobReference: String, prisonId: String) {
+    LOG.info("Entered AllocationService - processPrisonAllocation with job reference - $jobReference , prisonCode - $prisonId")
+    setVisitOrderAllocationPrisonJobStartTime(jobReference, prisonId)
     val allPrisoners = prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)
     val allIncentiveLevels = incentivesClient.getPrisonIncentiveLevels(prisonId)
 
@@ -39,6 +42,7 @@ class AllocationService(
       processPrisonerExpiration(prisoner.prisonerId)
     }
 
+    setVisitOrderAllocationPrisonJobEndTime(jobReference, prisonId)
     LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
   }
 
@@ -137,5 +141,13 @@ class AllocationService(
       }
     }
     return visitOrders.toList()
+  }
+
+  private fun setVisitOrderAllocationPrisonJobStartTime(jobReference: String, prisonCode: String) {
+    visitOrderAllocationPrisonJobRepository.updateStartTimestamp(jobReference, prisonCode, LocalDateTime.now())
+  }
+
+  private fun setVisitOrderAllocationPrisonJobEndTime(jobReference: String, prisonCode: String) {
+    visitOrderAllocationPrisonJobRepository.updateEndTimestamp(jobReference, prisonCode, LocalDateTime.now())
   }
 }

@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalS
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
@@ -75,6 +76,9 @@ abstract class EventsIntegrationTestBase {
 
   @MockitoSpyBean
   lateinit var visitOrderRepository: VisitOrderRepository
+
+  @MockitoSpyBean
+  lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
 
   @MockitoSpyBean
   lateinit var visitAllocationByPrisonJobListenerSpy: VisitAllocationByPrisonJobListener

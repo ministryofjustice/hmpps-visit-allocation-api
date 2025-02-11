@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Priso
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.AllocationService
 import java.time.LocalDate
@@ -36,11 +37,14 @@ class AllocationServiceTest {
   @Mock
   private lateinit var visitOrderRepository: VisitOrderRepository
 
+  @Mock
+  private lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
+
   private lateinit var allocationService: AllocationService
 
   @BeforeEach
   fun setUp() {
-    allocationService = AllocationService(prisonerSearchClient, incentivesClient, visitOrderRepository, 26)
+    allocationService = AllocationService(prisonerSearchClient, incentivesClient, visitOrderRepository, visitOrderAllocationPrisonJobRepository, 26)
   }
 
   // --- Start Allocation Tests --- \\
@@ -104,7 +108,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrison(prisonId)
+      allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
@@ -142,7 +146,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrison(prisonId)
+      allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -182,7 +186,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrison(prisonId)
+      allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -222,7 +226,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrison(prisonId)
+      allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
     // THEN - No VO / PVOs are saved.
@@ -259,7 +263,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrison(prisonId)
+      allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
     // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
@@ -304,7 +308,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrison(prisonId)
+      allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
@@ -339,7 +343,7 @@ class AllocationServiceTest {
 
     // Begin test
     runBlocking {
-      allocationService.processPrison(prisonId)
+      allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
     // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.

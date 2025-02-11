@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJob
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
@@ -29,11 +30,13 @@ import java.util.concurrent.TimeUnit
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   @BeforeEach
   fun setup() {
+    visitOrderAllocationPrisonJobRepository.deleteAll()
     visitOrderRepository.deleteAll()
   }
 
   @AfterEach
   fun cleanUp() {
+    visitOrderAllocationPrisonJobRepository.deleteAll()
     visitOrderRepository.deleteAll()
   }
 
@@ -54,10 +57,11 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   fun `when visit allocation job run for a prison then processMessage is called and visit orders are created for convicted prisoners`() {
     // Given - message sent to start allocation job for prison
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
-    val event = VisitAllocationEventJob(PRISON_CODE)
+    val allocationJobReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
     val message = objectMapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
-
+    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
@@ -76,30 +80,32 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
 
-    // Then
-    Awaitility.await()
-      .atMost(10, TimeUnit.SECONDS)
-      .untilAsserted {
-        // Then
-        await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
-        await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
-        await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
-        val visitOrders = visitOrderRepository.findAll()
+    await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
+    await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestamp(any(), any(), any()) }
 
-        assertThat(visitOrders.size).isEqualTo(9)
+    val visitOrders = visitOrderRepository.findAll()
 
-        // as prisoner1 is STD he should only get 1 VO and 0 PVOs
-        assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 1)
-        assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
+    assertThat(visitOrders.size).isEqualTo(9)
 
-        // as prisoner2 is ENH he should get 2 VOs and 1 PVO
-        assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 2)
-        assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 1)
+    // as prisoner1 is STD he should only get 1 VO and 0 PVOs
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 1)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
 
-        // as prisoner3 is ENH2 he should get 3 VOs and 2 PVO
-        assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 3)
-        assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
-      }
+    // as prisoner2 is ENH he should get 2 VOs and 1 PVO
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 2)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 1)
+
+    // as prisoner3 is ENH2 he should get 3 VOs and 2 PVO
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 3)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
+
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestamp(any(), any(), any())
+    val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
+    assertThat(visitOrderAllocationPrisonJobs[0].startTimestamp).isNotNull()
+    assertThat(visitOrderAllocationPrisonJobs[0].endTimestamp).isNotNull()
   }
 
   /**
@@ -118,7 +124,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     visitOrderRepository.saveAll(existingVOs)
 
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
-    val event = VisitAllocationEventJob(PRISON_CODE)
+    val allocationJObjectReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJObjectReference, PRISON_CODE)
     val message = objectMapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
@@ -186,7 +193,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     visitOrderRepository.saveAll(existingVOs)
 
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
-    val event = VisitAllocationEventJob(PRISON_CODE)
+    val allocationJObjectReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJObjectReference, PRISON_CODE)
     val message = objectMapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
