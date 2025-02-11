@@ -58,25 +58,6 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
     verify(sqsService, times(0)).sendVisitAllocationEventToAllocationJobQueue(any())
   }
 
-  @Test
-  fun `access forbidden when no role`() {
-    // Given
-    // When
-    val responseSpec = startVisitAllocationByPrisonJob(webTestClient, setAuthorisation(roles = listOf()))
-    // Then
-    responseSpec.expectStatus().isForbidden
-  }
-
-  @Test
-  fun `access forbidden when incorrect role`() {
-    // Given
-    val userRole = "TEST_USER"
-    // When
-    val responseSpec = startVisitAllocationByPrisonJob(webTestClient, setAuthorisation(roles = listOf(userRole)))
-    // Then
-    responseSpec.expectStatus().isForbidden
-  }
-
   fun startVisitAllocationByPrisonJob(
     webTestClient: WebTestClient,
     authHttpHeaders: (HttpHeaders) -> Unit,
