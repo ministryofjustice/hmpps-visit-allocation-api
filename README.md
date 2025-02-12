@@ -91,6 +91,7 @@ Put any dummy value for AWS_ACCESS_KEY=test and AWS_SECRET_KEY=test and eu-west-
 The queueName is the value of hmpps.sqs.queues.prisonvisitsallocationevents.queueName on the application-<env>.yml file.
 So the queue URL should be - http://localhost:4566/000000000000/{queueName}
 
+
 #### Step 4 - Send a message to the queue. The below is a prisoner.conviction-status-updated event for prisoner A8713DY.
 ```
 aws sqs send-message \
