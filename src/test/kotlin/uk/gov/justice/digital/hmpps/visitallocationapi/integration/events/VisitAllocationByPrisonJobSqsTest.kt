@@ -240,7 +240,5 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.count { it.prisonerId == prisonerId && it.type == type && it.status == status }).isEqualTo(total)
   }
 
-  private fun createVisitOrder(prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, createdDate: LocalDate): VisitOrder {
-    return VisitOrder(prisonerId = prisonerId, type = type, status = status, createdDate = createdDate)
-  }
+  private fun createVisitOrder(prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, createdDate: LocalDate): VisitOrder = VisitOrder(prisonerId = prisonerId, type = type, status = status, createdDate = createdDate)
 }

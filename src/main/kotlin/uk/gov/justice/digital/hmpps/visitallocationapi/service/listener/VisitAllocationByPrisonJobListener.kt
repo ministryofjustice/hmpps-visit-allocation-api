@@ -19,10 +19,8 @@ class VisitAllocationByPrisonJobListener(
   }
 
   @SqsListener(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy")
-  fun processMessage(visitAllocationEventJob: VisitAllocationEventJob): CompletableFuture<Void?> {
-    return CoroutineScope(Context.current().asContextElement()).future {
-      visitAllocationByPrisonJobListenerService.handleVisitAllocationJob(visitAllocationEventJob.prisonCode)
-      null
-    }
+  fun processMessage(visitAllocationEventJob: VisitAllocationEventJob): CompletableFuture<Void?> = CoroutineScope(Context.current().asContextElement()).future {
+    visitAllocationByPrisonJobListenerService.handleVisitAllocationJob(visitAllocationEventJob.prisonCode)
+    null
   }
 }

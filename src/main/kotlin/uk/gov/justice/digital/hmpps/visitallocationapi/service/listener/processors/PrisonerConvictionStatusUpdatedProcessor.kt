@@ -29,7 +29,5 @@ class PrisonerConvictionStatusUpdatedProcessor(
     }
   }
 
-  private fun getAdditionalInfo(domainEvent: DomainEvent): PrisonerConvictionStatusChangedInfo {
-    return objectMapper.readValue(domainEvent.additionalInformation, PrisonerConvictionStatusChangedInfo::class.java)
-  }
+  private fun getAdditionalInfo(domainEvent: DomainEvent): PrisonerConvictionStatusChangedInfo = objectMapper.readValue(domainEvent.additionalInformation, PrisonerConvictionStatusChangedInfo::class.java)
 }
