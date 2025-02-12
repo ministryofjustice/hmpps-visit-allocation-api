@@ -13,12 +13,8 @@ class MockUtils {
     private val objectMapper: ObjectMapper = ObjectMapper().registerModules(JavaTimeModule(), kotlinModule())
       .setSerializationInclusion(JsonInclude.Include.NON_NULL)
 
-    fun getJsonString(obj: Any): String {
-      return objectMapper.writer().writeValueAsString(obj)
-    }
+    fun getJsonString(obj: Any): String = objectMapper.writer().writeValueAsString(obj)
 
-    fun createJsonResponseBuilder(): ResponseDefinitionBuilder {
-      return WireMock.aResponse().withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-    }
+    fun createJsonResponseBuilder(): ResponseDefinitionBuilder = WireMock.aResponse().withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
   }
 }

@@ -65,7 +65,10 @@ class IncentivesMockServer : WireMockServer(8095) {
   }
 }
 
-class IncentivesMockExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+class IncentivesMockExtension :
+  BeforeAllCallback,
+  AfterAllCallback,
+  BeforeEachCallback {
   companion object {
     @JvmField
     val incentivesMockServer = IncentivesMockServer()
