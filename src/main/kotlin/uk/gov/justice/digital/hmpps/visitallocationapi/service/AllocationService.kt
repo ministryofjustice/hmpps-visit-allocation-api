@@ -91,15 +91,13 @@ class AllocationService(
     LOG.info("Expired $pvosExpired PVOs for prisoner $prisonerId")
   }
 
-  private fun createVisitOrder(prisonerId: String, type: VisitOrderType): VisitOrder {
-    return VisitOrder(
-      prisonerId = prisonerId,
-      type = type,
-      status = VisitOrderStatus.AVAILABLE,
-      createdDate = LocalDate.now(),
-      expiryDate = null,
-    )
-  }
+  private fun createVisitOrder(prisonerId: String, type: VisitOrderType): VisitOrder = VisitOrder(
+    prisonerId = prisonerId,
+    type = type,
+    status = VisitOrderStatus.AVAILABLE,
+    createdDate = LocalDate.now(),
+    expiryDate = null,
+  )
 
   private fun isDueVO(prisonerId: String): Boolean {
     val lastVODate = visitOrderRepository.findLastAllocatedDate(prisonerId, VisitOrderType.VO)

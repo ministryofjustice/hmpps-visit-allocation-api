@@ -40,12 +40,10 @@ class VisitAllocationEventJobSqsService(
     log.info("Successfully sent SQS message with visit allocation reference - $allocationJobReference, prisonCode - $prisonCode")
   }
 
-  private fun buildVisitAllocationEventToAllocationJobMessage(allocationJobReference: String, prisonCode: String): SendMessageRequest {
-    return SendMessageRequest.builder()
-      .queueUrl(visitsAllocationEventJobQueueUrl)
-      .messageBody(objectMapper.writeValueAsString(VisitAllocationEventJob(allocationJobReference, prisonCode)))
-      .build()
-  }
+  private fun buildVisitAllocationEventToAllocationJobMessage(allocationJobReference: String, prisonCode: String): SendMessageRequest = SendMessageRequest.builder()
+    .queueUrl(visitsAllocationEventJobQueueUrl)
+    .messageBody(objectMapper.writeValueAsString(VisitAllocationEventJob(allocationJobReference, prisonCode)))
+    .build()
 }
 
 data class VisitAllocationEventJob(
@@ -56,7 +54,5 @@ data class VisitAllocationEventJob(
 class PublishEventException(message: String? = null, cause: Throwable? = null) :
   RuntimeException(message, cause),
   Supplier<PublishEventException> {
-  override fun get(): PublishEventException {
-    return PublishEventException(message, cause)
-  }
+  override fun get(): PublishEventException = PublishEventException(message, cause)
 }

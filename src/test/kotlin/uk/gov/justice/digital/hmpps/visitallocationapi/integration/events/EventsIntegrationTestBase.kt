@@ -95,15 +95,11 @@ abstract class EventsIntegrationTestBase {
     client.purgeQueue(PurgeQueueRequest.builder().queueUrl(url).build()).get()
   }
 
-  fun createDomainEventPublishRequest(eventType: String, domainEvent: String): PublishRequest? {
-    return PublishRequest.builder()
-      .topicArn(topicArn)
-      .message(domainEvent).build()
-  }
+  fun createDomainEventPublishRequest(eventType: String, domainEvent: String): PublishRequest? = PublishRequest.builder()
+    .topicArn(topicArn)
+    .message(domainEvent).build()
 
-  fun createDomainEventJson(eventType: String, additionalInformation: String): String {
-    return "{\"eventType\":\"$eventType\",\"additionalInformation\":$additionalInformation}"
-  }
+  fun createDomainEventJson(eventType: String, additionalInformation: String): String = "{\"eventType\":\"$eventType\",\"additionalInformation\":$additionalInformation}"
 
   fun createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId: String, convictedStatus: String): String {
     val jsonValues = HashMap<String, String>()
@@ -128,19 +124,17 @@ abstract class EventsIntegrationTestBase {
     return builder.toString()
   }
 
-  private fun getJsonString(entry: Map.Entry<String, Any>): String {
-    return when (entry.value) {
-      is List<*> -> {
-        ("\"${entry.key}\":[${(entry.value as List<*>).joinToString { "\"" + it + "\"" }}]")
-      }
+  private fun getJsonString(entry: Map.Entry<String, Any>): String = when (entry.value) {
+    is List<*> -> {
+      ("\"${entry.key}\":[${(entry.value as List<*>).joinToString { "\"" + it + "\"" }}]")
+    }
 
-      is Number -> {
-        ("\"${entry.key}\":${entry.value}")
-      }
+    is Number -> {
+      ("\"${entry.key}\":${entry.value}")
+    }
 
-      else -> {
-        ("\"${entry.key}\":\"${entry.value}\"")
-      }
+    else -> {
+      ("\"${entry.key}\":\"${entry.value}\"")
     }
   }
 }
