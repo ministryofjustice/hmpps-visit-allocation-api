@@ -25,7 +25,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 # This will cancel all running build/test/release pipelines that are not on the main branch
 # If this pipeline is on the main branch, it will wait until existing runs complete
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: true
 
 jobs:
   helm_lint:
@@ -51,7 +51,7 @@ jobs:
       registry_org: 'ministryofjustice'
       additional_docker_tag: ${{ inputs.additional_docker_tag }}
       push: ${{ inputs.push || true }}
-      docker_multiplatform: true
+      docker_multiplatform: false
   deploy_dev:
     name: Deploy to the development environment
     needs:

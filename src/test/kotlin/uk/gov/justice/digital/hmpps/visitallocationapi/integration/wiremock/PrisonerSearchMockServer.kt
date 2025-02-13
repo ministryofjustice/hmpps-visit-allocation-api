@@ -48,7 +48,10 @@ class PrisonerSearchMockServer : WireMockServer(8094) {
   }
 }
 
-class PrisonerSearchMockExtension : BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+class PrisonerSearchMockExtension :
+  BeforeAllCallback,
+  AfterAllCallback,
+  BeforeEachCallback {
   companion object {
     @JvmField
     val prisonerSearchMockServer = PrisonerSearchMockServer()

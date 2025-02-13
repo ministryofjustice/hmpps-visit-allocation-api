@@ -40,8 +40,7 @@ class IncentivesClient(
       .uri(uri)
       .retrieve()
       .bodyToMono<List<PrisonIncentiveAmountsDto>>()
-      .onErrorResume {
-          e ->
+      .onErrorResume { e ->
         if (!isNotFoundError(e)) {
           LOG.error("getPrisonIncentiveLevels Failed for get request $uri")
           Mono.error(e)
@@ -61,8 +60,7 @@ class IncentivesClient(
       .uri(uri)
       .retrieve()
       .bodyToMono(PrisonIncentiveAmountsDto::class.java)
-      .onErrorResume {
-          e ->
+      .onErrorResume { e ->
         if (!isNotFoundError(e)) {
           LOG.error("getPrisonIncentiveLevelByLevelCode Failed for get request $uri")
           Mono.error(e)
@@ -74,6 +72,5 @@ class IncentivesClient(
       .block() ?: throw TimeoutException("Request timed out while fetching incentive level for $prisonId, level $levelCode")
   }
 
-  private fun isNotFoundError(e: Throwable?) =
-    e is WebClientResponseException && e.statusCode == NOT_FOUND
+  private fun isNotFoundError(e: Throwable?) = e is WebClientResponseException && e.statusCode == NOT_FOUND
 }
