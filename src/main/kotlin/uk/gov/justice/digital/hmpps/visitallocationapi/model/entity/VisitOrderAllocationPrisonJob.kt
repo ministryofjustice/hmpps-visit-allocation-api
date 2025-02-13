@@ -23,6 +23,18 @@ class VisitOrderAllocationPrisonJob(
   @Column()
   val startTimestamp: LocalDateTime? = null,
 
+  @Column(nullable = false)
+  val failureMessage: String? = null,
+
+  @Column(nullable = false)
+  val convictedPrisoners: Int? = null,
+
+  @Column(nullable = false)
+  val processedPrisoners: Int? = null,
+
+  @Column(nullable = false)
+  val failedPrisoners: Int? = null,
+
   @Column
   val endTimestamp: LocalDateTime? = null,
 ) : AbstractIdEntity()

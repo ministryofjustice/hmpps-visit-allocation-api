@@ -31,14 +31,38 @@ interface VisitOrderAllocationPrisonJobRepository : JpaRepository<VisitOrderAllo
   @Query(
     value = """
         UPDATE VisitOrderAllocationPrisonJob v SET   
+        v.failureMessage = :failureMessage,
         v.endTimestamp = :endTimestamp
         WHERE v.prisonCode = :prisonCode 
         AND v.allocationJobReference = :allocationJobReference
     """,
   )
-  fun updateEndTimestamp(
+  fun updateFailureMessageAndEndTimestamp(
+    allocationJobReference: String,
+    prisonCode: String,
+    failureMessage: String,
+    endTimestamp: LocalDateTime,
+  )
+
+  @Transactional
+  @Modifying
+  @Query(
+    value = """
+        UPDATE VisitOrderAllocationPrisonJob v SET   
+        v.endTimestamp = :endTimestamp, 
+        v.convictedPrisoners = :totalPrisoners,
+        v.processedPrisoners = :processedPrisoners,
+        v.failedPrisoners = :failedPrisoners
+        WHERE v.prisonCode = :prisonCode 
+        AND v.allocationJobReference = :allocationJobReference
+    """,
+  )
+  fun updateEndTimestampAndStats(
     allocationJobReference: String,
     prisonCode: String,
     endTimestamp: LocalDateTime,
+    totalPrisoners: Int,
+    processedPrisoners: Int,
+    failedPrisoners: Int,
   )
 }

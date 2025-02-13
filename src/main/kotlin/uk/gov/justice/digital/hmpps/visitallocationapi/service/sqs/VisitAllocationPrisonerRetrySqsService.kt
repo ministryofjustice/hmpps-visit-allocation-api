@@ -39,12 +39,10 @@ class VisitAllocationPrisonerRetrySqsService(
     log.info("Successfully sent SQS message with visit allocation reference - $allocationJobReference, prisonerId - $prisonerId")
   }
 
-  private fun buildVisitAllocationPrisonerRetryJobMessage(allocationJobReference: String, prisonerId: String): SendMessageRequest {
-    return SendMessageRequest.builder()
-      .queueUrl(visitAllocationPrisonerRetryQueueUrl)
-      .messageBody(objectMapper.writeValueAsString(VisitAllocationPrisonerRetryJob(allocationJobReference, prisonerId)))
-      .build()
-  }
+  private fun buildVisitAllocationPrisonerRetryJobMessage(allocationJobReference: String, prisonerId: String): SendMessageRequest = SendMessageRequest.builder()
+    .queueUrl(visitAllocationPrisonerRetryQueueUrl)
+    .messageBody(objectMapper.writeValueAsString(VisitAllocationPrisonerRetryJob(allocationJobReference, prisonerId)))
+    .build()
 
   data class VisitAllocationPrisonerRetryJob(
     val jobReference: String,
