@@ -22,7 +22,9 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEv
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener.Companion.PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationPrisonerRetryQueueListener.Companion.PRISON_VISITS_ALLOCATION_PRISONER_RETRY_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusUpdatedProcessor
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsTopic
@@ -55,6 +57,7 @@ abstract class EventsIntegrationTestBase {
 
   internal val prisonVisitsAllocationsQueue by lazy { hmppsQueueService.findByQueueId(PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY) as HmppsQueue }
   internal val prisonVisitsAllocationEventJobQueue by lazy { hmppsQueueService.findByQueueId(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY) as HmppsQueue }
+  internal val prisonVisitsAllocationPrisonerRetryQueue by lazy { hmppsQueueService.findByQueueId(PRISON_VISITS_ALLOCATION_PRISONER_RETRY_QUEUE_CONFIG_KEY) as HmppsQueue }
 
   internal val domainEventsSqsClient by lazy { prisonVisitsAllocationsQueue.sqsClient }
   internal val domainEventsSqsDlqClient by lazy { prisonVisitsAllocationsQueue.sqsDlqClient }
@@ -64,6 +67,10 @@ abstract class EventsIntegrationTestBase {
   internal val prisonVisitsAllocationEventJobQueueUrl by lazy { prisonVisitsAllocationEventJobQueue.queueUrl }
   internal val prisonVisitsAllocationEventJobSqsDlqClient by lazy { prisonVisitsAllocationEventJobQueue.sqsDlqClient }
   internal val prisonVisitsAllocationEventJobDlqUrl by lazy { prisonVisitsAllocationEventJobQueue.dlqUrl }
+  internal val prisonVisitsAllocationPrisonerRetryQueueSqsClient by lazy { prisonVisitsAllocationPrisonerRetryQueue.sqsClient }
+  internal val prisonVisitsAllocationPrisonerRetryQueueUrl by lazy { prisonVisitsAllocationPrisonerRetryQueue.queueUrl }
+  internal val prisonVisitsAllocationPrisonerRetryQueueDlqClient by lazy { prisonVisitsAllocationPrisonerRetryQueue.sqsDlqClient }
+  internal val prisonVisitsAllocationPrisonerRetryQueueDlqUrl by lazy { prisonVisitsAllocationPrisonerRetryQueue.dlqUrl }
 
   internal val awsSnsClient by lazy { topic.snsClient }
   internal val topicArn by lazy { topic.arn }
@@ -83,12 +90,17 @@ abstract class EventsIntegrationTestBase {
   @MockitoSpyBean
   lateinit var visitAllocationByPrisonJobListenerSpy: VisitAllocationByPrisonJobListener
 
+  @MockitoSpyBean
+  lateinit var visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService
+
   @BeforeEach
   fun cleanQueue() {
     purgeQueue(domainEventsSqsClient, domainEventsQueueUrl)
     purgeQueue(domainEventsSqsDlqClient!!, domainEventsDlqUrl!!)
     purgeQueue(prisonVisitsAllocationEventJobSqsClient, prisonVisitsAllocationEventJobQueueUrl)
     purgeQueue(prisonVisitsAllocationEventJobSqsDlqClient!!, prisonVisitsAllocationEventJobDlqUrl!!)
+    purgeQueue(prisonVisitsAllocationPrisonerRetryQueueSqsClient, prisonVisitsAllocationPrisonerRetryQueueUrl)
+    purgeQueue(prisonVisitsAllocationPrisonerRetryQueueDlqClient!!, prisonVisitsAllocationPrisonerRetryQueueDlqUrl!!)
   }
 
   fun purgeQueue(client: SqsAsyncClient, url: String) {

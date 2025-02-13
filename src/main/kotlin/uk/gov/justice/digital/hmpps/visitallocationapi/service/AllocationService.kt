@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -24,6 +25,7 @@ class AllocationService(
   private val incentivesClient: IncentivesClient,
   private val visitOrderRepository: VisitOrderRepository,
   private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
+  private val visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
@@ -37,9 +39,15 @@ class AllocationService(
     val allIncentiveLevels = incentivesClient.getPrisonIncentiveLevels(prisonId)
 
     for (prisoner in allPrisoners) {
-      processPrisonerAllocation(prisoner.prisonerId, prisoner, allIncentiveLevels)
-      processPrisonerAccumulation(prisoner.prisonerId)
-      processPrisonerExpiration(prisoner.prisonerId)
+      try {
+        processPrisonerAllocation(prisoner.prisonerId, prisoner, allIncentiveLevels)
+        processPrisonerAccumulation(prisoner.prisonerId)
+        processPrisonerExpiration(prisoner.prisonerId)
+      } catch (e: RuntimeException) {
+        // ignore the prisoner and send it to an SQS queue to ensure the whole process does not stop
+        LOG.error("Error processing prisoner - ${prisoner.prisonerId}, putting ${prisoner.prisonerId} on prisoner retry queue", e)
+        sendMessageToPrisonerRetryQueue(jobReference = jobReference, prisonerId = prisoner.prisonerId)
+      }
     }
 
     setVisitOrderAllocationPrisonJobEndTime(jobReference, prisonId)
@@ -50,7 +58,7 @@ class AllocationService(
     LOG.info("Entered AllocationService - processPrisonerAllocation with prisonerId $prisonerId")
 
     val prisoner = prisonerDto ?: prisonerSearchClient.getPrisonerById(prisonerId)
-    val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
+    val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisonerId)
     val prisonIncentiveAmounts = allPrisonIncentiveAmounts?.first { it.levelCode == prisonerIncentive.iepCode }
       ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)
 
@@ -149,5 +157,15 @@ class AllocationService(
 
   private fun setVisitOrderAllocationPrisonJobEndTime(jobReference: String, prisonCode: String) {
     visitOrderAllocationPrisonJobRepository.updateEndTimestamp(jobReference, prisonCode, LocalDateTime.now())
+  }
+
+  private fun sendMessageToPrisonerRetryQueue(jobReference: String, prisonerId: String) {
+    try {
+      LOG.info("Putting prisoner $prisonerId on the retry queue, jobReference - $jobReference")
+      visitAllocationPrisonerRetrySqsService.sendToVisitAllocationPrisonerRetryQueue(allocationJobReference = jobReference, prisonerId = prisonerId)
+    } catch (e: RuntimeException) {
+      // ignore if a message could not be sent
+      LOG.error("Failed to put prisoner $prisonerId on the retry queue, jobReference - $jobReference")
+    }
   }
 }

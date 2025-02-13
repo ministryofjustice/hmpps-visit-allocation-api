@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.springframework.http.HttpStatus
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
@@ -45,6 +46,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val prisoner1 = PrisonerDto(prisonerId = "ABC121", prisonId = PRISON_CODE)
     val prisoner2 = PrisonerDto(prisonerId = "ABC122", prisonId = PRISON_CODE)
     val prisoner3 = PrisonerDto(prisonerId = "ABC123", prisonId = PRISON_CODE)
+    val prisoner4 = PrisonerDto(prisonerId = "ABC124", prisonId = PRISON_CODE)
   }
 
   /**
@@ -242,6 +244,146 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
         assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.EXPIRED, 2)
       }
+  }
+
+  /**
+   * Scenario - Allocation: Visit allocation job is run, and if even one fails with a RuntimeException the process continues.
+   * Prisoner1 - Standard incentive, Gets 1 VO, 0 PVO.
+   * Prisoner2 - Gets no VOs - as the call to incentives fails.
+   * Prisoner3 - Enhanced2 incentive, Gets 3 VO, 2 PVOs.
+   * Prisoner4 - Enhanced2 incentive, Gets 3 VO, 2 PVOs.
+   */
+  @Test
+  fun `when visit allocation job run for a prison and processing for one of the prisoners fails with a 404 error the process continues`() {
+    // Given - message sent to start allocation job for prison
+    val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
+    val allocationJobReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
+    val message = objectMapper.writeValueAsString(event)
+    val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
+    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+
+    // When
+    val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3, prisoner4)
+    prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+
+    // a 404 is being returned for prisoner 2
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, null)
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner4.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = PRISON_CODE,
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
+
+    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+
+    await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
+    await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestamp(any(), any(), any()) }
+
+    val visitOrders = visitOrderRepository.findAll()
+
+    assertThat(visitOrders.size).isEqualTo(11)
+
+    // as prisoner1 is STD he should only get 1 VO and 0 PVOs
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 1)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
+
+    // as prisoner2 returned a 404 - he gets no VOs assigned and the prisoner is put on retry queue
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 0)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
+    verify(visitAllocationPrisonerRetrySqsService, times(1)).sendToVisitAllocationPrisonerRetryQueue(allocationJobReference, prisoner2.prisonerId)
+
+    // as prisoner3 and prisoner4 are  ENH2 they should get 3 VOs and 2 PVOs each
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 3)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
+
+    assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 3)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
+
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestamp(any(), any(), any())
+    val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
+    assertThat(visitOrderAllocationPrisonJobs[0].startTimestamp).isNotNull()
+    assertThat(visitOrderAllocationPrisonJobs[0].endTimestamp).isNotNull()
+  }
+
+  /**
+   * Scenario - Allocation: Visit allocation job is run, and if even one fails with a RuntimeException the process continues.
+   * Prisoner1 - Standard incentive, Gets 1 VO, 0 PVO.
+   * Prisoner2 - Gets no VOs - as the call to incentives fails.
+   * Prisoner3 - Enhanced2 incentive, Gets 3 VO, 2 PVOs.
+   * Prisoner4 - Enhanced2 incentive, Gets 3 VO, 2 PVOs.
+   */
+  @Test
+  fun `when visit allocation job run for a prison and processing for one of the prisoners fails with a 500 error the process continues`() {
+    // Given - message sent to start allocation job for prison
+    val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
+    val allocationJobReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
+    val message = objectMapper.writeValueAsString(event)
+    val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
+    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+
+    // When
+    val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3, prisoner4)
+    prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+
+    // a 500 error is being returned for prisoner 2
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, null, HttpStatus.INTERNAL_SERVER_ERROR)
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner4.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = PRISON_CODE,
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
+
+    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+
+    await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
+    await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestamp(any(), any(), any()) }
+
+    val visitOrders = visitOrderRepository.findAll()
+
+    assertThat(visitOrders.size).isEqualTo(11)
+
+    // as prisoner1 is STD he should only get 1 VO and 0 PVOs
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 1)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
+
+    // as prisoner2 returned a 500 - he gets no VOs assigned and the prisoner is put on retry queue
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 0)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
+    verify(visitAllocationPrisonerRetrySqsService, times(1)).sendToVisitAllocationPrisonerRetryQueue(allocationJobReference, prisoner2.prisonerId)
+
+    // as prisoner3 and prisoner4 are  ENH2 they should get 3 VOs and 2 PVOs each
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 3)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
+
+    assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 3)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner4.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
+
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestamp(any(), any(), any())
+    val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
+    assertThat(visitOrderAllocationPrisonJobs[0].startTimestamp).isNotNull()
+    assertThat(visitOrderAllocationPrisonJobs[0].endTimestamp).isNotNull()
   }
 
   private fun assertVisitOrdersAssignedBy(visitOrders: List<VisitOrder>, prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, total: Int) {
