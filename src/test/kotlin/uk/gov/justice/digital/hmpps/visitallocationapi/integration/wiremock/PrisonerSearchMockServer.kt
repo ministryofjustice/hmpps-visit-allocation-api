@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.springframework.http.HttpStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.RestPage
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.MockUtils.Companion.createJsonResponseBuilder
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.MockUtils.Companion.getJsonString
@@ -30,10 +31,14 @@ class PrisonerSearchMockServer : WireMockServer(8094) {
     )
   }
 
-  fun stubGetConvictedPrisoners(prisonId: String, convictedPrisoners: List<PrisonerDto>?, httpStatus: HttpStatus = HttpStatus.NOT_FOUND) {
+  fun stubGetConvictedPrisoners(
+    prisonId: String,
+    convictedPrisoners: List<PrisonerDto>?,
+    httpStatus: HttpStatus = HttpStatus.NOT_FOUND,
+  ) {
     val responseBuilder = createJsonResponseBuilder()
     stubFor(
-      post("/attribute-search?size=$10000")
+      post("/attribute-search?size=10000")
         .willReturn(
           if (convictedPrisoners == null) {
             responseBuilder
@@ -41,7 +46,7 @@ class PrisonerSearchMockServer : WireMockServer(8094) {
           } else {
             responseBuilder
               .withStatus(HttpStatus.OK.value())
-              .withBody(getJsonString(convictedPrisoners))
+              .withBody(getJsonString(RestPage(content = convictedPrisoners, size = convictedPrisoners.size, total = convictedPrisoners.size.toLong(), page = 0)))
           },
         ),
     )

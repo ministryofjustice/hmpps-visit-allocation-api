@@ -14,6 +14,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.RestPage
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
@@ -106,7 +107,15 @@ class AllocationServiceTest {
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
     // WHEN
-    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    val convictedPrisoners = listOf(prisoner)
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(
+      RestPage(
+        content = convictedPrisoners,
+        size = convictedPrisoners.size,
+        page = 0,
+        total = convictedPrisoners.size.toLong(),
+      ),
+    )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -144,7 +153,15 @@ class AllocationServiceTest {
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 0, levelCode = "STD")
 
     // WHEN
-    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    val convictedPrisoners = listOf(prisoner)
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(
+      RestPage(
+        content = convictedPrisoners,
+        size = convictedPrisoners.size,
+        page = 0,
+        total = convictedPrisoners.size.toLong(),
+      ),
+    )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -181,7 +198,15 @@ class AllocationServiceTest {
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
     // WHEN
-    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    val convictedPrisoners = listOf(prisoner)
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(
+      RestPage(
+        content = convictedPrisoners,
+        size = convictedPrisoners.size,
+        page = 0,
+        total = convictedPrisoners.size.toLong(),
+      ),
+    )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -221,7 +246,15 @@ class AllocationServiceTest {
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH")
 
     // WHEN
-    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    val convictedPrisoners = listOf(prisoner)
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(
+      RestPage(
+        content = convictedPrisoners,
+        size = convictedPrisoners.size,
+        page = 0,
+        total = convictedPrisoners.size.toLong(),
+      ),
+    )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -258,7 +291,15 @@ class AllocationServiceTest {
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
     // WHEN
-    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    val convictedPrisoners = listOf(prisoner)
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(
+      RestPage(
+        content = convictedPrisoners,
+        size = convictedPrisoners.size,
+        page = 0,
+        total = convictedPrisoners.size.toLong(),
+      ),
+    )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -301,7 +342,15 @@ class AllocationServiceTest {
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
     // WHEN
-    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    val convictedPrisoners = listOf(prisoner)
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(
+      RestPage(
+        content = convictedPrisoners,
+        size = convictedPrisoners.size,
+        page = 0,
+        total = convictedPrisoners.size.toLong(),
+      ),
+    )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -336,7 +385,15 @@ class AllocationServiceTest {
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
     // WHEN
-    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(listOf(prisoner))
+    val convictedPrisoners = listOf(prisoner)
+    whenever(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)).thenReturn(
+      RestPage(
+        content = convictedPrisoners,
+        size = convictedPrisoners.size,
+        page = 0,
+        total = convictedPrisoners.size.toLong(),
+      ),
+    )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 

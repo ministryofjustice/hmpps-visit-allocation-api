@@ -29,7 +29,7 @@ class PrisonerSearchClient(
       .block() ?: throw TimeoutException("Request timed out while fetching prisoner with ID $prisonerId")
   }
 
-  fun getConvictedPrisonersByPrisonId(prisonId: String): List<PrisonerDto> {
+  fun getConvictedPrisonersByPrisonId(prisonId: String): RestPage<PrisonerDto> {
     LOG.info("Calling prisoner-search to get all convicted prisoners for prison $prisonId")
     val requestBody = AttributeSearch(
       queries = listOf(
@@ -44,11 +44,11 @@ class PrisonerSearchClient(
 
     return webClient
       .post()
-      .uri("/attribute-search?size=$10000")
+      .uri("/attribute-search?size=10000")
       .bodyValue(requestBody)
       .accept(MediaType.APPLICATION_JSON)
       .retrieve()
-      .bodyToMono<List<PrisonerDto>>()
+      .bodyToMono<RestPage<PrisonerDto>>()
       .block() ?: throw TimeoutException("Request timed out while fetching all prisoners from prison $prisonId")
   }
 }
