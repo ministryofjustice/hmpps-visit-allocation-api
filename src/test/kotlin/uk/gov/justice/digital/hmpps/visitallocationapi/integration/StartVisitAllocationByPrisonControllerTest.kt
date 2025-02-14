@@ -20,6 +20,13 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocati
 class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
   @MockitoSpyBean
   private lateinit var sqsService: VisitAllocationEventJobSqsService
+
+  @MockitoSpyBean
+  private lateinit var visitOrderAllocationJobRepository: VisitOrderAllocationJobRepository
+
+  @MockitoSpyBean
+  private lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
+
   private val prisonCode1 = "ABC"
   private val prisonCode2 = "XYZ"
   private val prisonCode3 = "TST"
