@@ -70,7 +70,7 @@ class AllocationService(
     LOG.info("Entered AllocationService - processPrisonerAllocation with prisonerId $prisonerId")
 
     val prisoner = prisonerDto ?: prisonerSearchClient.getPrisonerById(prisonerId)
-    val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisonerId)
+    val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
     val prisonIncentiveAmounts = allPrisonIncentiveAmounts?.first { it.levelCode == prisonerIncentive.iepCode }
       ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)
 
