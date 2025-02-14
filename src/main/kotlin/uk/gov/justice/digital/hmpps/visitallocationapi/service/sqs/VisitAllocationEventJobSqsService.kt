@@ -24,29 +24,30 @@ class VisitAllocationEventJobSqsService(
   private val visitsAllocationEventJobSqsClient by lazy { visitsAllocationEventJobQueue.sqsClient }
   private val visitsAllocationEventJobQueueUrl by lazy { visitsAllocationEventJobQueue.queueUrl }
 
-  fun sendVisitAllocationEventToAllocationJobQueue(prisonCode: String) {
-    log.info("Sending visit allocation job with prisonCode - $prisonCode")
+  fun sendVisitAllocationEventToAllocationJobQueue(allocationJobReference: String, prisonCode: String) {
+    log.info("Sending SQS message with visit allocation reference - $allocationJobReference, prisonCode - $prisonCode")
 
     try {
       // drop the message on the visit allocation event job queue
       visitsAllocationEventJobSqsClient.sendMessage(
-        buildVisitAllocationEventToAllocationJobMessage(prisonCode),
+        buildVisitAllocationEventToAllocationJobMessage(allocationJobReference, prisonCode),
       )
     } catch (e: Throwable) {
-      val message = "Failed to send visit allocation job with prisonCode - $prisonCode"
+      val message = "Failed to send SQS message with visit allocation reference - $allocationJobReference, prisonCode - $prisonCode"
       log.error(message, e)
       throw PublishEventException(message, e)
     }
-    log.info("Successfully sent visit allocation job with prisonCode - $prisonCode")
+    log.info("Successfully sent SQS message with visit allocation reference - $allocationJobReference, prisonCode - $prisonCode")
   }
 
-  private fun buildVisitAllocationEventToAllocationJobMessage(prisonCode: String): SendMessageRequest = SendMessageRequest.builder()
+  private fun buildVisitAllocationEventToAllocationJobMessage(allocationJobReference: String, prisonCode: String): SendMessageRequest = SendMessageRequest.builder()
     .queueUrl(visitsAllocationEventJobQueueUrl)
-    .messageBody(objectMapper.writeValueAsString(VisitAllocationEventJob(prisonCode)))
+    .messageBody(objectMapper.writeValueAsString(VisitAllocationEventJob(allocationJobReference, prisonCode)))
     .build()
 }
 
 data class VisitAllocationEventJob(
+  val jobReference: String,
   val prisonCode: String,
 )
 

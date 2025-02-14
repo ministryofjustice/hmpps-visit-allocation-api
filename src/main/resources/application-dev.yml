@@ -33,6 +33,10 @@ hmpps:
       visitsallocationeventjob:
         queueName: sqs_hmpps_prison_visit_allocation_event_job_queue
         dlqName: sqs_hmpps_prison_visit_allocation_event_job_dlq
+      prisonvisitsallocationprisonerretryqueue:
+        queueName: sqs_hmpps_prison_visits_allocation_prisoner_retry_queue
+        dlqName: sqs_hmpps_prison_visits_allocation_prisoner_retry_dlq
+
     topics:
       domainevents:
         arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
