@@ -23,7 +23,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.AllocationService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
 import java.time.LocalDate
 
 @ExtendWith(MockitoExtension::class)
@@ -42,13 +42,13 @@ class AllocationServiceTest {
   private lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
 
   @Mock
-  private lateinit var visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService
+  private lateinit var prisonerRetryService: PrisonerRetryService
 
   private lateinit var allocationService: AllocationService
 
   @BeforeEach
   fun setUp() {
-    allocationService = AllocationService(prisonerSearchClient, incentivesClient, visitOrderRepository, visitOrderAllocationPrisonJobRepository, visitAllocationPrisonerRetrySqsService, 26)
+    allocationService = AllocationService(prisonerSearchClient, incentivesClient, visitOrderRepository, visitOrderAllocationPrisonJobRepository, prisonerRetryService, 26)
   }
 
   // --- Start Allocation Tests --- \\
