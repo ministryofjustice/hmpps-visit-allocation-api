@@ -185,7 +185,7 @@ class AllocationService(
 
   private fun getConvictedPrisonersForPrison(jobReference: String, prisonId: String): List<PrisonerDto> {
     val convictedPrisonersForPrison = try {
-      prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId)
+      prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId).content.toList()
     } catch (e: Exception) {
       val failureMessage = "failed to get convicted prisoners by prisonId - $prisonId"
       LOG.error(failureMessage, e)
