@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -25,7 +24,7 @@ class AllocationService(
   private val incentivesClient: IncentivesClient,
   private val visitOrderRepository: VisitOrderRepository,
   private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
-  private val visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService,
+  private val prisonerRetryService: PrisonerRetryService,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
@@ -51,7 +50,7 @@ class AllocationService(
         // ignore the prisoner and send it to an SQS queue to ensure the whole process does not stop
         LOG.error("Error processing prisoner - ${prisoner.prisonerId}, putting ${prisoner.prisonerId} on prisoner retry queue", e)
         totalConvictedPrisonersFailed++
-        sendMessageToPrisonerRetryQueue(jobReference = jobReference, prisonerId = prisoner.prisonerId)
+        prisonerRetryService.sendMessageToPrisonerRetryQueue(jobReference = jobReference, prisonerId = prisoner.prisonerId)
       }
     }
 
@@ -171,16 +170,6 @@ class AllocationService(
 
   private fun setVisitOrderAllocationPrisonJobEndTimeAndStats(jobReference: String, prisonCode: String, totalConvictedPrisoners: Int, totalPrisonersProcessed: Int, totalPrisonersFailed: Int) {
     visitOrderAllocationPrisonJobRepository.updateEndTimestampAndStats(allocationJobReference = jobReference, prisonCode = prisonCode, LocalDateTime.now(), totalPrisoners = totalConvictedPrisoners, processedPrisoners = totalPrisonersProcessed, failedPrisoners = totalPrisonersFailed)
-  }
-
-  private fun sendMessageToPrisonerRetryQueue(jobReference: String, prisonerId: String) {
-    try {
-      LOG.info("Putting prisoner $prisonerId on the retry queue, jobReference - $jobReference")
-      visitAllocationPrisonerRetrySqsService.sendToVisitAllocationPrisonerRetryQueue(allocationJobReference = jobReference, prisonerId = prisonerId)
-    } catch (e: RuntimeException) {
-      // ignore if a message could not be sent
-      LOG.error("Failed to put prisoner $prisonerId on the retry queue, jobReference - $jobReference")
-    }
   }
 
   private fun getConvictedPrisonersForPrison(jobReference: String, prisonId: String): List<PrisonerDto> {

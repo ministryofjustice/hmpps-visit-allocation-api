@@ -103,6 +103,11 @@ abstract class EventsIntegrationTestBase {
     purgeQueue(prisonVisitsAllocationPrisonerRetryQueueDlqClient!!, prisonVisitsAllocationPrisonerRetryQueueDlqUrl!!)
   }
 
+  @BeforeEach
+  fun clearDB() {
+    visitOrderRepository.deleteAll()
+  }
+
   fun purgeQueue(client: SqsAsyncClient, url: String) {
     client.purgeQueue(PurgeQueueRequest.builder().queueUrl(url).build()).get()
   }
