@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -9,6 +8,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitAllocationByPrisonService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
@@ -16,7 +16,6 @@ const val VO_START_VISIT_ALLOCATION_JOB: String = "/visits/allocation/job/start"
 
 @RestController
 class StartVisitAllocationByPrisonController(
-  private val objectMapper: ObjectMapper,
   private val visitAllocationByPrisonService: VisitAllocationByPrisonService,
 ) {
   // This endpoint is secured in the ingress rather than the app so that they can be called from
@@ -42,8 +41,8 @@ class StartVisitAllocationByPrisonController(
       ),
     ],
   )
-  fun triggerVisitAllocationByPrison(): ResponseEntity<String> {
-    val allocationJobReference = visitAllocationByPrisonService.triggerAllocationByPrison()
-    return ResponseEntity.status(HttpStatus.OK).body(objectMapper.writeValueAsString("Visit Allocation triggered with reference - $allocationJobReference"))
+  fun triggerVisitAllocationForActivePrisons(): ResponseEntity<VisitAllocationEventJobDto> {
+    val visitAllocationEventJobDto = visitAllocationByPrisonService.triggerVisitAllocationForActivePrisons()
+    return ResponseEntity.status(HttpStatus.OK).body(visitAllocationEventJobDto)
   }
 }

@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -9,6 +10,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_START_VISIT_ALLOCATION_JOB
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPrison
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
@@ -45,10 +47,11 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
     val result = responseSpec.expectStatus().isOk.expectBody()
-    val allocationJobReference = getAllocationJobReference(result)
+    val visitAllocationEventJobDto = getVisitAllocationEventJobDto(result)
+    Assertions.assertThat(visitAllocationEventJobDto.totalActivePrisons).isEqualTo(2)
     verify(sqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
-    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(allocationJobReference, prison1Active.prisonCode)
-    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(allocationJobReference, prison2Active.prisonCode)
+    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(visitAllocationEventJobDto.allocationJobReference, prison1Active.prisonCode)
+    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(visitAllocationEventJobDto.allocationJobReference, prison2Active.prisonCode)
     verify(visitOrderAllocationJobRepository, times(1)).save(any())
     verify(visitOrderAllocationPrisonJobRepository, times(2)).save(any())
   }
@@ -68,6 +71,9 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
 
     // Then
     responseSpec.expectStatus().isOk
+    val result = responseSpec.expectStatus().isOk.expectBody()
+    val visitAllocationEventJobDto = getVisitAllocationEventJobDto(result)
+    Assertions.assertThat(visitAllocationEventJobDto.totalActivePrisons).isEqualTo(0)
     verify(sqsService, times(0)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
     verify(visitOrderAllocationJobRepository, times(1)).save(any())
     verify(visitOrderAllocationPrisonJobRepository, times(0)).save(any())
@@ -83,9 +89,8 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
       .exchange()
   }
 
-  private fun getAllocationJobReference(returnResult: WebTestClient.BodyContentSpec): String {
-    val text = objectMapper.readValue(returnResult.returnResult().responseBody, String::class.java)
-    val reference = text.removePrefix("Visit Allocation triggered with reference - ")
-    return reference
-  }
+  private fun getVisitAllocationEventJobDto(returnResult: WebTestClient.BodyContentSpec): VisitAllocationEventJobDto = objectMapper.readValue(
+    returnResult.returnResult().responseBody,
+    VisitAllocationEventJobDto::class.java,
+  )
 }

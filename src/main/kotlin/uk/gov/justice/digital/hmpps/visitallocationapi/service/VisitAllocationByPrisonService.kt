@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
@@ -21,7 +22,7 @@ class VisitAllocationByPrisonService(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun triggerAllocationByPrison(): String {
+  fun triggerVisitAllocationForActivePrisons(): VisitAllocationEventJobDto {
     log.info("Trigger allocation by prison started")
     val activePrisons = visitOrderPrisonRepository.findByActive(true)
     val allocationJobReference = auditOrderAllocationJob(totalActivePrisons = activePrisons.size).reference
@@ -33,7 +34,7 @@ class VisitAllocationByPrisonService(
       sendSqsMessageForPrison(allocationJobReference, prisonCode)
     }
 
-    return allocationJobReference
+    return VisitAllocationEventJobDto(allocationJobReference, totalActivePrisons = activePrisons.size)
   }
 
   private fun auditOrderAllocationJob(totalActivePrisons: Int): VisitOrderAllocationJob {

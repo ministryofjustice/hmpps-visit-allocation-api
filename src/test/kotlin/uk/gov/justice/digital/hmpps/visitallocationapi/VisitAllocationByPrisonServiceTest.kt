@@ -47,7 +47,7 @@ class VisitAllocationByPrisonServiceTest {
     whenever(visitOrderPrisonRepository.findByActive(true)).thenReturn(listOf(activePrison1, activePrison2))
     whenever(visitOrderAllocationJobRepository.save(any())).thenReturn(visitOrderAllocationJob)
     // Begin test
-    visitAllocationByPrisonService.triggerAllocationByPrison()
+    visitAllocationByPrisonService.triggerVisitAllocationForActivePrisons()
 
     // then - 2 SQS messages should be sent to the allocation queue
     verify(visitAllocationEventJobSqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
@@ -66,7 +66,7 @@ class VisitAllocationByPrisonServiceTest {
     whenever(visitOrderAllocationJobRepository.save(any())).thenReturn(visitOrderAllocationJob)
 
     // Begin test
-    visitAllocationByPrisonService.triggerAllocationByPrison()
+    visitAllocationByPrisonService.triggerVisitAllocationForActivePrisons()
 
     // then - no SQS messages should be sent to the allocation queue
     verify(visitAllocationEventJobSqsService, times(0)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
@@ -88,7 +88,7 @@ class VisitAllocationByPrisonServiceTest {
     whenever(visitAllocationEventJobSqsService.sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.prisonCode)).thenThrow(RuntimeException::class.java)
 
     // Begin test
-    visitAllocationByPrisonService.triggerAllocationByPrison()
+    visitAllocationByPrisonService.triggerVisitAllocationForActivePrisons()
 
     // then - SQS messages for the second active prison is still sent
     verify(visitAllocationEventJobSqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
