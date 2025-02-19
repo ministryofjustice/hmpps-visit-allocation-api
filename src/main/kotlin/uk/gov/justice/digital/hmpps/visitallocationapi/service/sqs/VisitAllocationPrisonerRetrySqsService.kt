@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
@@ -12,14 +11,12 @@ import uk.gov.justice.hmpps.sqs.HmppsQueueService
 class VisitAllocationPrisonerRetrySqsService(
   private val hmppsQueueService: HmppsQueueService,
   private val objectMapper: ObjectMapper,
-  @Value("\${hmpps.sqs.queues.prisonvisitsallocationprisonerretryqueue.queue-name}")
-  private val queueName: String,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val visitAllocationPrisonerRetryQueue by lazy { hmppsQueueService.findByQueueName(queueName) ?: throw RuntimeException("Queue with name $queueName doesn't exist") }
+  private val visitAllocationPrisonerRetryQueue by lazy { hmppsQueueService.findByQueueId("prisonvisitsallocationprisonerretryqueue") ?: throw RuntimeException("Queue with name prisonvisitsallocationprisonerretryqueue doesn't exist") }
   private val visitAllocationPrisonerRetrySqsClient by lazy { visitAllocationPrisonerRetryQueue.sqsClient }
   private val visitAllocationPrisonerRetryQueueUrl by lazy { visitAllocationPrisonerRetryQueue.queueUrl }
 
