@@ -1,5 +1,6 @@
 generic-service:
   nameOverride: hmpps-visit-allocation-api
+  serviceAccountName: visit-someone-in-prison
   productId: "DPS035"
 
   replicaCount: 4
