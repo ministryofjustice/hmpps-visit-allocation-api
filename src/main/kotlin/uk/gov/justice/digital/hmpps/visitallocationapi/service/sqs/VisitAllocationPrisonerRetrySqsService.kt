@@ -12,7 +12,7 @@ import uk.gov.justice.hmpps.sqs.HmppsQueueService
 class VisitAllocationPrisonerRetrySqsService(
   private val hmppsQueueService: HmppsQueueService,
   private val objectMapper: ObjectMapper,
-  @Value("\${hmpps.sqs.queues.prisonvisitsallocationprisonerretryqueue.queueName}")
+  @Value("\${hmpps.sqs.queues.prisonvisitsallocationprisonerretryqueue.queue-name}")
   private val queueName: String,
 ) {
   companion object {

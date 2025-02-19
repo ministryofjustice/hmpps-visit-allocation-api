@@ -13,7 +13,7 @@ import java.util.function.Supplier
 class VisitAllocationEventJobSqsService(
   private val hmppsQueueService: HmppsQueueService,
   private val objectMapper: ObjectMapper,
-  @Value("\${hmpps.sqs.queues.visitsallocationeventjob.queueName}")
+  @Value("\${hmpps.sqs.queues.visitsallocationeventjob.queue-name}")
   private val queueName: String,
 ) {
   companion object {
