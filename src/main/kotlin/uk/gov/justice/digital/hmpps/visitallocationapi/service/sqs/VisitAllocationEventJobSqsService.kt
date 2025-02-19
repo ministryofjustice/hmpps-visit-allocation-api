@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
@@ -13,14 +12,12 @@ import java.util.function.Supplier
 class VisitAllocationEventJobSqsService(
   private val hmppsQueueService: HmppsQueueService,
   private val objectMapper: ObjectMapper,
-  @Value("\${hmpps.sqs.queues.visitsallocationeventjob.queueName}")
-  private val queueName: String,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  private val visitsAllocationEventJobQueue by lazy { hmppsQueueService.findByQueueName(queueName) ?: throw RuntimeException("Queue with name $queueName doesn't exist") }
+  private val visitsAllocationEventJobQueue by lazy { hmppsQueueService.findByQueueId("visitsallocationeventjob") ?: throw RuntimeException("Queue with name visitsallocationeventjob doesn't exist") }
   private val visitsAllocationEventJobSqsClient by lazy { visitsAllocationEventJobQueue.sqsClient }
   private val visitsAllocationEventJobQueueUrl by lazy { visitsAllocationEventJobQueue.queueUrl }
 
