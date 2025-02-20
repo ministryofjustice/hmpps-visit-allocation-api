@@ -28,3 +28,6 @@ generic-prometheus-alerts:
     - "book-a-prison-visit-dev-hmpps_prison_visits_allocation_processing_job_dlq"
   sqsAlertsOldestThreshold: 1
   sqsAlertsTotalMessagesThreshold: 1
+
+cron:
+  visitOrderAllocationJob: "30 8 * * *" # 08:30 AM every day
