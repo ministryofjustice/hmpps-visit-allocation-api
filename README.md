@@ -116,7 +116,7 @@ The endpoint to allocate visit allocations for active prisons is triggered by a 
 
 The endpoint is protected from being called externally, so it is not possible to call the endpoint directly. Only the Cronjob can call the endpoint.
 
-So to manually trigger visit allocation, we just trigger the Cronjob
+So to manually trigger the periodic visit allocation, we just trigger the Cronjob
 
 Below is an example to trigger the cronjob manually -
 ```
