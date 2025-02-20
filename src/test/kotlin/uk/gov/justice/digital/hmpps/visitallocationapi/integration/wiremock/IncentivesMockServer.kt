@@ -47,7 +47,7 @@ class IncentivesMockServer : WireMockServer(8095) {
     )
   }
 
-  fun stubGetPrisonIncentiveLevels(prisonId: String, levelCode: String, prisonIncentiveAmountsDto: PrisonIncentiveAmountsDto?, httpStatus: HttpStatus = HttpStatus.NOT_FOUND) {
+  fun stubGetPrisonIncentiveLevelsByLevelCode(prisonId: String, levelCode: String, prisonIncentiveAmountsDto: PrisonIncentiveAmountsDto?, httpStatus: HttpStatus = HttpStatus.NOT_FOUND) {
     val responseBuilder = createJsonResponseBuilder()
     stubFor(
       get("/incentive/prison-levels/$prisonId/level/$levelCode")

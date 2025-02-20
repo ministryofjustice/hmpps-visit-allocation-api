@@ -110,6 +110,129 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   }
 
   /**
+   * Scenario - Allocation: Visit allocation job is run, and all prisoners are allocated visit orders (VO / PVO).
+   * Prisoner1 - Standard incentive, Gets 1 VO, 0 PVO.
+   * Prisoner2 - Enhanced incentive, Gets 2 VO, 1 PVO.
+   * Prisoner3 - Enhanced2 incentive, Gets 3 VO, 2 PVOs.
+   */
+  @Test
+  fun `when visit allocation job run for a prison with lowercase then processMessage is called with upper case prison code and visit orders are created for convicted prisoners`() {
+    // Given - message sent to start allocation job for prison
+    val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
+    val allocationJobReference = "job-ref"
+
+    // prison code sent with lower case
+    val prisonCode = PRISON_CODE.lowercase()
+    val event = VisitAllocationEventJob(allocationJobReference, prisonCode)
+    val message = objectMapper.writeValueAsString(event)
+    val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
+    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+    // When
+    val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
+    prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = PRISON_CODE,
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
+
+    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+
+    await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
+    await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any()) }
+
+    val visitOrders = visitOrderRepository.findAll()
+
+    assertThat(visitOrders.size).isEqualTo(9)
+
+    // as prisoner1 is STD he should only get 1 VO and 0 PVOs
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 1)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
+
+    // as prisoner2 is ENH he should get 2 VOs and 1 PVO
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 2)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 1)
+
+    // as prisoner3 is ENH2 he should get 3 VOs and 2 PVO
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 3)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
+
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
+  }
+
+  /**
+   * Scenario - Allocation: Visit allocation job is run, and all prisoners are allocated visit orders (VO / PVO).
+   * Prisoner1 - Standard incentive, Gets 1 VO, 0 PVO.
+   * Prisoner2 - Enhanced incentive, Gets 2 VO, 1 PVO.
+   * Prisoner3 - Enhanced2 incentive, Gets 3 VO, 2 PVOs.
+   */
+  @Test
+  fun `when visit allocation job is run for a prison and getAllPrisonIncentiveLevels returns an empty list the prison is still processed and visit orders are created for convicted prisoners`() {
+    // Given - message sent to start allocation job for prison
+    val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
+    val allocationJobReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
+    val message = objectMapper.writeValueAsString(event)
+    val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
+    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+    // When
+    val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
+    prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+
+    // stubGetAllPrisonIncentiveLevels returns an empty list
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = PRISON_CODE,
+      emptyList(),
+    )
+    incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"))
+    incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "ENH", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"))
+    incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "ENH2", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"))
+
+    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+
+    await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
+    await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any()) }
+
+    val visitOrders = visitOrderRepository.findAll()
+
+    assertThat(visitOrders.size).isEqualTo(9)
+
+    // as prisoner1 is STD he should only get 1 VO and 0 PVOs
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 1)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
+
+    // as prisoner2 is ENH he should get 2 VOs and 1 PVO
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 2)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 1)
+
+    // as prisoner3 is ENH2 he should get 3 VOs and 2 PVO
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 3)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
+
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
+  }
+
+  /**
    * Scenario - Accumulation: Visit allocation job is run and accumulation occurs.
    * Prisoner1 - Has no existing VOs - No accumulation.
    * Prisoner2 - Has 2 VOs older than 28days - 2 VOs are accumulated.
