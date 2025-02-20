@@ -37,6 +37,7 @@ class PrisonerSearchClient(
           matchers = listOf(
             Matcher(attribute = "prisonId", condition = "IS", searchTerm = prisonId),
             Matcher(attribute = "convictedStatus", condition = "IS", searchTerm = ConvictedStatus.CONVICTED.value),
+            Matcher(attribute = "status", condition = "STARTSWITH", searchTerm = "ACTIVE"),
           ),
         ),
       ),
