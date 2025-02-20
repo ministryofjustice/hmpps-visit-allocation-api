@@ -70,7 +70,7 @@ class AllocationService(
 
     val prisoner = prisonerDto ?: prisonerSearchClient.getPrisonerById(prisonerId)
     val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
-    val prisonIncentiveAmounts = allPrisonIncentiveAmounts?.first { it.levelCode == prisonerIncentive.iepCode }
+    val prisonIncentiveAmounts = allPrisonIncentiveAmounts?.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
       ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)
 
     val visitOrders = mutableListOf<VisitOrder>()

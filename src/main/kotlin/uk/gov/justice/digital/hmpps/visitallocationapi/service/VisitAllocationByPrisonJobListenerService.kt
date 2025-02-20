@@ -15,8 +15,8 @@ class VisitAllocationByPrisonJobListenerService(
 
   suspend fun handleVisitAllocationJob(visitAllocationEventJob: VisitAllocationEventJob) {
     with(visitAllocationEventJob) {
-      log.info("received allocation job event with reference {} and prison code: {}", jobReference, prisonCode)
-      allocationService.processPrison(jobReference, prisonCode)
+      log.info("received allocation job event with reference {} and prison code: {}", jobReference, prisonCode.uppercase())
+      allocationService.processPrison(jobReference, prisonCode.uppercase())
     }
   }
 }
