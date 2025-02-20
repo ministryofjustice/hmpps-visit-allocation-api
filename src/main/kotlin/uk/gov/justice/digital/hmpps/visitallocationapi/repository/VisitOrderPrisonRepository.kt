@@ -7,4 +7,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPr
 @Repository
 interface VisitOrderPrisonRepository : JpaRepository<VisitOrderPrison, Long> {
   fun findByActive(active: Boolean): List<VisitOrderPrison>
+
+  fun findByPrisonCode(prisonCode: String): VisitOrderPrison?
 }

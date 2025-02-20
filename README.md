@@ -97,7 +97,7 @@ aws sqs send-message \
   --endpoint-url=http://localhost:4566 \
   --queue-url=http://localhost:4566/000000000000/sqs_hmpps_visits_allocation_events_queue \
   --message-body \
-    '{"Type":"Notification", "Message": "{\"eventType\": \"prisoner-offender-search.prisoner.conviction-status.updated\", \"additionalInformation\": {\"nomsNumber\": \"A8713DY\", \"convictedStatus\": \"Convicted\"}}", "MessageId": "123"}'
+    '{"Type":"Notification", "Message": "{\"eventType\": \"prisoner-offender-search.prisoner.convicted-status-changed\", \"additionalInformation\": {\"nomsNumber\": \"A8713DY\", \"convictedStatus\": \"Convicted\"}}", "MessageId": "123"}'
 ```
 
 If you are unsure about the queue name you can check the queue names using the following command and replace it in the above --queue-url value parameter
