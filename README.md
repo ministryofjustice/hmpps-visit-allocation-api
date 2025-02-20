@@ -110,3 +110,15 @@ to check messages on the actual queues on localstack (queue and dead-letter queu
 http://localhost.localstack.cloud:4566/_aws/sqs/messages?QueueUrl=http://sqs.eu-west-2.loca[…]000000000000/sqs_hmpps_visits_allocation_events_queue
 http://localhost.localstack.cloud:4566/_aws/sqs/messages?QueueUrl=http://sqs.eu-west-2.loca[…]6/000000000000/sqs_hmpps_visits_allocation_events_dlq
 ```
+
+### Periodic Visit allocation cronjob
+The endpoint to allocate visit allocations for active prisons is triggered by a Kubernetes Cronjob that is configured to run once a day. 
+
+The endpoint is protected from being called externally, so it is not possible to call the endpoint directly. Only the Cronjob can call the endpoint.
+
+So to manually trigger visit allocation, we just trigger the Cronjob
+
+Below is an example to trigger the cronjob manually -
+```
+kubectl create job --from=cronjob/hmpps-visit-allocation-api-allocate-visit-orders-job <job-name> -n <namespace>
+```
