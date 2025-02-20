@@ -9,14 +9,14 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitAllocationByPrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 const val VO_START_VISIT_ALLOCATION_JOB: String = "/visits/allocation/job/start"
 
 @RestController
 class StartVisitAllocationByPrisonController(
-  private val visitAllocationByPrisonService: VisitAllocationByPrisonService,
+  private val prisonService: PrisonService,
 ) {
   // This endpoint is secured in the ingress rather than the app so that they can be called from
   // within the namespace without requiring authentication
@@ -42,7 +42,7 @@ class StartVisitAllocationByPrisonController(
     ],
   )
   fun triggerVisitAllocationForActivePrisons(): ResponseEntity<VisitAllocationEventJobDto> {
-    val visitAllocationEventJobDto = visitAllocationByPrisonService.triggerVisitAllocationForActivePrisons()
+    val visitAllocationEventJobDto = prisonService.triggerVisitAllocationForActivePrisons()
     return ResponseEntity.status(HttpStatus.OK).body(visitAllocationEventJobDto)
   }
 }

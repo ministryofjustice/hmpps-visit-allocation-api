@@ -17,13 +17,13 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.Hmpp
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener.Companion.PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationPrisonerRetryQueueListener.Companion.PRISON_VISITS_ALLOCATION_PRISONER_RETRY_QUEUE_CONFIG_KEY
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.processors.PrisonerConvictionStatusUpdatedProcessor
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
@@ -79,13 +79,13 @@ abstract class EventsIntegrationTestBase {
   lateinit var domainEventListenerSpy: DomainEventListener
 
   @MockitoSpyBean
-  lateinit var prisonerConvictionStatusUpdatedProcessorSpy: PrisonerConvictionStatusUpdatedProcessor
-
-  @MockitoSpyBean
   lateinit var visitOrderRepository: VisitOrderRepository
 
   @MockitoSpyBean
   lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
+
+  @MockitoSpyBean
+  lateinit var visitOrderPrisonRepositorySpy: VisitOrderPrisonRepository
 
   @MockitoSpyBean
   lateinit var visitAllocationByPrisonJobListenerSpy: VisitAllocationByPrisonJobListener
@@ -106,6 +106,7 @@ abstract class EventsIntegrationTestBase {
   @BeforeEach
   fun clearDB() {
     visitOrderRepository.deleteAll()
+    visitOrderPrisonRepositorySpy.deleteAll()
   }
 
   fun purgeQueue(client: SqsAsyncClient, url: String) {

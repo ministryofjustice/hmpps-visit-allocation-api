@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPris
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJobSqsService
 
 @Service
-class VisitAllocationByPrisonService(
+class PrisonService(
   private val visitOrderPrisonRepository: VisitOrderPrisonRepository,
   private val visitOrderAllocationJobRepository: VisitOrderAllocationJobRepository,
   private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,

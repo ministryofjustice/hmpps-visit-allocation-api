@@ -14,11 +14,11 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPr
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitAllocationByPrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJobSqsService
 
 @ExtendWith(MockitoExtension::class)
-class VisitAllocationByPrisonServiceTest {
+class PrisonServiceTest {
 
   @Mock
   private lateinit var visitOrderPrisonRepository: VisitOrderPrisonRepository
@@ -33,7 +33,7 @@ class VisitAllocationByPrisonServiceTest {
   private lateinit var visitAllocationEventJobSqsService: VisitAllocationEventJobSqsService
 
   @InjectMocks
-  private lateinit var visitAllocationByPrisonService: VisitAllocationByPrisonService
+  private lateinit var prisonService: PrisonService
 
   @Test
   fun `Given 2 active prisons then trigger allocation sends 2 SQS messages to the allocation job queue`() {
@@ -47,7 +47,7 @@ class VisitAllocationByPrisonServiceTest {
     whenever(visitOrderPrisonRepository.findByActive(true)).thenReturn(listOf(activePrison1, activePrison2))
     whenever(visitOrderAllocationJobRepository.save(any())).thenReturn(visitOrderAllocationJob)
     // Begin test
-    visitAllocationByPrisonService.triggerVisitAllocationForActivePrisons()
+    prisonService.triggerVisitAllocationForActivePrisons()
 
     // then - 2 SQS messages should be sent to the allocation queue
     verify(visitAllocationEventJobSqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
@@ -66,7 +66,7 @@ class VisitAllocationByPrisonServiceTest {
     whenever(visitOrderAllocationJobRepository.save(any())).thenReturn(visitOrderAllocationJob)
 
     // Begin test
-    visitAllocationByPrisonService.triggerVisitAllocationForActivePrisons()
+    prisonService.triggerVisitAllocationForActivePrisons()
 
     // then - no SQS messages should be sent to the allocation queue
     verify(visitAllocationEventJobSqsService, times(0)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
@@ -88,7 +88,7 @@ class VisitAllocationByPrisonServiceTest {
     whenever(visitAllocationEventJobSqsService.sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.prisonCode)).thenThrow(RuntimeException::class.java)
 
     // Begin test
-    visitAllocationByPrisonService.triggerVisitAllocationForActivePrisons()
+    prisonService.triggerVisitAllocationForActivePrisons()
 
     // then - SQS messages for the second active prison is still sent
     verify(visitAllocationEventJobSqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
