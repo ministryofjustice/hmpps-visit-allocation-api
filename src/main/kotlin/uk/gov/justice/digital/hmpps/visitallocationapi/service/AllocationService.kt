@@ -91,7 +91,8 @@ class AllocationService(
   private fun processPrisonerAccumulation(prisonerId: String) {
     LOG.info("Entered AllocationService - processPrisonerAccumulation with prisonerId: $prisonerId")
 
-    visitOrderRepository.updateAvailableVisitOrdersOver28DaysToAccumulated(prisonerId, VisitOrderType.VO)
+    val vosAccumulated = visitOrderRepository.updateAvailableVisitOrdersOver28DaysToAccumulated(prisonerId, VisitOrderType.VO)
+    LOG.info("Accumulated $vosAccumulated VOs for prisoner $prisonerId")
   }
 
   private fun processPrisonerExpiration(prisonerId: String) {
@@ -102,7 +103,8 @@ class AllocationService(
     if (currentAccumulatedVoCount > maxAccumulatedVisitOrders) {
       val amountToExpire = currentAccumulatedVoCount - maxAccumulatedVisitOrders
       LOG.info("prisoner $prisonerId has $currentAccumulatedVoCount VOs. This is more than maximum allowed accumulated VOs $maxAccumulatedVisitOrders. Expiring $amountToExpire VOs")
-      visitOrderRepository.expireOldestAccumulatedVisitOrders(prisonerId, amountToExpire)
+      val vosExpired = visitOrderRepository.expireOldestAccumulatedVisitOrders(prisonerId, amountToExpire)
+      LOG.info("Expired $vosExpired VOs for prisoner $prisonerId")
     }
 
     // Expire all PVOs older than 28 days.

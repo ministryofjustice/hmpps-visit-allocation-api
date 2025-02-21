@@ -83,5 +83,5 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   fun updateAvailableVisitOrdersOver28DaysToAccumulated(
     prisonerId: String,
     type: VisitOrderType,
-  )
+  ): Int
 }
