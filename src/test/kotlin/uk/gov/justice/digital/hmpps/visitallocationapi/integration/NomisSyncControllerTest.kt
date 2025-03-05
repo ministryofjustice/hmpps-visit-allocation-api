@@ -68,7 +68,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
   @Test
   fun `sync prisoner - when visit prisoner allocation sync endpoint is called, then prisoner information is successfully synced to DPS service`() {
     // Given
-    val prisonerSyncDto = VisitAllocationPrisonerSyncDto("AA123456", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUE, ChangeSource.SYSTEM)
+    val prisonerSyncDto = VisitAllocationPrisonerSyncDto("AA123456", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUE, ChangeSource.SYSTEM, "issued vo")
 
     // When
     val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
@@ -80,7 +80,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
   @Test
   fun `sync prisoner - when request body validation fails then 400 bad request is returned`() {
     // Given
-    val prisonerSyncDto = VisitAllocationPrisonerSyncDto("", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUE, ChangeSource.SYSTEM)
+    val prisonerSyncDto = VisitAllocationPrisonerSyncDto("", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUE, ChangeSource.SYSTEM, "issued vo")
 
     // When
     val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
@@ -93,7 +93,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
   fun `sync prisoner - access forbidden when no role`() {
     // Given
     val incorrectAuthHeaders = setAuthorisation(roles = listOf())
-    val prisonerSyncDto = VisitAllocationPrisonerSyncDto("AA123456", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUE, ChangeSource.SYSTEM)
+    val prisonerSyncDto = VisitAllocationPrisonerSyncDto("AA123456", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUE, ChangeSource.SYSTEM, "issued vo")
 
     // When
     val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, incorrectAuthHeaders)

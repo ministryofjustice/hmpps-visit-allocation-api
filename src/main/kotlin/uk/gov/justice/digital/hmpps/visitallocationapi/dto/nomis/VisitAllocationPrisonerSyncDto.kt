@@ -40,4 +40,8 @@ data class VisitAllocationPrisonerSyncDto(
   @Schema(description = "The source of the change being made", example = "SYSTEM or STAFF", required = true)
   @field:NotNull
   val changeSource: ChangeSource,
+
+  @Schema(description = "Additional information on the sync reason", example = "Manually adjusted for phone credit", required = true)
+  @field:NotEmpty
+  val comment: String? = null,
 )
