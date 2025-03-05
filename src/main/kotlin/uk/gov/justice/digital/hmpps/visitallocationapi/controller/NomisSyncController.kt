@@ -12,17 +12,19 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
-const val VO_MIGRATION: String = "/visits/allocation/migrate"
+const val VO_PRISONER_MIGRATION: String = "/visits/allocation/prisoner/migrate"
+const val VO_PRISONER_SYNC: String = "/visits/allocation/prisoner/sync"
 
 @RestController
 class NomisSyncController {
   @PreAuthorize("hasRole('VISIT_ALLOCATION_MIGRATION')")
-  @PostMapping(VO_MIGRATION)
+  @PostMapping(VO_PRISONER_MIGRATION)
   @Operation(
     summary = "Endpoint to migrate prisoner VO / PVO balances from NOMIS to DPS.",
-    description = "Takes a list of prisoners and 'onboards' them onto DPS, syncing their balance with NOMIS.",
+    description = "Takes a prisoner and 'onboards' them onto DPS, syncing their balance with NOMIS.",
     responses = [
       ApiResponse(
         responseCode = "200",
@@ -41,4 +43,28 @@ class NomisSyncController {
     ],
   )
   fun migratePrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerMigrationDto: VisitAllocationPrisonerMigrationDto): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.OK).build()
+
+  @PreAuthorize("hasRole('VISIT_ALLOCATION_SYNC')")
+  @PostMapping(VO_PRISONER_SYNC)
+  @Operation(
+    summary = "Endpoint to sync ongoing changes to prisoner VO / PVO balances from NOMIS to DPS.",
+    description = "Takes a set of changes to a prisoners and syncs them onto DPS.",
+    responses = [
+      ApiResponse(
+        responseCode = "200",
+        description = "Prisoner information has been synced.",
+      ),
+      ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to access this endpoint.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
+        responseCode = "403",
+        description = "Incorrect permissions to sync prisoner VO / PVO information.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+    ],
+  )
+  fun syncPrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerSyncDto: VisitAllocationPrisonerSyncDto): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.OK).build()
 }
