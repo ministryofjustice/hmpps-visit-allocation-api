@@ -11,6 +11,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_START_VISIT_ALLOCATION_JOB
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPost
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPrison
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
@@ -82,12 +83,7 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
   fun startVisitAllocationByPrisonJob(
     webTestClient: WebTestClient,
     authHttpHeaders: (HttpHeaders) -> Unit,
-  ): WebTestClient.ResponseSpec {
-    val url = VO_START_VISIT_ALLOCATION_JOB
-    return webTestClient.post().uri(url)
-      .headers(authHttpHeaders)
-      .exchange()
-  }
+  ): WebTestClient.ResponseSpec = callPost(webTestClient = webTestClient, url = VO_START_VISIT_ALLOCATION_JOB, authHttpHeaders = authHttpHeaders)
 
   private fun getVisitAllocationEventJobDto(returnResult: WebTestClient.BodyContentSpec): VisitAllocationEventJobDto = objectMapper.readValue(
     returnResult.returnResult().responseBody,
