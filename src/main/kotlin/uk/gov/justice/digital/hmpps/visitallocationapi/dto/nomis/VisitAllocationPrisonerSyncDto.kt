@@ -33,7 +33,7 @@ data class VisitAllocationPrisonerSyncDto(
   @field:NotNull
   val createdDate: LocalDate,
 
-  @Schema(description = "The reason for the adjustment", example = "VO_ISSUED", required = true)
+  @Schema(description = "The reason for the adjustment", example = "VO_ISSUE", required = true)
   @field:NotNull
   val adjustmentReasonCode: AdjustmentReasonCode,
 
