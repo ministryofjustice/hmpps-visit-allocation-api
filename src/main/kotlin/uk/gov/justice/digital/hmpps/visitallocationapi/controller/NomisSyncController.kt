@@ -15,8 +15,9 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocation
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
-const val VO_PRISONER_MIGRATION: String = "/visits/allocation/prisoner/migrate"
-const val VO_PRISONER_SYNC: String = "/visits/allocation/prisoner/sync"
+const val VO_NOMIS = "/visits/allocation/prisoner"
+const val VO_PRISONER_MIGRATION: String = "$VO_NOMIS/migrate"
+const val VO_PRISONER_SYNC: String = "$VO_NOMIS/sync"
 
 @RestController
 class NomisSyncController {
