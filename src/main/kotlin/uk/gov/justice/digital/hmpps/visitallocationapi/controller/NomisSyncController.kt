@@ -21,7 +21,7 @@ const val VO_PRISONER_SYNC: String = "$VO_NOMIS/sync"
 
 @RestController
 class NomisSyncController {
-  @PreAuthorize("hasRole('VISIT_ALLOCATION_MIGRATION')")
+  @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @PostMapping(VO_PRISONER_MIGRATION)
   @Operation(
     summary = "Endpoint to migrate prisoner VO / PVO balances from NOMIS to DPS.",
@@ -45,7 +45,7 @@ class NomisSyncController {
   )
   fun migratePrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerMigrationDto: VisitAllocationPrisonerMigrationDto): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.OK).build()
 
-  @PreAuthorize("hasRole('VISIT_ALLOCATION_SYNC')")
+  @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @PostMapping(VO_PRISONER_SYNC)
   @Operation(
     summary = "Endpoint to sync ongoing changes to prisoner VO / PVO balances from NOMIS to DPS.",

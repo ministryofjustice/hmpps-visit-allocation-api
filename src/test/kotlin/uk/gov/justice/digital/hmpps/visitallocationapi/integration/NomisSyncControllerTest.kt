@@ -23,7 +23,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, LocalDate.now().minusDays(1))
 
     // When
-    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("VISIT_ALLOCATION_MIGRATION")))
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -35,7 +35,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("", 5, 2, LocalDate.now().minusDays(1))
 
     // When
-    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("VISIT_ALLOCATION_MIGRATION")))
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
 
     // Then
     responseSpec.expectStatus().isBadRequest
@@ -71,7 +71,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
     val prisonerSyncDto = VisitAllocationPrisonerSyncDto("AA123456", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUED, ChangeSource.SYSTEM)
 
     // When
-    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("VISIT_ALLOCATION_SYNC")))
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -83,7 +83,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
     val prisonerSyncDto = VisitAllocationPrisonerSyncDto("", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUED, ChangeSource.SYSTEM)
 
     // When
-    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("VISIT_ALLOCATION_SYNC")))
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
 
     // Then
     responseSpec.expectStatus().isBadRequest
