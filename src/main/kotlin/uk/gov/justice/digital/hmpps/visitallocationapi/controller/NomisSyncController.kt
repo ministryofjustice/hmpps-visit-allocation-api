@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 const val VO_NOMIS = "/visits/allocation/prisoner"
@@ -20,7 +21,7 @@ const val VO_PRISONER_MIGRATION: String = "$VO_NOMIS/migrate"
 const val VO_PRISONER_SYNC: String = "$VO_NOMIS/sync"
 
 @RestController
-class NomisSyncController {
+class NomisSyncController(val nomisSyncService: NomisSyncService) {
   @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @PostMapping(VO_PRISONER_MIGRATION)
   @Operation(
@@ -43,7 +44,10 @@ class NomisSyncController {
       ),
     ],
   )
-  fun migratePrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerMigrationDto: VisitAllocationPrisonerMigrationDto): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.OK).build()
+  fun migratePrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerMigrationDto: VisitAllocationPrisonerMigrationDto): ResponseEntity<Void> {
+    nomisSyncService.migratePrisoner(visitAllocationPrisonerMigrationDto)
+    return ResponseEntity.status(HttpStatus.OK).build()
+  }
 
   @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @PostMapping(VO_PRISONER_SYNC)

@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.constraints.NotEmpty
 import jakarta.validation.constraints.NotNull
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeSource
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import java.time.LocalDate
 
 data class VisitAllocationPrisonerSyncDto(
@@ -39,7 +39,7 @@ data class VisitAllocationPrisonerSyncDto(
 
   @Schema(description = "The source of the change being made", example = "SYSTEM or STAFF", required = true)
   @field:NotNull
-  val changeSource: ChangeSource,
+  val changeLogSource: ChangeLogSource,
 
   @Schema(description = "Additional information on the sync reason", example = "Manually adjusted for phone credit", required = true)
   @field:NotEmpty
