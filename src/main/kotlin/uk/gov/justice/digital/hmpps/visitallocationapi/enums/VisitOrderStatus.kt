@@ -5,6 +5,5 @@ enum class VisitOrderStatus {
   AVAILABLE,
   EXPIRED,
   ACCUMULATED,
-  SCHEDULED,
   USED,
 }
