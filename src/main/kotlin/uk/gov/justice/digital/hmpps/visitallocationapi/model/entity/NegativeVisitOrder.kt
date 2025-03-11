@@ -11,6 +11,7 @@ import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity
 @Table(name = "NEGATIVE_VISIT_ORDER")
@@ -31,7 +32,7 @@ data class NegativeVisitOrder(
   val type: NegativeVisitOrderType,
 
   @Column(nullable = false)
-  val createdDate: LocalDate = LocalDate.now(),
+  val createdTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
   val repaidDate: LocalDate? = null,

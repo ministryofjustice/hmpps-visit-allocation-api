@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAl
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJob
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
@@ -242,8 +243,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   fun `when visit allocation job run for a prison then processMessage is called and visit orders are accumulated for convicted prisoners`() {
     // Given - Some prisoners have pre-existing VOs, and a message is sent to start allocation job for prison
     val existingVOs = mutableListOf<VisitOrder>().apply {
-      addAll(List(2) { createVisitOrder(prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29)) })
-      addAll(List(2) { createVisitOrder(prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(14)) })
+      addAll(List(2) { createVisitOrder(prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29).atStartOfDay()) })
+      addAll(List(2) { createVisitOrder(prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(14).atStartOfDay()) })
     }
     visitOrderRepository.saveAll(existingVOs)
 
@@ -315,8 +316,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   fun `when visit allocation job run for a prison then processMessage is called and visit orders are expired for convicted prisoners`() {
     // Given - Some prisoners have pre-existing VOs / PVOs, and a message is sent to start allocation job for prison
     val existingVOs = mutableListOf<VisitOrder>().apply {
-      addAll(List(28) { createVisitOrder(prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDate.now().minusDays(1)) })
-      addAll(List(2) { createVisitOrder(prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29)) })
+      addAll(List(28) { createVisitOrder(prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDate.now().minusDays(1).atStartOfDay()) })
+      addAll(List(2) { createVisitOrder(prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29).atStartOfDay()) })
     }
     visitOrderRepository.saveAll(existingVOs)
 
@@ -642,5 +643,5 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     assertThat(visitOrderAllocationPrisonJob.endTimestamp).isNotNull()
   }
 
-  private fun createVisitOrder(prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, createdDate: LocalDate): VisitOrder = VisitOrder(prisonerId = prisonerId, type = type, status = status, createdDate = createdDate)
+  private fun createVisitOrder(prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, createdDateTime: LocalDateTime): VisitOrder = VisitOrder(prisonerId = prisonerId, type = type, status = status, createdTimestamp = createdDateTime)
 }

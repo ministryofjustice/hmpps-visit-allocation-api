@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
-import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.math.abs
 
 @Service
@@ -73,7 +73,7 @@ class NomisSyncService(
         prisonerId = migrationDto.prisonerId,
         type = type,
         status = VisitOrderStatus.AVAILABLE,
-        createdDate = migrationDto.lastVoAllocationDate,
+        createdTimestamp = migrationDto.lastVoAllocationDate.atStartOfDay(),
         expiryDate = null,
       )
     }
@@ -95,7 +95,7 @@ class NomisSyncService(
         } else {
           NegativeVisitOrderType.NEGATIVE_PVO
         },
-        createdDate = LocalDate.now(),
+        createdTimestamp = LocalDateTime.now(),
       )
     }
     negativeVisitOrderRepository.saveAll(negativeVisitOrders)

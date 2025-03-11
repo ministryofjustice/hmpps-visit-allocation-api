@@ -14,7 +14,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Transactional
@@ -116,13 +115,13 @@ class AllocationService(
     prisonerId = prisonerId,
     type = type,
     status = VisitOrderStatus.AVAILABLE,
-    createdDate = LocalDate.now(),
+    createdTimestamp = LocalDateTime.now(),
     expiryDate = null,
   )
 
   private fun isDueVO(prisonerId: String): Boolean {
     val lastVODate = visitOrderRepository.findLastAllocatedDate(prisonerId, VisitOrderType.VO)
-    return lastVODate == null || lastVODate <= LocalDate.now().minusDays(14)
+    return lastVODate == null || lastVODate <= LocalDateTime.now().minusDays(14)
   }
 
   private fun isDuePVO(prisonerId: String): Boolean {
@@ -133,7 +132,7 @@ class AllocationService(
       return isDueVO(prisonerId)
     }
 
-    return lastPVODate <= LocalDate.now().minusDays(28)
+    return lastPVODate <= LocalDateTime.now().minusDays(28)
   }
 
   private fun generateVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {

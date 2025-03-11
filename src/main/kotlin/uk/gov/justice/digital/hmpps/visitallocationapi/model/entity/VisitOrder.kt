@@ -11,6 +11,7 @@ import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity
 @Table(name = "VISIT_ORDER")
@@ -31,7 +32,7 @@ data class VisitOrder(
   val status: VisitOrderStatus,
 
   @Column(nullable = false)
-  val createdDate: LocalDate = LocalDate.now(),
+  val createdTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
   val expiryDate: LocalDate? = null,

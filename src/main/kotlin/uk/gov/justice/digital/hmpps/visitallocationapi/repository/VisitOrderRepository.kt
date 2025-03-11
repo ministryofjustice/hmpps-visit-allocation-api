@@ -8,17 +8,17 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Repository
 interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   @Query(
-    "SELECT vo.createdDate FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type ORDER BY vo.createdDate DESC LIMIT 1",
+    "SELECT vo.createdTimestamp FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type ORDER BY vo.createdTimestamp DESC LIMIT 1",
   )
   fun findLastAllocatedDate(
     prisonerId: String,
     type: VisitOrderType,
-  ): LocalDate?
+  ): LocalDateTime?
 
   @Query(
     "SELECT COUNT (vo) FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type AND vo.status = :status",
@@ -40,7 +40,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
             WHERE prisoner_id = :prisonerId 
               AND type = 'VO'
               AND status = 'ACCUMULATED' 
-            ORDER BY created_date ASC 
+            ORDER BY created_timestamp ASC 
             LIMIT :amount)
     """,
     nativeQuery = true,
@@ -59,7 +59,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
             WHERE prisoner_id = :prisonerId
               AND type = 'PVO'
               AND status = 'AVAILABLE'
-              AND created_date < CURRENT_DATE - INTERVAL '28 days'
+              AND created_timestamp < CURRENT_TIMESTAMP - INTERVAL '28 days'
     """,
     nativeQuery = true,
   )
@@ -76,7 +76,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
             WHERE prisoner_id = :prisonerId
               AND type = :#{#type.name()}
               AND status = 'AVAILABLE'
-              AND created_date < CURRENT_DATE - INTERVAL '28 days'
+              AND created_timestamp < CURRENT_TIMESTAMP - INTERVAL '28 days'
     """,
     nativeQuery = true,
   )

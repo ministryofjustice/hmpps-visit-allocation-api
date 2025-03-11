@@ -87,7 +87,7 @@ class AllocationServiceTest {
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.count { it.type == VisitOrderType.PVO } == 1 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -135,7 +135,7 @@ class AllocationServiceTest {
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.count { it.type == VisitOrderType.PVO } == 1 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -180,7 +180,7 @@ class AllocationServiceTest {
         visitOrders.size == 2 &&
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -210,8 +210,8 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(14))
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(14).atStartOfDay())
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14).atStartOfDay())
 
     // Begin test
     runBlocking {
@@ -228,7 +228,7 @@ class AllocationServiceTest {
         visitOrders.size == 2 &&
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -258,7 +258,7 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(10))
+    whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(10).atStartOfDay())
     whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(null)
 
     // Begin test
@@ -303,8 +303,8 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(14))
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(28))
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(14).atStartOfDay())
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(28).atStartOfDay())
 
     // Begin test
     runBlocking {
@@ -322,7 +322,7 @@ class AllocationServiceTest {
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.count { it.type == VisitOrderType.PVO } == 1 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -354,8 +354,8 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1))
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1).atStartOfDay())
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14).atStartOfDay())
 
     whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)).thenReturn(4)
 
@@ -397,8 +397,8 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1))
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1).atStartOfDay())
+    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14).atStartOfDay())
 
     whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)).thenReturn(28)
 
