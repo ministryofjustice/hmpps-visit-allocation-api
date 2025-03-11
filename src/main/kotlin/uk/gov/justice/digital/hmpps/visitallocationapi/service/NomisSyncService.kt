@@ -10,8 +10,10 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderT
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDate
 import kotlin.math.abs
@@ -20,6 +22,7 @@ import kotlin.math.abs
 class NomisSyncService(
   private val visitOrderRepository: VisitOrderRepository,
   private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
+  private val prisonerDetailsRepository: PrisonerDetailsRepository,
   private val changeLogService: ChangeLogService,
 ) {
   companion object {
@@ -32,6 +35,7 @@ class NomisSyncService(
 
     migrateBalance(migrationDto, VisitOrderType.VO)
     migrateBalance(migrationDto, VisitOrderType.PVO)
+    migrateLastAllocatedDate(migrationDto)
 
     changeLogService.logMigrationChange(migrationDto)
 
@@ -53,7 +57,6 @@ class NomisSyncService(
             prisonerId = migrationDto.prisonerId,
             type = type,
             status = VisitOrderStatus.AVAILABLE,
-            // TODO: VB-5220 - Should the PVO date be the VO date - 14 days in some instances? (To help with PVO generation spread).
             createdDate = migrationDto.lastVoAllocationDate,
             expiryDate = null,
           )
@@ -80,5 +83,10 @@ class NomisSyncService(
         LOG.info("Not migrating ${type.name} balance for prisoner ${migrationDto.prisonerId} as it's 0")
       }
     }
+  }
+
+  private fun migrateLastAllocatedDate(migrationDto: VisitAllocationPrisonerMigrationDto) {
+    LOG.info("Migrating prisoner ${migrationDto.prisonerId} details (last allocated date - ${migrationDto.lastVoAllocationDate})")
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = migrationDto.prisonerId, lastAllocatedDate = migrationDto.lastVoAllocationDate))
   }
 }

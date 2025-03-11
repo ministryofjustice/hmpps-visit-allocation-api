@@ -1,1 +1,1 @@
-CREATE INDEX idx_visit_prisoner_id ON change_log (prisoner_id);
+CREATE INDEX idx_change_log_prisoner_id ON change_log (prisoner_id);

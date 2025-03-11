@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPrison
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 
@@ -15,6 +16,7 @@ class EntityHelper(
   val visitOrderRepository: VisitOrderRepository,
   val negativeVisitOrderRepository: NegativeVisitOrderRepository,
   val changeLogRepository: ChangeLogRepository,
+  private val prisonerDetailsRepository: PrisonerDetailsRepository,
 ) {
 
   @Transactional
@@ -35,5 +37,8 @@ class EntityHelper(
 
     changeLogRepository.deleteAll()
     changeLogRepository.flush()
+
+    prisonerDetailsRepository.deleteAll()
+    prisonerDetailsRepository.flush()
   }
 }
