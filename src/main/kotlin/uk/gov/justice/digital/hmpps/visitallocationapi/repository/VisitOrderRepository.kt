@@ -59,7 +59,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
             WHERE prisoner_id = :prisonerId
               AND type = 'PVO'
               AND status = 'AVAILABLE'
-              AND created_timestamp < CURRENT_TIMESTAMP - INTERVAL '28 days'
+              AND CAST(created_timestamp AS DATE) < CURRENT_DATE - INTERVAL '28 days'
     """,
     nativeQuery = true,
   )
@@ -74,9 +74,9 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
         UPDATE visit_order
         SET status = 'ACCUMULATED'
             WHERE prisoner_id = :prisonerId
-              AND type = :#{#type.name()}
+              AND type = 'VO'
               AND status = 'AVAILABLE'
-              AND created_timestamp < CURRENT_TIMESTAMP - INTERVAL '28 days'
+              AND CAST(created_timestamp AS DATE) < CURRENT_DATE - INTERVAL '28 days'
     """,
     nativeQuery = true,
   )
