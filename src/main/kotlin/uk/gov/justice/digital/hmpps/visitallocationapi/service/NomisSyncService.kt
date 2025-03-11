@@ -39,7 +39,7 @@ class NomisSyncService(
 
     changeLogService.logMigrationChange(migrationDto)
 
-    LOG.info("Finished NomisSyncService - migratePrisoner successfully")
+    LOG.info("Finished NomisSyncService - migratePrisoner ${migrationDto.prisonerId} successfully")
   }
 
   private fun migrateBalance(migrationDto: VisitAllocationPrisonerMigrationDto, type: VisitOrderType) {
@@ -51,38 +51,54 @@ class NomisSyncService(
 
     when {
       balance > 0 -> {
-        LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a ${type.name} balance of $balance")
-        val visitOrders = List(balance) {
-          VisitOrder(
-            prisonerId = migrationDto.prisonerId,
-            type = type,
-            status = VisitOrderStatus.AVAILABLE,
-            createdDate = migrationDto.lastVoAllocationDate,
-            expiryDate = null,
-          )
-        }
-        visitOrderRepository.saveAll(visitOrders)
+        createPositiveVisitOrders(migrationDto, type, balance)
       }
       balance < 0 -> {
-        LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a negative ${type.name} balance of $balance")
-        val negativeVisitOrders = List(abs(balance)) {
-          NegativeVisitOrder(
-            prisonerId = migrationDto.prisonerId,
-            status = NegativeVisitOrderStatus.USED,
-            type = if (type == VisitOrderType.VO) {
-              NegativeVisitOrderType.NEGATIVE_VO
-            } else {
-              NegativeVisitOrderType.NEGATIVE_PVO
-            },
-            createdDate = LocalDate.now(),
-          )
-        }
-        negativeVisitOrderRepository.saveAll(negativeVisitOrders)
+        createNegativeVisitOrders(migrationDto, type, balance)
       }
       else -> {
         LOG.info("Not migrating ${type.name} balance for prisoner ${migrationDto.prisonerId} as it's 0")
       }
     }
+  }
+
+  private fun createPositiveVisitOrders(
+    migrationDto: VisitAllocationPrisonerMigrationDto,
+    type: VisitOrderType,
+    balance: Int,
+  ) {
+    LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a ${type.name} balance of $balance")
+    val visitOrders = List(balance) {
+      VisitOrder(
+        prisonerId = migrationDto.prisonerId,
+        type = type,
+        status = VisitOrderStatus.AVAILABLE,
+        createdDate = migrationDto.lastVoAllocationDate,
+        expiryDate = null,
+      )
+    }
+    visitOrderRepository.saveAll(visitOrders)
+  }
+
+  private fun createNegativeVisitOrders(
+    migrationDto: VisitAllocationPrisonerMigrationDto,
+    type: VisitOrderType,
+    balance: Int,
+  ) {
+    LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a negative ${type.name} balance of $balance")
+    val negativeVisitOrders = List(abs(balance)) {
+      NegativeVisitOrder(
+        prisonerId = migrationDto.prisonerId,
+        status = NegativeVisitOrderStatus.USED,
+        type = if (type == VisitOrderType.VO) {
+          NegativeVisitOrderType.NEGATIVE_VO
+        } else {
+          NegativeVisitOrderType.NEGATIVE_PVO
+        },
+        createdDate = LocalDate.now(),
+      )
+    }
+    negativeVisitOrderRepository.saveAll(negativeVisitOrders)
   }
 
   private fun migrateLastAllocatedDate(migrationDto: VisitAllocationPrisonerMigrationDto) {

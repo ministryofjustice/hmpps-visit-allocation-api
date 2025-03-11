@@ -25,7 +25,7 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
         changeType = ChangeLogType.MIGRATION,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
-        comment = "migrated prisoner ${migrationChangeDto.prisonerId}, with vo balance ${migrationChangeDto.voBalance} and pvo balance ${migrationChangeDto.pvoBalance}",
+        comment = "migrated prisoner ${migrationChangeDto.prisonerId}, with vo balance ${migrationChangeDto.voBalance} and pvo balance ${migrationChangeDto.pvoBalance} and lastAllocatedDate ${migrationChangeDto.lastVoAllocationDate}",
       ),
     )
   }
