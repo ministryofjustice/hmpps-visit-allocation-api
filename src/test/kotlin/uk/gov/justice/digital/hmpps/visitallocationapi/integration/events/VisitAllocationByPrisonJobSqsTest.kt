@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJob
@@ -29,17 +30,27 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
+// TODO: To fix the PVO issue; Add a PVO lastAllocatedDate column to the prisoner details table, and then at the end of allocation
+//  overwrite the column with the new date. Existing VO work done can stay, just needs more changes:
+//  1. New column for the PVO and rename the VO column to mention it's a VO column.
+//  2. use the new PVO date column to calculate the date, if it's null, check VO date... (Same as usual).
+//  3. At the end of allocation, update the prisoner_details table to set both the VO / PVO date to "LocalDate.now()" (Date the allocation ran for each).
+//  4. Update migration to set the date in each call (migrated VO balance -> sets VO date at end / migrate PVO balance -> sets PVO date at end).
+//  4. Finally update these tests and any in the AllocationServiceTest class, to set the right dates for the prisonerDetails table (allocation dates).
+
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   @BeforeEach
   fun setup() {
     visitOrderAllocationPrisonJobRepository.deleteAll()
     visitOrderRepository.deleteAll()
+    prisonerDetailsRepository.deleteAll()
   }
 
   @AfterEach
   fun cleanUp() {
     visitOrderAllocationPrisonJobRepository.deleteAll()
     visitOrderRepository.deleteAll()
+    prisonerDetailsRepository.deleteAll()
   }
 
   companion object {
@@ -320,6 +331,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
       addAll(List(2) { createVisitOrder(prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29).atStartOfDay()) })
     }
     visitOrderRepository.saveAll(existingVOs)
+    prisonerDetailsRepository.save(PrisonerDetails(prisoner2.prisonerId, LocalDate.now().minusDays(1)))
+    prisonerDetailsRepository.save(PrisonerDetails(prisoner3.prisonerId, LocalDate.now().minusDays(29)))
 
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"

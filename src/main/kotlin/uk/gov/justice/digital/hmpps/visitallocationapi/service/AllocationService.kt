@@ -12,8 +12,10 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Priso
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Transactional
@@ -23,6 +25,7 @@ class AllocationService(
   private val incentivesClient: IncentivesClient,
   private val visitOrderRepository: VisitOrderRepository,
   private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
+  private val prisonerDetailsRepository: PrisonerDetailsRepository,
   private val prisonerRetryService: PrisonerRetryService,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
@@ -120,19 +123,19 @@ class AllocationService(
   )
 
   private fun isDueVO(prisonerId: String): Boolean {
-    val lastVODate = visitOrderRepository.findLastAllocatedDate(prisonerId, VisitOrderType.VO)
-    return lastVODate == null || lastVODate <= LocalDateTime.now().minusDays(14)
+    val lastVODate = prisonerDetailsRepository.findByPrisonerId(prisonerId)?.lastAllocatedDate
+    return lastVODate == null || lastVODate <= LocalDate.now().minusDays(14)
   }
 
   private fun isDuePVO(prisonerId: String): Boolean {
     val lastPVODate = visitOrderRepository.findLastAllocatedDate(prisonerId, VisitOrderType.PVO)
 
-    // If they haven't been given a PVO before, we wait until their VO due date to allocate it.
+    // If they haven't been given a PVO before, we wait until their VO due date to allocate it, to align the dates.
     if (lastPVODate == null) {
       return isDueVO(prisonerId)
     }
 
-    return lastPVODate <= LocalDateTime.now().minusDays(28)
+    return lastPVODate.toLocalDate() <= LocalDate.now().minusDays(28)
   }
 
   private fun generateVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {

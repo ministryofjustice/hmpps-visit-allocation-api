@@ -5,4 +5,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 
 @Repository
-interface PrisonerDetailsRepository : JpaRepository<PrisonerDetails, Long>
+interface PrisonerDetailsRepository : JpaRepository<PrisonerDetails, Long> {
+  fun findByPrisonerId(prisonerId: String): PrisonerDetails?
+}
