@@ -5,6 +5,7 @@ import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
 import org.awaitility.kotlin.untilCallTo
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -29,6 +30,13 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
 
   @BeforeEach
   fun setup() {
+    visitOrderAllocationPrisonJobRepository.deleteAll()
+    visitOrderRepository.deleteAll()
+    prisonerDetailsRepository.deleteAll()
+  }
+
+  @AfterEach
+  fun cleanup() {
     visitOrderAllocationPrisonJobRepository.deleteAll()
     visitOrderRepository.deleteAll()
     prisonerDetailsRepository.deleteAll()
