@@ -1,9 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.enums
 
 @Suppress("unused")
-enum class VisitOrderStatus {
-  AVAILABLE,
-  EXPIRED,
-  ACCUMULATED,
-  USED,
+enum class NegativeVisitOrderType {
+  NEGATIVE_VO,
+  NEGATIVE_PVO,
 }

@@ -8,14 +8,13 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
-import java.time.LocalDate
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "VISIT_ORDER")
-data class VisitOrder(
+@Table(name = "CHANGE_LOG")
+data class ChangeLog(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,
@@ -24,16 +23,19 @@ data class VisitOrder(
   val prisonerId: String,
 
   @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
-  val type: VisitOrderType,
+  val changeTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val status: VisitOrderStatus,
+  val changeType: ChangeLogType,
 
   @Column(nullable = false)
-  val createdTimestamp: LocalDateTime = LocalDateTime.now(),
+  @Enumerated(EnumType.STRING)
+  val changeSource: ChangeLogSource,
 
   @Column(nullable = false)
-  val expiryDate: LocalDate? = null,
+  val userId: String,
+
+  @Column(nullable = false)
+  val comment: String? = null,
 )

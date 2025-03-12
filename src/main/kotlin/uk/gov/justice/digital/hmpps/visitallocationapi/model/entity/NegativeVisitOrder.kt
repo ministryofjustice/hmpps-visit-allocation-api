@@ -8,14 +8,14 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "VISIT_ORDER")
-data class VisitOrder(
+@Table(name = "NEGATIVE_VISIT_ORDER")
+data class NegativeVisitOrder(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,
@@ -25,15 +25,15 @@ data class VisitOrder(
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val type: VisitOrderType,
+  val status: NegativeVisitOrderStatus,
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val status: VisitOrderStatus,
+  val type: NegativeVisitOrderType,
 
   @Column(nullable = false)
   val createdTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
-  val expiryDate: LocalDate? = null,
+  val repaidDate: LocalDate? = null,
 )

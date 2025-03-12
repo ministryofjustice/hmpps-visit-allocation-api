@@ -5,7 +5,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
-import org.mockito.Mockito.lenient
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
@@ -20,10 +19,12 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIn
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.AllocationService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
 import java.time.LocalDate
 
@@ -40,6 +41,9 @@ class AllocationServiceTest {
   private lateinit var visitOrderRepository: VisitOrderRepository
 
   @Mock
+  private lateinit var prisonerDetailsService: PrisonerDetailsService
+
+  @Mock
   private lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
 
   @Mock
@@ -49,7 +53,7 @@ class AllocationServiceTest {
 
   @BeforeEach
   fun setUp() {
-    allocationService = AllocationService(prisonerSearchClient, incentivesClient, visitOrderRepository, visitOrderAllocationPrisonJobRepository, prisonerRetryService, 26)
+    allocationService = AllocationService(prisonerSearchClient, incentivesClient, visitOrderRepository, visitOrderAllocationPrisonJobRepository, prisonerDetailsService, prisonerRetryService, 26)
   }
 
   // --- Start Allocation Tests --- \\
@@ -87,7 +91,7 @@ class AllocationServiceTest {
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.count { it.type == VisitOrderType.PVO } == 1 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -135,7 +139,7 @@ class AllocationServiceTest {
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.count { it.type == VisitOrderType.PVO } == 1 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -149,6 +153,7 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), null)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 0, levelCode = "STD")
 
@@ -164,6 +169,7 @@ class AllocationServiceTest {
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
+    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(prisonerDetails)
 
     // Begin test
     runBlocking {
@@ -180,7 +186,7 @@ class AllocationServiceTest {
         visitOrders.size == 2 &&
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -194,6 +200,7 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), LocalDate.now().minusDays(14))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
@@ -210,8 +217,7 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(14))
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
+    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(prisonerDetails)
 
     // Begin test
     runBlocking {
@@ -228,7 +234,7 @@ class AllocationServiceTest {
         visitOrders.size == 2 &&
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -242,6 +248,7 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(10), null)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "ENH")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH")
 
@@ -258,8 +265,7 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(10))
-    whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(null)
+    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(prisonerDetails)
 
     // Begin test
     runBlocking {
@@ -287,6 +293,7 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), LocalDate.now().minusDays(28))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
@@ -303,8 +310,7 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(14))
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(28))
+    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(prisonerDetails)
 
     // Begin test
     runBlocking {
@@ -322,7 +328,7 @@ class AllocationServiceTest {
           visitOrders.count { it.type == VisitOrderType.VO } == 2 &&
           visitOrders.count { it.type == VisitOrderType.PVO } == 1 &&
           visitOrders.all { it.status == VisitOrderStatus.AVAILABLE } &&
-          visitOrders.all { it.createdDate == LocalDate.now() }
+          visitOrders.all { it.createdTimestamp.toLocalDate() == LocalDate.now() }
       },
     )
   }
@@ -338,6 +344,7 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), LocalDate.now().minusDays(14))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
@@ -354,8 +361,7 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1))
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
+    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(prisonerDetails)
 
     whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)).thenReturn(4)
 
@@ -381,6 +387,7 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "MDI"
     val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), LocalDate.now().minusDays(14))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
@@ -397,8 +404,7 @@ class AllocationServiceTest {
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
 
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.VO)).thenReturn(LocalDate.now().minusDays(1))
-    lenient().whenever(visitOrderRepository.findLastAllocatedDate(prisoner.prisonerId, VisitOrderType.PVO)).thenReturn(LocalDate.now().minusDays(14))
+    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(prisonerDetails)
 
     whenever(visitOrderRepository.countAllVisitOrders(prisoner.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED)).thenReturn(28)
 
