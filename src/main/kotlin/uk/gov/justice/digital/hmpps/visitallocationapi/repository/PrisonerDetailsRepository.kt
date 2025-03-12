@@ -14,17 +14,11 @@ interface PrisonerDetailsRepository : JpaRepository<PrisonerDetails, Long> {
 
   @Transactional
   @Modifying
-  @Query(
-    value = "UPDATE prisoner_details SET last_vo_allocated_date = :newLastAllocatedDate WHERE prisoner_id = :prisonerId",
-    nativeQuery = true,
-  )
+  @Query("UPDATE PrisonerDetails pd SET pd.lastVoAllocatedDate = :newLastAllocatedDate WHERE pd.prisonerId = :prisonerId")
   fun updatePrisonerLastVoAllocatedDate(prisonerId: String, newLastAllocatedDate: LocalDate)
 
   @Transactional
   @Modifying
-  @Query(
-    value = "UPDATE prisoner_details SET last_pvo_allocated_date = :newLastAllocatedDate WHERE prisoner_id = :prisonerId",
-    nativeQuery = true,
-  )
+  @Query("UPDATE PrisonerDetails pd SET pd.lastPvoAllocatedDate = :newLastAllocatedDate WHERE pd.prisonerId = :prisonerId")
   fun updatePrisonerLastPvoAllocatedDate(prisonerId: String, newLastAllocatedDate: LocalDate)
 }
