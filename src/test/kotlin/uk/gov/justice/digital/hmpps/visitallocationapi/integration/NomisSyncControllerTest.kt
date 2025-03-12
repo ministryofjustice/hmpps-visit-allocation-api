@@ -69,7 +69,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
     val prisonerDetails = prisonerDetailsRepository.findAll()
     assertThat(prisonerDetails.size).isEqualTo(1)
     assertThat(prisonerDetails.first().prisonerId).isEqualTo(prisonerMigrationDto.prisonerId)
-    assertThat(prisonerDetails.first().lastAllocatedDate).isEqualTo(prisonerMigrationDto.lastVoAllocationDate)
+    assertThat(prisonerDetails.first().lastVoAllocatedDate).isEqualTo(prisonerMigrationDto.lastVoAllocationDate)
 
     val changeLog = changeLogRepository.findAll()
     assertThat(changeLog.size).isEqualTo(1)
@@ -100,7 +100,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
     val prisonerDetails = prisonerDetailsRepository.findAll()
     assertThat(prisonerDetails.size).isEqualTo(1)
     assertThat(prisonerDetails.first().prisonerId).isEqualTo(prisonerMigrationDto.prisonerId)
-    assertThat(prisonerDetails.first().lastAllocatedDate).isEqualTo(prisonerMigrationDto.lastVoAllocationDate)
+    assertThat(prisonerDetails.first().lastVoAllocatedDate).isEqualTo(prisonerMigrationDto.lastVoAllocationDate)
 
     val changeLog = changeLogRepository.findAll()
     assertThat(changeLog.size).isEqualTo(1)
@@ -136,7 +136,7 @@ class NomisSyncControllerTest : IntegrationTestBase() {
     val prisonerDetails = prisonerDetailsRepository.findAll()
     assertThat(prisonerDetails.size).isEqualTo(1)
     assertThat(prisonerDetails.first().prisonerId).isEqualTo(prisonerMigrationDto.prisonerId)
-    assertThat(prisonerDetails.first().lastAllocatedDate).isEqualTo(prisonerMigrationDto.lastVoAllocationDate)
+    assertThat(prisonerDetails.first().lastVoAllocatedDate).isEqualTo(prisonerMigrationDto.lastVoAllocationDate)
 
     val changeLog = changeLogRepository.findAll()
     assertThat(changeLog.size).isEqualTo(1)

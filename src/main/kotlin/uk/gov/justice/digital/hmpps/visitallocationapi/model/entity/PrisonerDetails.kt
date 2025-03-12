@@ -9,11 +9,13 @@ import java.time.LocalDate
 @Entity
 @Table(name = "PRISONER_DETAILS")
 data class PrisonerDetails(
-
   @Id
   @Column(nullable = false)
   val prisonerId: String,
 
   @Column(nullable = false)
-  val lastAllocatedDate: LocalDate,
+  val lastVoAllocatedDate: LocalDate,
+
+  @Column(nullable = true)
+  val lastPvoAllocatedDate: LocalDate?,
 )

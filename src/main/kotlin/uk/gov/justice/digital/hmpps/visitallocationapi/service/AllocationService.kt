@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Priso
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDate
@@ -25,7 +24,7 @@ class AllocationService(
   private val incentivesClient: IncentivesClient,
   private val visitOrderRepository: VisitOrderRepository,
   private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
-  private val prisonerDetailsRepository: PrisonerDetailsRepository,
+  private val prisonerDetailsService: PrisonerDetailsService,
   private val prisonerRetryService: PrisonerRetryService,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
@@ -85,9 +84,18 @@ class AllocationService(
 
     visitOrderRepository.saveAll(visitOrders)
 
+    updateLastAllocatedDates(prisoner, visitOrders)
+
     LOG.info(
       "Successfully generated ${visitOrders.size} visit orders for prisoner prisoner $prisonerId: " + "${visitOrders.count { it.type == VisitOrderType.PVO }} PVOs and ${visitOrders.count { it.type == VisitOrderType.VO }} VOs",
     )
+  }
+
+  private fun updateLastAllocatedDates(prisoner: PrisonerDto, visitOrders: MutableList<VisitOrder>) {
+    prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(prisonerId = prisoner.prisonerId, LocalDate.now())
+    if (visitOrders.any { it.type == VisitOrderType.PVO }) {
+      prisonerDetailsService.updatePvoLastCreatedDate(prisonerId = prisoner.prisonerId, LocalDate.now())
+    }
   }
 
   private fun processPrisonerAccumulation(prisonerId: String) {
@@ -123,19 +131,19 @@ class AllocationService(
   )
 
   private fun isDueVO(prisonerId: String): Boolean {
-    val lastVODate = prisonerDetailsRepository.findByPrisonerId(prisonerId)?.lastAllocatedDate
+    val lastVODate = prisonerDetailsService.getPrisoner(prisonerId)?.lastVoAllocatedDate
     return lastVODate == null || lastVODate <= LocalDate.now().minusDays(14)
   }
 
   private fun isDuePVO(prisonerId: String): Boolean {
-    val lastPVODate = visitOrderRepository.findLastAllocatedDate(prisonerId, VisitOrderType.PVO)
+    val lastPVODate = prisonerDetailsService.getPrisoner(prisonerId)?.lastPvoAllocatedDate
 
     // If they haven't been given a PVO before, we wait until their VO due date to allocate it, to align the dates.
     if (lastPVODate == null) {
       return isDueVO(prisonerId)
     }
 
-    return lastPVODate.toLocalDate() <= LocalDate.now().minusDays(28)
+    return lastPVODate <= LocalDate.now().minusDays(28)
   }
 
   private fun generateVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
@@ -146,7 +154,6 @@ class AllocationService(
         visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.VO))
       }
     }
-
     return visitOrders.toList()
   }
 

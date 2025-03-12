@@ -103,6 +103,13 @@ class NomisSyncService(
 
   private fun migrateLastAllocatedDate(migrationDto: VisitAllocationPrisonerMigrationDto) {
     LOG.info("Migrating prisoner ${migrationDto.prisonerId} details (last allocated date - ${migrationDto.lastVoAllocationDate})")
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = migrationDto.prisonerId, lastAllocatedDate = migrationDto.lastVoAllocationDate))
+
+    val lastPvoAllocatedDate = if (migrationDto.pvoBalance != 0) {
+      migrationDto.lastVoAllocationDate
+    } else {
+      null
+    }
+
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = migrationDto.prisonerId, lastVoAllocatedDate = migrationDto.lastVoAllocationDate, lastPvoAllocatedDate = lastPvoAllocatedDate))
   }
 }
