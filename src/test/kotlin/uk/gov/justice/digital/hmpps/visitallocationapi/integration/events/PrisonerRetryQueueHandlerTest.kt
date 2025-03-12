@@ -5,6 +5,7 @@ import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
 import org.awaitility.kotlin.untilCallTo
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
@@ -25,6 +26,13 @@ import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
   @MockitoSpyBean
   lateinit var visitAllocationPrisonerRetryQueueListenerSpy: VisitAllocationPrisonerRetryQueueListener
+
+  @BeforeEach
+  fun setup() {
+    visitOrderAllocationPrisonJobRepository.deleteAll()
+    visitOrderRepository.deleteAll()
+    prisonerDetailsRepository.deleteAll()
+  }
 
   @Test
   fun `when prisoner put on retry queue the message is processed`() {
