@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.clients
 
 import com.microsoft.applicationinsights.TelemetryClient
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -15,11 +13,4 @@ class ApplicationInsightsConfiguration {
 
   @Bean
   fun telemetryClient(): TelemetryClient = TelemetryClient()
-
-  companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
-  }
 }
-
-@Suppress("unused")
-fun TelemetryClient.trackEvent(name: String, properties: Map<String, String>) = this.trackEvent(name, properties, null)
