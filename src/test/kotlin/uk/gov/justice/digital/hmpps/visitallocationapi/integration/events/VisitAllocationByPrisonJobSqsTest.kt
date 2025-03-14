@@ -402,7 +402,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
 
         verify(prisonerDetailsRepository, times(1)).save(any())
-        verify(prisonerDetailsRepository, times(2)).updatePrisonerLastVoAllocatedDate(any(), any())
+        verify(prisonerDetailsRepository, times(1)).updatePrisonerLastVoAllocatedDate(any(), any())
         verify(prisonerDetailsRepository, times(1)).updatePrisonerLastPvoAllocatedDate(any(), any())
       }
   }
