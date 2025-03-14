@@ -76,8 +76,7 @@ class NomisController(
     ],
   )
   fun syncPrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerSyncDto: VisitAllocationPrisonerSyncDto): ResponseEntity<Void> {
-    // TODO: Uncomment when ready to test
-    // nomisSyncService.syncPrisoner(visitAllocationPrisonerSyncDto)
+    nomisSyncService.syncPrisoner(visitAllocationPrisonerSyncDto)
     return ResponseEntity.status(HttpStatus.OK).build()
   }
 }

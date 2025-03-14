@@ -88,6 +88,11 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
     type: VisitOrderType,
   ): Int
 
+  // 1 - oldest
+  // 2 - ...
+  // 3 - ...
+  // CUT
+
   @Transactional
   @Modifying
   @Query(
@@ -97,6 +102,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
             WHERE prisoner_id = :prisonerId
               AND type = :visitOrderType
               AND status in ('AVAILABLE', 'ACCUMULATED')
+            ORDER BY created_timestamp ASC
             LIMIT :amountToExpire
     """,
     nativeQuery = true,
