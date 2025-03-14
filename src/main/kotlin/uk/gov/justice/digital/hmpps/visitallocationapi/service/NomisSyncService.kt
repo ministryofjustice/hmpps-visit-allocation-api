@@ -4,112 +4,146 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
-import java.time.LocalDateTime
 import kotlin.math.abs
+
+// TODO: VB-5234 - Nomis Sync Ticket. Continue with comments below.
 
 @Service
 class NomisSyncService(
-  private val visitOrderRepository: VisitOrderRepository,
-  private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
-  private val prisonerDetailsRepository: PrisonerDetailsRepository,
-  private val changeLogService: ChangeLogService,
+  val balanceService: BalanceService,
+  val prisonerDetailsService: PrisonerDetailsService,
+  val visitOrderRepository: VisitOrderRepository,
+  val negativeVisitOrderRepository: NegativeVisitOrderRepository,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   @Transactional
-  fun migratePrisoner(migrationDto: VisitAllocationPrisonerMigrationDto) {
-    LOG.info("Entered NomisSyncService - migratePrisoner with migration dto {}", migrationDto)
+  fun syncPrisoner(syncDto: VisitAllocationPrisonerSyncDto) {
+    LOG.info("Entered NomisSyncService - syncPrisoner with sync dto {}", syncDto)
 
-    migrateBalance(migrationDto, VisitOrderType.VO)
-    migrateBalance(migrationDto, VisitOrderType.PVO)
-    migrateLastAllocatedDate(migrationDto)
-
-    changeLogService.logMigrationChange(migrationDto)
-
-    LOG.info("Finished NomisSyncService - migratePrisoner ${migrationDto.prisonerId} successfully")
-  }
-
-  private fun migrateBalance(migrationDto: VisitAllocationPrisonerMigrationDto, type: VisitOrderType) {
-    val balance = if (type == VisitOrderType.VO) {
-      migrationDto.voBalance
+    val prisonerBalance: PrisonerBalanceDto
+    if (prisonerDetailsService.getPrisoner(syncDto.prisonerId) != null) {
+      // If prisoner is existing, get their balance and do a comparison validation.
+      prisonerBalance = balanceService.getPrisonerBalance(syncDto.prisonerId)
+      compareBalanceBeforeSync(syncDto, prisonerBalance)
     } else {
-      migrationDto.pvoBalance
+      // If they don't exist in our system we initialise their balance to 0 ready for sync.
+      prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, 0, 0)
     }
 
+    // If VO balance has changed, sync it
+    if (syncDto.changeToVoBalance != null) {
+      processSync(syncDto.prisonerId, prisonerBalance.voBalance, syncDto.changeToVoBalance, VisitOrderType.VO, NegativeVisitOrderType.NEGATIVE_VO)
+    }
+
+    // If PVO balance has changed, sync it
+    if (syncDto.changeToPvoBalance != null) {
+      processSync(syncDto.prisonerId, prisonerBalance.pvoBalance, syncDto.changeToPvoBalance, VisitOrderType.PVO, NegativeVisitOrderType.NEGATIVE_PVO)
+    }
+
+    // If this is a VO allocation from the NOMIS system, update the lastVoAllocatedDate to keep this synced.
+    if (syncDto.adjustmentReasonCode == AdjustmentReasonCode.IEP && syncDto.changeLogSource == ChangeLogSource.SYSTEM) {
+      prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(syncDto.prisonerId, syncDto.createdDate)
+    }
+  }
+
+  private fun processSync(prisonerId: String, prisonerDpsBalance: Int, changeToNomisBalance: Int, visitOrderType: VisitOrderType, negativeVoType: NegativeVisitOrderType) {
     when {
-      balance > 0 -> {
-        createPositiveVisitOrders(migrationDto, type, balance)
+      prisonerDpsBalance > 0 -> {
+        handlePositiveBalance(prisonerId, prisonerDpsBalance, changeToNomisBalance, visitOrderType, negativeVoType)
       }
-      balance < 0 -> {
-        createNegativeVisitOrders(migrationDto, type, balance)
+      prisonerDpsBalance < 0 -> {
+        handleNegativeBalance(prisonerId, prisonerDpsBalance, changeToNomisBalance, visitOrderType, negativeVoType)
       }
       else -> {
-        LOG.info("Not migrating ${type.name} balance for prisoner ${migrationDto.prisonerId} as it's 0")
+        handleZeroBalance(prisonerId, changeToNomisBalance, visitOrderType, negativeVoType)
       }
     }
   }
 
-  private fun createPositiveVisitOrders(
-    migrationDto: VisitAllocationPrisonerMigrationDto,
-    type: VisitOrderType,
-    balance: Int,
-  ) {
-    LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a ${type.name} balance of $balance")
-    val visitOrders = List(balance) {
-      VisitOrder(
-        prisonerId = migrationDto.prisonerId,
-        type = type,
-        status = VisitOrderStatus.AVAILABLE,
-        createdTimestamp = migrationDto.lastVoAllocationDate.atStartOfDay(),
-        expiryDate = null,
+  private fun handlePositiveBalance(prisonerId: String, prisonerDpsBalance: Int, changeToNomisBalance: Int, visitOrderType: VisitOrderType, negativeVoType: NegativeVisitOrderType) {
+    if (changeToNomisBalance >= 0) {
+      createAndSaveVisitOrders(prisonerId, visitOrderType, changeToNomisBalance)
+    } else {
+      if ((prisonerDpsBalance - changeToNomisBalance) >= 0) {
+        // TODO: Should we be expiring AVAILABLE first then ACCUMULATED, or does it not matter?
+        visitOrderRepository.expireVisitOrdersGivenAmount(prisonerId, visitOrderType, changeToNomisBalance)
+      } else {
+        val negativeVosToCreate = abs(prisonerDpsBalance - changeToNomisBalance)
+        visitOrderRepository.expireAllVisitOrders(prisonerId, visitOrderType)
+        createAndSaveNegativeVisitOrders(prisonerId, negativeVoType, negativeVosToCreate)
+      }
+    }
+  }
+
+  private fun handleNegativeBalance(prisonerId: String, prisonerDpsBalance: Int, changeToNomisBalance: Int, visitOrderType: VisitOrderType, negativeVoType: NegativeVisitOrderType) {
+    if (changeToNomisBalance <= 0) {
+      createAndSaveNegativeVisitOrders(prisonerId, negativeVoType, changeToNomisBalance)
+    } else {
+      if ((prisonerDpsBalance + changeToNomisBalance) <= 0) {
+        negativeVisitOrderRepository.repayVisitOrdersGivenAmount(prisonerId, negativeVoType, changeToNomisBalance)
+      } else {
+        val positiveVosToCreate = prisonerDpsBalance + changeToNomisBalance
+        negativeVisitOrderRepository.repayAllVisitOrders(prisonerId, negativeVoType)
+        createAndSaveVisitOrders(prisonerId, visitOrderType, positiveVosToCreate)
+      }
+    }
+  }
+
+  private fun handleZeroBalance(prisonerId: String, changeToNomisBalance: Int, visitOrderType: VisitOrderType, negativeVoType: NegativeVisitOrderType) {
+    if (changeToNomisBalance >= 0) {
+      createAndSaveVisitOrders(prisonerId, visitOrderType, changeToNomisBalance)
+    } else {
+      createAndSaveNegativeVisitOrders(prisonerId, negativeVoType, changeToNomisBalance)
+    }
+  }
+
+  private fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, amountToCreate: Int) {
+    val visitOrders = mutableListOf<VisitOrder>()
+    repeat(amountToCreate) {
+      visitOrders.add(
+        VisitOrder(
+          prisonerId = prisonerId,
+          type = visitOrderType,
+          status = VisitOrderStatus.AVAILABLE
+        )
       )
     }
     visitOrderRepository.saveAll(visitOrders)
   }
 
-  private fun createNegativeVisitOrders(
-    migrationDto: VisitAllocationPrisonerMigrationDto,
-    type: VisitOrderType,
-    balance: Int,
-  ) {
-    LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a negative ${type.name} balance of $balance")
-    val negativeVisitOrders = List(abs(balance)) {
-      NegativeVisitOrder(
-        prisonerId = migrationDto.prisonerId,
-        status = NegativeVisitOrderStatus.USED,
-        type = if (type == VisitOrderType.VO) {
-          NegativeVisitOrderType.NEGATIVE_VO
-        } else {
-          NegativeVisitOrderType.NEGATIVE_PVO
-        },
-        createdTimestamp = LocalDateTime.now(),
+  private fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: NegativeVisitOrderType, amountToCreate: Int) {
+    val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
+    repeat(amountToCreate) {
+      negativeVisitOrders.add(
+        NegativeVisitOrder(
+          prisonerId = prisonerId,
+          type = negativeVoType,
+          status = NegativeVisitOrderStatus.USED
+        )
       )
     }
     negativeVisitOrderRepository.saveAll(negativeVisitOrders)
   }
 
-  private fun migrateLastAllocatedDate(migrationDto: VisitAllocationPrisonerMigrationDto) {
-    LOG.info("Migrating prisoner ${migrationDto.prisonerId} details (last allocated date - ${migrationDto.lastVoAllocationDate})")
-
-    val lastPvoAllocatedDate = if (migrationDto.pvoBalance != 0) {
-      migrationDto.lastVoAllocationDate
-    } else {
-      null
+  private fun compareBalanceBeforeSync(syncDto: VisitAllocationPrisonerSyncDto, prisonerBalance: PrisonerBalanceDto) {
+    // Compare if the balance we hold matches the "before balance" from nomis.
+    if (prisonerBalance.voBalance != syncDto.oldVoBalance || prisonerBalance.pvoBalance != syncDto.oldPvoBalance) {
+      TODO("Add call to telemetry service to log this anomaly. This will currently trigger for new prisoners.")
     }
-
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = migrationDto.prisonerId, lastVoAllocatedDate = migrationDto.lastVoAllocationDate, lastPvoAllocatedDate = lastPvoAllocatedDate))
   }
 }

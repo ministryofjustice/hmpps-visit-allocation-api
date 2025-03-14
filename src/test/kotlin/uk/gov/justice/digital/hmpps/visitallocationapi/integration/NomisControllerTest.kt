@@ -31,7 +31,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepo
 import java.time.LocalDate
 
 @DisplayName("NomisSyncController tests")
-class NomisSyncControllerTest : IntegrationTestBase() {
+class NomisControllerTest : IntegrationTestBase() {
 
   @MockitoSpyBean
   private lateinit var visitOrderRepository: VisitOrderRepository

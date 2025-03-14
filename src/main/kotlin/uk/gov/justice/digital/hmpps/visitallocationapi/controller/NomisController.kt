@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisMigrationService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
@@ -21,7 +22,10 @@ const val VO_PRISONER_MIGRATION: String = "$VO_NOMIS/migrate"
 const val VO_PRISONER_SYNC: String = "$VO_NOMIS/sync"
 
 @RestController
-class NomisSyncController(val nomisSyncService: NomisSyncService) {
+class NomisController(
+  val nomisMigrationService: NomisMigrationService,
+  val nomisSyncService: NomisSyncService,
+) {
   @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @PostMapping(VO_PRISONER_MIGRATION)
   @Operation(
@@ -45,7 +49,7 @@ class NomisSyncController(val nomisSyncService: NomisSyncService) {
     ],
   )
   fun migratePrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerMigrationDto: VisitAllocationPrisonerMigrationDto): ResponseEntity<Void> {
-    nomisSyncService.migratePrisoner(visitAllocationPrisonerMigrationDto)
+    nomisMigrationService.migratePrisoner(visitAllocationPrisonerMigrationDto)
     return ResponseEntity.status(HttpStatus.OK).build()
   }
 
@@ -71,5 +75,9 @@ class NomisSyncController(val nomisSyncService: NomisSyncService) {
       ),
     ],
   )
-  fun syncPrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerSyncDto: VisitAllocationPrisonerSyncDto): ResponseEntity<Void> = ResponseEntity.status(HttpStatus.OK).build()
+  fun syncPrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerSyncDto: VisitAllocationPrisonerSyncDto): ResponseEntity<Void> {
+    // TODO: Uncomment when ready to test
+    // nomisSyncService.syncPrisoner(visitAllocationPrisonerSyncDto)
+    return ResponseEntity.status(HttpStatus.OK).build()
+  }
 }
