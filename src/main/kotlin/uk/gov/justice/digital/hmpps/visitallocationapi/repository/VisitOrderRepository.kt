@@ -24,7 +24,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   ): List<PositivePrisonerBalance>
 
   @Query(
-    "SELECT COUNT (vo) FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type AND vo.status = :status",
+    "SELECT COUNT(vo) FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type AND vo.status = :status",
   )
   fun countAllVisitOrders(
     prisonerId: String,
@@ -88,23 +88,21 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
     type: VisitOrderType,
   ): Int
 
-  // 1 - oldest
-  // 2 - ...
-  // 3 - ...
-  // CUT
-
   @Transactional
   @Modifying
   @Query(
     value = """
-        UPDATE visit_order
-        SET status = 'EXPIRED', expiry_date = CURRENT_DATE
-            WHERE prisoner_id = :prisonerId
-              AND type = :visitOrderType
-              AND status in ('AVAILABLE', 'ACCUMULATED')
-            ORDER BY created_timestamp ASC
-            LIMIT :amountToExpire
-    """,
+      UPDATE visit_order
+      SET status = 'EXPIRED', expiry_date = CURRENT_DATE
+      WHERE id IN (
+          SELECT id FROM visit_order
+          WHERE prisoner_id = :prisonerId
+            AND type = :visitOrderType
+            AND status in ('AVAILABLE', 'ACCUMULATED')
+          ORDER BY created_timestamp ASC
+          LIMIT :amountToExpire
+      )
+  """,
     nativeQuery = true,
   )
   fun expireVisitOrdersGivenAmount(
