@@ -45,7 +45,7 @@ spring:
     hikari:
       pool-name: VisitAllocation-CP
       maximum-pool-size: 20
-      connection-timeout: 30000
+      connection-timeout: 10000
       validation-timeout: 5000
 
 server:
