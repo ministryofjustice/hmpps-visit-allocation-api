@@ -142,8 +142,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN
-    verify(visitOrderRepository, times(1)).expireAllVisitOrders(prisonerId, VisitOrderType.VO)
-    verify(visitOrderRepository, times(1)).expireAllVisitOrders(prisonerId, VisitOrderType.PVO)
+    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, null)
+    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.PVO, null)
     verify(negativeVisitOrderRepository, times(2)).saveAll(negativeVisitOrderCaptor.capture())
 
     val negativeVisitOrdersSaved = negativeVisitOrderCaptor.allValues[0]
@@ -238,8 +238,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN
-    verify(negativeVisitOrderRepository, times(1)).repayAllVisitOrders(prisonerId, NegativeVisitOrderType.NEGATIVE_VO)
-    verify(negativeVisitOrderRepository, times(1)).repayAllVisitOrders(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO)
+    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, null)
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
 
     val visitOrdersSaved = visitOrderCaptor.allValues[0]
@@ -507,7 +507,7 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN - Capture the visit orders that were saved
-    verify(negativeVisitOrderRepository, times(1)).repayAllVisitOrders(prisonerId, NegativeVisitOrderType.NEGATIVE_VO)
+    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
 
     // Retrieve the captured values
@@ -549,8 +549,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN - Capture the visit orders that were saved
-    verify(negativeVisitOrderRepository, times(1)).repayAllVisitOrders(prisonerId, NegativeVisitOrderType.NEGATIVE_VO)
-    verify(negativeVisitOrderRepository, times(1)).repayAllVisitOrders(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO)
+    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, null)
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
 
     // Retrieve the captured values
@@ -592,7 +592,7 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN - Capture the visit orders that were saved
-    verify(visitOrderRepository, times(1)).expireAllVisitOrders(prisonerId, VisitOrderType.VO)
+    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, null)
     verify(negativeVisitOrderRepository, times(2)).saveAll(negativeVisitOrderCaptor.capture())
 
     // Retrieve the captured values
@@ -634,8 +634,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN - Capture the visit orders that were saved
-    verify(visitOrderRepository, times(1)).expireAllVisitOrders(prisonerId, VisitOrderType.VO)
-    verify(visitOrderRepository, times(1)).expireAllVisitOrders(prisonerId, VisitOrderType.PVO)
+    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, null)
+    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.PVO, null)
     verify(negativeVisitOrderRepository, times(2)).saveAll(negativeVisitOrderCaptor.capture())
 
     // Retrieve the captured values

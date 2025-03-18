@@ -34,7 +34,7 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
             WHERE prisoner_id = :prisonerId
               AND type = :#{#negativeVisitOrderType.name()}
               AND status = 'USED'
-            ORDER BY createdTimestamp ASC
+            ORDER BY created_timestamp ASC
             LIMIT :amountToExpire
         )
     """,
@@ -43,23 +43,6 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
   fun repayVisitOrdersGivenAmount(
     prisonerId: String,
     negativeVisitOrderType: NegativeVisitOrderType,
-    amountToExpire: Long,
-  ): Int
-
-  @Transactional
-  @Modifying
-  @Query(
-    value = """
-        UPDATE negative_visit_order
-        SET status = 'REPAID', repaid_date = CURRENT_DATE
-            WHERE prisoner_id = :prisonerId
-              AND type = :#{#negativeVisitOrderType.name()}
-              AND status = 'USED'
-    """,
-    nativeQuery = true,
-  )
-  fun repayAllVisitOrders(
-    prisonerId: String,
-    negativeVisitOrderType: NegativeVisitOrderType,
+    amountToExpire: Long?,
   ): Int
 }

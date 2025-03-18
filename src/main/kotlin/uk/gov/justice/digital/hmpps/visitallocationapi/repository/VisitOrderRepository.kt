@@ -108,23 +108,6 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   fun expireVisitOrdersGivenAmount(
     prisonerId: String,
     visitOrderType: VisitOrderType,
-    amountToExpire: Long,
-  ): Int
-
-  @Transactional
-  @Modifying
-  @Query(
-    value = """
-        UPDATE visit_order
-        SET status = 'EXPIRED', expiry_date = CURRENT_DATE
-            WHERE prisoner_id = :prisonerId
-              AND type = :#{#visitOrderType.name()}
-              AND status in ('AVAILABLE', 'ACCUMULATED')
-    """,
-    nativeQuery = true,
-  )
-  fun expireAllVisitOrders(
-    prisonerId: String,
-    visitOrderType: VisitOrderType,
+    amountToExpire: Long?,
   ): Int
 }

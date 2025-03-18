@@ -90,7 +90,7 @@ class NomisSyncService(
       } else {
         val negativeVosToCreate = abs(prisonerDpsBalance + balanceChange)
         LOG.info("Balance decreased and is negative for prisoner $prisonerId, expiring all $visitOrderType and creating $negativeVosToCreate $negativeVoType")
-        visitOrderRepository.expireAllVisitOrders(prisonerId, visitOrderType)
+        visitOrderRepository.expireVisitOrdersGivenAmount(prisonerId, visitOrderType, null)
         createAndSaveNegativeVisitOrders(prisonerId, negativeVoType, negativeVosToCreate)
       }
     }
@@ -108,7 +108,7 @@ class NomisSyncService(
       } else {
         val positiveVosToCreate = prisonerDpsBalance + balanceChange
         LOG.info("Balance increased and is positive for prisoner $prisonerId, repaying all $negativeVoType and creating $positiveVosToCreate $visitOrderType")
-        negativeVisitOrderRepository.repayAllVisitOrders(prisonerId, negativeVoType)
+        negativeVisitOrderRepository.repayVisitOrdersGivenAmount(prisonerId, negativeVoType, null)
         createAndSaveVisitOrders(prisonerId, visitOrderType, positiveVosToCreate)
       }
     }

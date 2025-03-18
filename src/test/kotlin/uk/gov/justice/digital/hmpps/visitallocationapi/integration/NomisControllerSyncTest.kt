@@ -177,6 +177,94 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `when a new prisoner with a zero balance increases, then DPS service successfully syncs`() {
+    // Given
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 0,
+      changeToVoBalance = 1,
+      oldPvoBalance = 0,
+      changeToPvoBalance = 1,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 1, expectedPvoCount = 1, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
+    verifyNoInteractions(telemetryClientService)
+  }
+
+  @Test
+  fun `when a new prisoner with a zero balance decreases, then DPS service successfully syncs`() {
+    // Given
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 0,
+      changeToVoBalance = -1,
+      oldPvoBalance = 0,
+      changeToPvoBalance = -1,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 0, expectedPvoCount = 0, expectedNegativeVoCount = 1, expectedNegativePvoCount = 1)
+    verifyNoInteractions(telemetryClientService)
+  }
+
+  @Test
+  fun `when an existing prisoner with an out of sync (DPS higher) and a positive balance decreases below zero, then DPS service successfully syncs`() {
+    // Given
+    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
+    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 1,
+      changeToVoBalance = -3,
+      oldPvoBalance = 0,
+      changeToPvoBalance = -2,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 0, expectedPvoCount = 0, expectedNegativeVoCount = 2, expectedNegativePvoCount = 2)
+    verify(telemetryClientService, times(1)).trackEvent(any(), any())
+  }
+
+  @Test
+  fun `when an existing prisoner with an out of sync (NOMIS higher) and a negative balance increases above zero, then DPS service successfully syncs`() {
+    // Given
+    createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 1)
+    createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 1)
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = -2,
+      changeToVoBalance = 3,
+      oldPvoBalance = -2,
+      changeToPvoBalance = 3,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 1, expectedPvoCount = 1, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
+    verify(telemetryClientService, times(1)).trackEvent(any(), any())
+  }
+
+  @Test
   fun `when request body validation fails then 400 bad request is returned`() {
     // Given
     val prisonerSyncDto = VisitAllocationPrisonerSyncDto("", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUE, ChangeLogSource.SYSTEM, "issued vo")
