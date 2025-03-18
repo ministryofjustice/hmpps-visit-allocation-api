@@ -9,10 +9,16 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.EntityHelper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 
 @ExtendWith(HmppsAuthApiExtension::class)
@@ -30,6 +36,21 @@ abstract class IntegrationTestBase {
 
   @Autowired
   lateinit var entityHelper: EntityHelper
+
+  @MockitoSpyBean
+  lateinit var visitOrderRepository: VisitOrderRepository
+
+  @MockitoSpyBean
+  lateinit var negativeVisitOrderRepository: NegativeVisitOrderRepository
+
+  @MockitoSpyBean
+  lateinit var prisonerDetailsRepository: PrisonerDetailsRepository
+
+  @MockitoSpyBean
+  lateinit var changeLogRepository: ChangeLogRepository
+
+  @MockitoSpyBean
+  lateinit var telemetryClientService: TelemetryClientService
 
   protected lateinit var startVisitAllocationJobRoleHttpHeaders: (HttpHeaders) -> Unit
 

@@ -50,7 +50,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   )
   fun expireOldestAccumulatedVisitOrders(
     prisonerId: String,
-    amount: Int,
+    amount: Long,
   ): Int
 
   @Transactional
@@ -97,7 +97,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
       WHERE id IN (
           SELECT id FROM visit_order
           WHERE prisoner_id = :prisonerId
-            AND type = :visitOrderType
+            AND type = :#{#visitOrderType.name()}
             AND status in ('AVAILABLE', 'ACCUMULATED')
           ORDER BY created_timestamp ASC
           LIMIT :amountToExpire
@@ -108,7 +108,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   fun expireVisitOrdersGivenAmount(
     prisonerId: String,
     visitOrderType: VisitOrderType,
-    amountToExpire: Int,
+    amountToExpire: Long,
   ): Int
 
   @Transactional
@@ -118,7 +118,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
         UPDATE visit_order
         SET status = 'EXPIRED', expiry_date = CURRENT_DATE
             WHERE prisoner_id = :prisonerId
-              AND type = :visitOrderType
+              AND type = :#{#visitOrderType.name()}
               AND status in ('AVAILABLE', 'ACCUMULATED')
     """,
     nativeQuery = true,

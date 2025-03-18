@@ -114,8 +114,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN
-    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, 1)
-    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.PVO, 1)
+    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, 1L)
+    verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.PVO, 1L)
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 

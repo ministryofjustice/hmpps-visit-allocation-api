@@ -86,7 +86,7 @@ class NomisSyncService(
     } else {
       if ((prisonerDpsBalance + balanceChange) >= 0) {
         LOG.info("Balance decreased but remains positive for prisoner $prisonerId, expiring $balanceChange, $visitOrderType")
-        visitOrderRepository.expireVisitOrdersGivenAmount(prisonerId, visitOrderType, abs(balanceChange))
+        visitOrderRepository.expireVisitOrdersGivenAmount(prisonerId, visitOrderType, abs(balanceChange).toLong())
       } else {
         val negativeVosToCreate = abs(prisonerDpsBalance + balanceChange)
         LOG.info("Balance decreased and is negative for prisoner $prisonerId, expiring all $visitOrderType and creating $negativeVosToCreate $negativeVoType")
@@ -104,7 +104,7 @@ class NomisSyncService(
     } else {
       if ((prisonerDpsBalance + balanceChange) <= 0) {
         LOG.info("Balance increased but remains negative for prisoner $prisonerId, repaying $balanceChange, $negativeVoType")
-        negativeVisitOrderRepository.repayVisitOrdersGivenAmount(prisonerId, negativeVoType, abs(balanceChange))
+        negativeVisitOrderRepository.repayVisitOrdersGivenAmount(prisonerId, negativeVoType, abs(balanceChange).toLong())
       } else {
         val positiveVosToCreate = prisonerDpsBalance + balanceChange
         LOG.info("Balance increased and is positive for prisoner $prisonerId, repaying all $negativeVoType and creating $positiveVosToCreate $visitOrderType")

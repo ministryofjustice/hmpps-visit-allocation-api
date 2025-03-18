@@ -7,7 +7,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpHeaders
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_MIGRATION
@@ -20,26 +19,10 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDate
 
 @DisplayName("NomisController migration tests - $VO_PRISONER_MIGRATION")
 class NomisControllerMigrateTest : IntegrationTestBase() {
-
-  @MockitoSpyBean
-  private lateinit var visitOrderRepository: VisitOrderRepository
-
-  @MockitoSpyBean
-  private lateinit var negativeVisitOrderRepository: NegativeVisitOrderRepository
-
-  @MockitoSpyBean
-  private lateinit var prisonerDetailsRepository: PrisonerDetailsRepository
-
-  @MockitoSpyBean
-  private lateinit var changeLogRepository: ChangeLogRepository
 
   @Test
   fun `migrate prisoner - when visit prisoner allocation migration endpoint is called with positive balance, then prisoner information is successfully migrated to DPS service`() {

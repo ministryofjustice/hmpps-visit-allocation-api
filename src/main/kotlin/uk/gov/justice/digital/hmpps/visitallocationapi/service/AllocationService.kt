@@ -116,7 +116,7 @@ class AllocationService(
     if (currentAccumulatedVoCount > maxAccumulatedVisitOrders) {
       val amountToExpire = currentAccumulatedVoCount - maxAccumulatedVisitOrders
       LOG.info("prisoner $prisonerId has $currentAccumulatedVoCount VOs. This is more than maximum allowed accumulated VOs $maxAccumulatedVisitOrders. Expiring $amountToExpire VOs")
-      val vosExpired = visitOrderRepository.expireOldestAccumulatedVisitOrders(prisonerId, amountToExpire)
+      val vosExpired = visitOrderRepository.expireOldestAccumulatedVisitOrders(prisonerId, amountToExpire.toLong())
       LOG.info("Expired $vosExpired VOs for prisoner $prisonerId")
     }
 
