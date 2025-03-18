@@ -4,10 +4,12 @@ import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
 import org.awaitility.kotlin.untilCallTo
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.springframework.test.context.TestPropertySource
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
@@ -18,8 +20,9 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPr
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService.Companion.CONVICTION_STATUS_UPDATED_EVENT_TYPE
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
+@DisplayName("Test for Domain Event prisoner-conviction-status-updated processing")
+@TestPropertySource(properties = ["domain-event-processing.enabled=true"])
 class DomainEventsSqsTest : EventsIntegrationTestBase() {
-
   @Test
   fun `test prisoner-conviction-status-updated event is processed for a prisoner in an active prison`() {
     // Given

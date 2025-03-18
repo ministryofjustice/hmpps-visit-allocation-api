@@ -86,3 +86,6 @@ hmpps:
   sqs:
     enabled: ${hmpps.sqs.enabled}
     queueAdminRole: ROLE_VISIT_ALLOCATION_EVENTS_QUEUE_ADMIN
+
+domain-event-processing:
+    enabled: ${SQS_DOMAIN_EVENT_PROCESSING_ENABLED}
