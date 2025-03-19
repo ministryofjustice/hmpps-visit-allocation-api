@@ -20,5 +20,5 @@ data class VisitAllocationPrisonerMigrationDto(
   val pvoBalance: Int,
 
   @Schema(description = "The date which the last iep allocation was given", example = "2025-02-28", required = false)
-  var lastVoAllocationDate: LocalDate? = LocalDate.now().minusDays(28)
+  var lastVoAllocationDate: LocalDate? = LocalDate.now().minusDays(28),
 )
