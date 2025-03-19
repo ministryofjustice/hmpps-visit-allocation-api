@@ -25,7 +25,7 @@ import java.time.LocalDate
 class NomisControllerMigrateTest : IntegrationTestBase() {
 
   @Test
-  fun `migrate prisoner - when visit prisoner allocation migration endpoint is called with positive balance, then prisoner information is successfully migrated to DPS service`() {
+  fun `when visit prisoner allocation migration endpoint is called with positive balance, then prisoner information is successfully migrated to DPS service`() {
     // Given
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, LocalDate.now().minusDays(1))
 
@@ -56,7 +56,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `migrate prisoner - when visit prisoner allocation migration endpoint is called with negative balance, then prisoner information is successfully migrated to DPS service`() {
+  fun `when visit prisoner allocation migration endpoint is called with negative balance, then prisoner information is successfully migrated to DPS service`() {
     // Given
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", -5, -2, LocalDate.now().minusDays(1))
 
@@ -87,7 +87,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `migrate prisoner - when visit prisoner allocation migration endpoint is called with a mixed balance, then prisoner information is successfully migrated to DPS service`() {
+  fun `when visit prisoner allocation migration endpoint is called with a mixed balance, then prisoner information is successfully migrated to DPS service`() {
     // Given
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, -2, LocalDate.now().minusDays(1))
 
@@ -123,7 +123,38 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `migrate prisoner - when request body validation fails then 400 bad request is returned`() {
+  fun `when visit prisoner allocation migration endpoint is called with missing lastAllocatedDate, then default value of TODAY - 28 DAYS is used`() {
+    // Given
+    val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, null)
+
+    // When
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isOk
+
+    verify(visitOrderRepository, times(2)).saveAll<VisitOrder>(any())
+    verify(negativeVisitOrderRepository, times(0)).saveAll<NegativeVisitOrder>(any())
+    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
+    verify(changeLogRepository, times(1)).save<ChangeLog>(any())
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.size).isEqualTo(7)
+    assertThat(visitOrders.filter { it.type == VisitOrderType.VO }.size).isEqualTo(5)
+    assertThat(visitOrders.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(2)
+
+    val prisonerDetails = prisonerDetailsRepository.findAll()
+    assertThat(prisonerDetails.size).isEqualTo(1)
+    assertThat(prisonerDetails.first().prisonerId).isEqualTo(prisonerMigrationDto.prisonerId)
+    assertThat(prisonerDetails.first().lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(28))
+
+    val changeLog = changeLogRepository.findAll()
+    assertThat(changeLog.size).isEqualTo(1)
+    assertThat(changeLog.first().changeType).isEqualTo(ChangeLogType.MIGRATION)
+  }
+
+  @Test
+  fun `when request body validation fails then 400 bad request is returned`() {
     // Given
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("", 5, 2, LocalDate.now().minusDays(1))
 
@@ -135,7 +166,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `migrate prisoner - access forbidden when no role`() {
+  fun `access forbidden when no role`() {
     // Given
     val incorrectAuthHeaders = setAuthorisation(roles = listOf())
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, LocalDate.now().minusDays(1))
@@ -148,7 +179,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `migrate prisoner - unauthorised when no token`() {
+  fun `unauthorised when no token`() {
     // Given no auth token
 
     // When
