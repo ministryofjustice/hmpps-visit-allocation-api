@@ -32,6 +32,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     const val PRISONER_ID = "AA123456"
   }
 
+  /**
+   * Scenario 1: Existing Prisoner who has a positive balance which is in sync, has an increase to their balance. DPS syncs successfully.
+  */
   @Test
   fun `when an existing prisoner with a positive balance increases, then DPS service successfully syncs`() {
     // Given
@@ -56,6 +59,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verifyNoInteractions(telemetryClientService)
   }
 
+  /**
+   * Scenario 2: Existing Prisoner who has a negative balance which is in sync, has a decrease to their balance. DPS syncs successfully.
+  */
   @Test
   fun `when an existing prisoner with a negative balance decreases, then DPS service successfully syncs`() {
     // Given
@@ -80,6 +86,10 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verifyNoInteractions(telemetryClientService)
   }
 
+  /**
+   * Scenario 3: Existing Prisoner who has a positive balance which is in sync, has a decrease to their balance which puts them into negative.
+   * DPS syncs successfully. All positive visit orders are expired and new negative visit orders are created with status USED.
+  */
   @Test
   fun `when an existing prisoner with a positive balance decreases below zero, then DPS service successfully syncs`() {
     // Given
@@ -104,6 +114,10 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verifyNoInteractions(telemetryClientService)
   }
 
+  /**
+   * Scenario 4: Existing Prisoner who has a negative balance which is in sync, has an increase to their balance which puts them into positive.
+   * DPS syncs successfully. All negative visit orders are repaid and new visit orders are created with status AVAILABLE.
+  */
   @Test
   fun `when an existing prisoner with a negative balance increases above zero, then DPS service successfully syncs`() {
     // Given
@@ -128,6 +142,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verifyNoInteractions(telemetryClientService)
   }
 
+  /**
+   * Scenario 5: Existing Prisoner who has a positive balance which is out of sync (DPS is higher), has an increase to their balance, DPS syncs successfully.
+  */
   @Test
   fun `when an existing prisoner with an out of sync (DPS higher) positive balance increases, then DPS service successfully syncs`() {
     // Given
@@ -152,6 +169,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verify(telemetryClientService, times(1)).trackEvent(any(), any())
   }
 
+  /**
+   * Scenario 6: Existing Prisoner who has a positive balance which is out of sync (NOMIS is higher), has an increase to their balance, DPS syncs successfully.
+  */
   @Test
   fun `when an existing prisoner with an out of sync (NOMIS higher) positive balance increases, then DPS service successfully syncs`() {
     // Given
@@ -176,6 +196,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verify(telemetryClientService, times(1)).trackEvent(any(), any())
   }
 
+  /**
+   * Scenario 7: New Prisoner who has a zero balance which is in sync, has an increase to their balance, DPS syncs successfully.
+  */
   @Test
   fun `when a new prisoner with a zero balance increases, then DPS service successfully syncs`() {
     // Given
@@ -196,6 +219,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verifyNoInteractions(telemetryClientService)
   }
 
+  /**
+   * Scenario 8: New Prisoner who has a zero balance which is in sync, has a decrease to their balance, DPS syncs successfully.
+  */
   @Test
   fun `when a new prisoner with a zero balance decreases, then DPS service successfully syncs`() {
     // Given
@@ -216,6 +242,10 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verifyNoInteractions(telemetryClientService)
   }
 
+  /**
+   * Scenario 9: Existing Prisoner who has a positive balance which is out of sync (DPS higher), has a decrease to their balance which puts them into negative.
+   * DPS syncs successfully. All visit orders are expired and new negative visit orders are created with status USED.
+  */
   @Test
   fun `when an existing prisoner with an out of sync (DPS higher) and a positive balance decreases below zero, then DPS service successfully syncs`() {
     // Given
@@ -240,6 +270,10 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     verify(telemetryClientService, times(1)).trackEvent(any(), any())
   }
 
+  /**
+   * Scenario 10: Existing Prisoner who has a negative balance which is out of sync (NOMIS higher), has an increase to their balance which puts them into positive.
+   * DPS syncs successfully. All negative visit orders are repaid and new visit orders are created with status AVAILABLE.
+   */
   @Test
   fun `when an existing prisoner with an out of sync (NOMIS higher) and a negative balance increases above zero, then DPS service successfully syncs`() {
     // Given
