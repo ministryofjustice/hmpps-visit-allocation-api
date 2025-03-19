@@ -39,7 +39,7 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
         changeType = ChangeLogType.SYNC,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
-        comment = "synced prisoner ${syncDto.prisonerId} from NOMIS to DPS",
+        comment = "synced prisoner ${syncDto.prisonerId}, with adjustment code ${syncDto.adjustmentReasonCode.name}",
       ),
     )
   }
