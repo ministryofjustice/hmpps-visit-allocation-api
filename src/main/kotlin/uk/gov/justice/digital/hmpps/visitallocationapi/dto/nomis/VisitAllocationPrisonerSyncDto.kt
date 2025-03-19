@@ -18,7 +18,6 @@ data class VisitAllocationPrisonerSyncDto(
   val oldVoBalance: Int,
 
   @Schema(description = "The change of the VO balance (can be negative)", example = "5", required = false)
-  @field:NotNull
   val changeToVoBalance: Int? = null,
 
   @Schema(description = "The previous PVO balance (can be negative)", example = "2", required = true)
@@ -26,7 +25,6 @@ data class VisitAllocationPrisonerSyncDto(
   val oldPvoBalance: Int,
 
   @Schema(description = "The change of the PVO balance (can be negative)", example = "5", required = false)
-  @field:NotNull
   val changeToPvoBalance: Int? = null,
 
   @Schema(description = "The date which the change was made", example = "2025-02-28", required = true)
@@ -42,6 +40,5 @@ data class VisitAllocationPrisonerSyncDto(
   val changeLogSource: ChangeLogSource,
 
   @Schema(description = "Additional information on the sync reason", example = "Manually adjusted for phone credit", required = true)
-  @field:NotEmpty
   val comment: String? = null,
 )

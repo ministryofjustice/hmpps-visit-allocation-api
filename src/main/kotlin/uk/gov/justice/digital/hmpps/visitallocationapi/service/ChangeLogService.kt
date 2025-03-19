@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
@@ -18,7 +19,7 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
   }
 
   fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto) {
-    LOG.info("Logging change to change_log table for prisoner ${migrationChangeDto.prisonerId}, change - $migrationChangeDto")
+    LOG.info("Logging migration to change_log table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
     changeLogRepository.save(
       ChangeLog(
         prisonerId = migrationChangeDto.prisonerId,
@@ -26,6 +27,19 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         comment = "migrated prisoner ${migrationChangeDto.prisonerId}, with vo balance ${migrationChangeDto.voBalance} and pvo balance ${migrationChangeDto.pvoBalance} and lastAllocatedDate ${migrationChangeDto.lastVoAllocationDate}",
+      ),
+    )
+  }
+
+  fun logSyncChange(syncDto: VisitAllocationPrisonerSyncDto) {
+    LOG.info("Logging sync to change_log table for prisoner ${syncDto.prisonerId}, sync - $syncDto")
+    changeLogRepository.save(
+      ChangeLog(
+        prisonerId = syncDto.prisonerId,
+        changeType = ChangeLogType.SYNC,
+        changeSource = ChangeLogSource.SYSTEM,
+        userId = "SYSTEM",
+        comment = "synced prisoner ${syncDto.prisonerId} from NOMIS to DPS",
       ),
     )
   }

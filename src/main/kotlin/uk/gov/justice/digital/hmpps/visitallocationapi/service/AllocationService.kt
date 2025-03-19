@@ -92,7 +92,10 @@ class AllocationService(
   }
 
   private fun updateLastAllocatedDates(prisoner: PrisonerDto, visitOrders: MutableList<VisitOrder>) {
-    prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(prisonerId = prisoner.prisonerId, LocalDate.now())
+    // Only update the lastVoAllocatedDate and lastPvoAllocatedDate if VOs and PVOs have been generated.
+    if (visitOrders.any { it.type == VisitOrderType.VO }) {
+      prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(prisonerId = prisoner.prisonerId, LocalDate.now())
+    }
     if (visitOrders.any { it.type == VisitOrderType.PVO }) {
       prisonerDetailsService.updatePvoLastCreatedDate(prisonerId = prisoner.prisonerId, LocalDate.now())
     }
@@ -113,7 +116,7 @@ class AllocationService(
     if (currentAccumulatedVoCount > maxAccumulatedVisitOrders) {
       val amountToExpire = currentAccumulatedVoCount - maxAccumulatedVisitOrders
       LOG.info("prisoner $prisonerId has $currentAccumulatedVoCount VOs. This is more than maximum allowed accumulated VOs $maxAccumulatedVisitOrders. Expiring $amountToExpire VOs")
-      val vosExpired = visitOrderRepository.expireOldestAccumulatedVisitOrders(prisonerId, amountToExpire)
+      val vosExpired = visitOrderRepository.expireOldestAccumulatedVisitOrders(prisonerId, amountToExpire.toLong())
       LOG.info("Expired $vosExpired VOs for prisoner $prisonerId")
     }
 
@@ -147,7 +150,6 @@ class AllocationService(
   }
 
   private fun generateVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
-    // Generate VOs
     val visitOrders = mutableListOf<VisitOrder>()
     if (isDueVO(prisoner.prisonerId)) {
       repeat(prisonIncentivesForPrisonerLevel.visitOrders) {
@@ -158,7 +160,6 @@ class AllocationService(
   }
 
   private fun generatePVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
-    // Generate PVOs
     val visitOrders = mutableListOf<VisitOrder>()
 
     if (prisonIncentivesForPrisonerLevel.privilegedVisitOrders != 0) {

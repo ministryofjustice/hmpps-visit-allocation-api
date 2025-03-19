@@ -8,20 +8,23 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.PositivePrisonerBalance
 
 @Repository
 interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   @Query(
-    "SELECT vo.createdTimestamp FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type ORDER BY vo.createdTimestamp DESC LIMIT 1",
+    "SELECT vo.type AS type, COUNT(*) AS balance FROM visit_order vo " +
+      "WHERE vo.prisoner_id = :prisonerId " +
+      "AND vo.status IN ('AVAILABLE', 'ACCUMULATED') " +
+      "GROUP BY vo.type",
+    nativeQuery = true,
   )
-  fun findLastAllocatedDate(
+  fun getPrisonerPositiveBalance(
     prisonerId: String,
-    type: VisitOrderType,
-  ): LocalDateTime?
+  ): List<PositivePrisonerBalance>
 
   @Query(
-    "SELECT COUNT (vo) FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type AND vo.status = :status",
+    "SELECT COUNT(vo) FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type AND vo.status = :status",
   )
   fun countAllVisitOrders(
     prisonerId: String,
@@ -47,7 +50,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   )
   fun expireOldestAccumulatedVisitOrders(
     prisonerId: String,
-    amount: Int,
+    amount: Long,
   ): Int
 
   @Transactional
@@ -83,5 +86,28 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   fun updateAvailableVisitOrdersOver28DaysToAccumulated(
     prisonerId: String,
     type: VisitOrderType,
+  ): Int
+
+  @Transactional
+  @Modifying
+  @Query(
+    value = """
+      UPDATE visit_order
+      SET status = 'EXPIRED', expiry_date = CURRENT_DATE
+      WHERE id IN (
+          SELECT id FROM visit_order
+          WHERE prisoner_id = :prisonerId
+            AND type = :#{#visitOrderType.name()}
+            AND status in ('AVAILABLE', 'ACCUMULATED')
+          ORDER BY created_timestamp ASC
+          LIMIT :amountToExpire
+      )
+  """,
+    nativeQuery = true,
+  )
+  fun expireVisitOrdersGivenAmount(
+    prisonerId: String,
+    visitOrderType: VisitOrderType,
+    amountToExpire: Long?,
   ): Int
 }
