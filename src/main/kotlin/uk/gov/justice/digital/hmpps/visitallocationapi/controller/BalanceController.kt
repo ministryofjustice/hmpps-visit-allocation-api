@@ -42,5 +42,5 @@ class BalanceController(val balanceService: BalanceService) {
     @Schema(description = "prisonerId", example = "AA123456", required = true)
     @PathVariable
     prisonerId: String,
-  ): PrisonerBalanceDto =return balanceService.getPrisonerBalance(prisonerId)
+  ): PrisonerBalanceDto = balanceService.getPrisonerBalance(prisonerId)
 }
