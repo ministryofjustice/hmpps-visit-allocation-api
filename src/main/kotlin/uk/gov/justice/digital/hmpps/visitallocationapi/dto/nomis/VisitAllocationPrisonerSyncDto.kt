@@ -14,15 +14,13 @@ data class VisitAllocationPrisonerSyncDto(
   val prisonerId: String,
 
   @Schema(description = "The previous VO balance (can be negative)", example = "5", required = true)
-  @field:NotNull
-  val oldVoBalance: Int,
+  val oldVoBalance: Int? = null,
 
   @Schema(description = "The change of the VO balance (can be negative)", example = "5", required = false)
   val changeToVoBalance: Int? = null,
 
   @Schema(description = "The previous PVO balance (can be negative)", example = "2", required = true)
-  @field:NotNull
-  val oldPvoBalance: Int,
+  val oldPvoBalance: Int? = null,
 
   @Schema(description = "The change of the PVO balance (can be negative)", example = "5", required = false)
   val changeToPvoBalance: Int? = null,
