@@ -20,7 +20,7 @@ class BalanceController(val balanceService: BalanceService) {
   @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @GetMapping(VO_BALANCE)
   @Operation(
-    summary = "Endpoint to get a prisoners current balance. Returns 0 if prisoner not found",
+    summary = "Endpoint to get a prisoners current balance.",
     description = "Takes a prisoner id and return their current visit order balance.",
     responses = [
       ApiResponse(
