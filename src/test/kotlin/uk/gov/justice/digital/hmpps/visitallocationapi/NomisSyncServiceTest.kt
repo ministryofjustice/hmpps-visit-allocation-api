@@ -334,14 +334,19 @@ class NomisSyncServiceTest {
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
-    val telemetryProperties = createTelemetrySyncProperties(
+    val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
       syncDto.oldVoBalance.toString(),
-      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.voBalance.toString(),
+    )
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, voTelemetryProperties)
+
+    val pvoTelemetryProperties = createTelemetryPvoSyncProperties(
+      prisonerId,
+      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.pvoBalance.toString(),
     )
-    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryProperties)
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, pvoTelemetryProperties)
   }
 
   /**
@@ -373,14 +378,19 @@ class NomisSyncServiceTest {
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
-    val telemetryProperties = createTelemetrySyncProperties(
+    val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
       syncDto.oldVoBalance.toString(),
-      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.voBalance.toString(),
+    )
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, voTelemetryProperties)
+
+    val pvoTelemetryProperties = createTelemetryPvoSyncProperties(
+      prisonerId,
+      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.pvoBalance.toString(),
     )
-    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryProperties)
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, pvoTelemetryProperties)
   }
 
   /**
@@ -412,14 +422,19 @@ class NomisSyncServiceTest {
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
-    val telemetryProperties = createTelemetrySyncProperties(
+    val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
       syncDto.oldVoBalance.toString(),
-      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.voBalance.toString(),
+    )
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, voTelemetryProperties)
+
+    val pvoTelemetryProperties = createTelemetryPvoSyncProperties(
+      prisonerId,
+      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.pvoBalance.toString(),
     )
-    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryProperties)
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, pvoTelemetryProperties)
   }
 
   /**
@@ -451,14 +466,19 @@ class NomisSyncServiceTest {
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
-    val telemetryProperties = createTelemetrySyncProperties(
+    val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
       syncDto.oldVoBalance.toString(),
-      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.voBalance.toString(),
+    )
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, voTelemetryProperties)
+
+    val pvoTelemetryProperties = createTelemetryPvoSyncProperties(
+      prisonerId,
+      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.pvoBalance.toString(),
     )
-    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryProperties)
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, pvoTelemetryProperties)
   }
 
   /**
@@ -491,14 +511,19 @@ class NomisSyncServiceTest {
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
-    val telemetryProperties = createTelemetrySyncProperties(
+    val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
       syncDto.oldVoBalance.toString(),
-      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.voBalance.toString(),
+    )
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, voTelemetryProperties)
+
+    val pvoTelemetryProperties = createTelemetryPvoSyncProperties(
+      prisonerId,
+      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.pvoBalance.toString(),
     )
-    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryProperties)
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, pvoTelemetryProperties)
   }
 
   /**
@@ -532,14 +557,19 @@ class NomisSyncServiceTest {
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
-    val telemetryProperties = createTelemetrySyncProperties(
+    val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
       syncDto.oldVoBalance.toString(),
-      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.voBalance.toString(),
+    )
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, voTelemetryProperties)
+
+    val pvoTelemetryProperties = createTelemetryPvoSyncProperties(
+      prisonerId,
+      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.pvoBalance.toString(),
     )
-    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryProperties)
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, pvoTelemetryProperties)
   }
 
   /**
@@ -572,14 +602,19 @@ class NomisSyncServiceTest {
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
-    val telemetryProperties = createTelemetrySyncProperties(
+    val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
       syncDto.oldVoBalance.toString(),
-      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.voBalance.toString(),
+    )
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, voTelemetryProperties)
+
+    val pvoTelemetryProperties = createTelemetryPvoSyncProperties(
+      prisonerId,
+      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.pvoBalance.toString(),
     )
-    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryProperties)
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, pvoTelemetryProperties)
   }
 
   /**
@@ -614,14 +649,19 @@ class NomisSyncServiceTest {
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
-    val telemetryProperties = createTelemetrySyncProperties(
+    val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
       syncDto.oldVoBalance.toString(),
-      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.voBalance.toString(),
+    )
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, voTelemetryProperties)
+
+    val pvoTelemetryProperties = createTelemetryPvoSyncProperties(
+      prisonerId,
+      syncDto.oldPvoBalance.toString(),
       existingPrisonerBalance.pvoBalance.toString(),
     )
-    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryProperties)
+    verify(telemetryClientService, times(1)).trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, pvoTelemetryProperties)
   }
 
   private fun createSyncRequest(
@@ -646,11 +686,15 @@ class NomisSyncServiceTest {
     comment,
   )
 
-  private fun createTelemetrySyncProperties(prisonerId: String, nomisVoBalance: String, nomisPvoBalance: String, dpsVoBalance: String, dpsPvoBalance: String): Map<String, String> = mapOf(
+  private fun createTelemetryVoSyncProperties(prisonerId: String, nomisVoBalance: String, dpsVoBalance: String): Map<String, String> = mapOf(
     "prisonerId" to prisonerId,
     "nomisVoBalance" to nomisVoBalance,
-    "nomisPvoBalance" to nomisPvoBalance,
     "dpsVoBalance" to dpsVoBalance,
+  )
+
+  private fun createTelemetryPvoSyncProperties(prisonerId: String, nomisPvoBalance: String, dpsPvoBalance: String): Map<String, String> = mapOf(
+    "prisonerId" to prisonerId,
+    "nomisPvoBalance" to nomisPvoBalance,
     "dpsPvoBalance" to dpsPvoBalance,
   )
 }

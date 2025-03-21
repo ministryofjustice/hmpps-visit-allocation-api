@@ -12,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
@@ -31,6 +32,17 @@ class VisitAllocationApiExceptionHandler {
         developerMessage = e.message,
       ),
     ).also { log.info("Validation exception: {}", e.message) }
+
+  @ExceptionHandler(InvalidSyncRequestException::class)
+  fun handleInvalidSyncRequestException(e: InvalidSyncRequestException): ResponseEntity<ErrorResponse> = ResponseEntity
+    .status(BAD_REQUEST)
+    .body(
+      ErrorResponse(
+        status = BAD_REQUEST,
+        userMessage = "${e.message}",
+        developerMessage = e.message,
+      ),
+    )
 
   @ExceptionHandler(MethodArgumentNotValidException::class)
   fun handleMethodArgumentException(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> = ResponseEntity
