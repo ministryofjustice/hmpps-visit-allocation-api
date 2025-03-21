@@ -20,3 +20,11 @@ fun callPost(
     .body(BodyInserters.fromValue(bodyValue))
     .exchange()
 }
+
+fun callGet(
+  webTestClient: WebTestClient,
+  url: String,
+  authHttpHeaders: (HttpHeaders) -> Unit,
+) = webTestClient.get().uri(url)
+  .headers(authHttpHeaders)
+  .exchange()
