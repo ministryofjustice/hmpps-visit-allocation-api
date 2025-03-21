@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
+import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.math.abs
 
@@ -27,11 +28,18 @@ class NomisMigrationService(
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
+    const val NULL_LAST_ALLOCATION_DATE_OFFSET = 28L
   }
 
   @Transactional
   fun migratePrisoner(migrationDto: VisitAllocationPrisonerMigrationDto) {
     LOG.info("Entered NomisMigrationService - migratePrisoner with migration dto {}", migrationDto)
+
+    // Due to bad data in NOMIS, it's possible for a prisoner to exist with a balance but no IEP date.
+    // When this happens, set it to TODAY - 28 DAYS. This allows prisoner to receive IEP allocation ASAP.
+    if (migrationDto.lastVoAllocationDate == null) {
+      migrationDto.lastVoAllocationDate = LocalDate.now().minusDays(NULL_LAST_ALLOCATION_DATE_OFFSET)
+    }
 
     migrateBalance(migrationDto, VisitOrderType.VO)
     migrateBalance(migrationDto, VisitOrderType.PVO)
@@ -73,7 +81,7 @@ class NomisMigrationService(
         prisonerId = migrationDto.prisonerId,
         type = type,
         status = VisitOrderStatus.AVAILABLE,
-        createdTimestamp = migrationDto.lastVoAllocationDate.atStartOfDay(),
+        createdTimestamp = migrationDto.lastVoAllocationDate!!.atStartOfDay(),
         expiryDate = null,
       )
     }
@@ -110,6 +118,6 @@ class NomisMigrationService(
       null
     }
 
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = migrationDto.prisonerId, lastVoAllocatedDate = migrationDto.lastVoAllocationDate, lastPvoAllocatedDate = lastPvoAllocatedDate))
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = migrationDto.prisonerId, lastVoAllocatedDate = migrationDto.lastVoAllocationDate!!, lastPvoAllocatedDate = lastPvoAllocatedDate))
   }
 }

@@ -19,7 +19,6 @@ data class VisitAllocationPrisonerMigrationDto(
   @field:NotNull
   val pvoBalance: Int,
 
-  @Schema(description = "The date which the last iep allocation was given", example = "2025-02-28", required = true)
-  @field:NotNull
-  val lastVoAllocationDate: LocalDate,
+  @Schema(description = "The date which the last iep allocation was given", example = "2025-02-28", required = false)
+  var lastVoAllocationDate: LocalDate? = null,
 )
