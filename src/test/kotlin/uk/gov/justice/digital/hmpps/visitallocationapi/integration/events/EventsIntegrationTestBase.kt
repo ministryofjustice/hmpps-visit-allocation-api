@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,10 +13,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalStackContainer.setLocalStackProperties
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.EntityHelper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
@@ -51,6 +57,9 @@ abstract class EventsIntegrationTestBase {
 
   @Autowired
   protected lateinit var objectMapper: ObjectMapper
+
+  @Autowired
+  protected lateinit var entityHelper: EntityHelper
 
   @Autowired
   private lateinit var hmppsQueueService: HmppsQueueService
@@ -101,6 +110,9 @@ abstract class EventsIntegrationTestBase {
   @MockitoSpyBean
   lateinit var visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService
 
+  @MockitoSpyBean
+  lateinit var negativeVisitOrderRepository: NegativeVisitOrderRepository
+
   @BeforeEach
   fun cleanQueue() {
     purgeQueue(domainEventsSqsClient, domainEventsQueueUrl)
@@ -112,8 +124,20 @@ abstract class EventsIntegrationTestBase {
   }
 
   @BeforeEach
-  fun clearDB() {
+  fun setup() {
+    visitOrderAllocationPrisonJobRepository.deleteAll()
     visitOrderRepository.deleteAll()
+    negativeVisitOrderRepository.deleteAll()
+    prisonerDetailsRepository.deleteAll()
+    visitOrderPrisonRepositorySpy.deleteAll()
+  }
+
+  @AfterEach
+  fun cleanUp() {
+    visitOrderAllocationPrisonJobRepository.deleteAll()
+    visitOrderRepository.deleteAll()
+    negativeVisitOrderRepository.deleteAll()
+    prisonerDetailsRepository.deleteAll()
     visitOrderPrisonRepositorySpy.deleteAll()
   }
 
@@ -162,5 +186,19 @@ abstract class EventsIntegrationTestBase {
     else -> {
       ("\"${entry.key}\":\"${entry.value}\"")
     }
+  }
+
+  private fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: NegativeVisitOrderType, amountToCreate: Int) {
+    val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
+    repeat(amountToCreate) {
+      negativeVisitOrders.add(
+        NegativeVisitOrder(
+          prisonerId = prisonerId,
+          type = negativeVoType,
+          status = NegativeVisitOrderStatus.USED,
+        ),
+      )
+    }
+    negativeVisitOrderRepository.saveAll(negativeVisitOrders)
   }
 }

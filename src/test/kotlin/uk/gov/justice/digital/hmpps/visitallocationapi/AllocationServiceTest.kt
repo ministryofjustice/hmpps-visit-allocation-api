@@ -1,4 +1,4 @@
-package uk.gov.justice.digital.hmpps.visitallocationapi.integration.allocations
+package uk.gov.justice.digital.hmpps.visitallocationapi
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.AllocationService
@@ -49,11 +50,23 @@ class AllocationServiceTest {
   @Mock
   private lateinit var prisonerRetryService: PrisonerRetryService
 
+  @Mock
+  private lateinit var negativeVisitOrderRepository: NegativeVisitOrderRepository
+
   private lateinit var allocationService: AllocationService
 
   @BeforeEach
   fun setUp() {
-    allocationService = AllocationService(prisonerSearchClient, incentivesClient, visitOrderRepository, visitOrderAllocationPrisonJobRepository, prisonerDetailsService, prisonerRetryService, 26)
+    allocationService = AllocationService(
+      prisonerSearchClient,
+      incentivesClient,
+      visitOrderRepository,
+      visitOrderAllocationPrisonJobRepository,
+      prisonerDetailsService,
+      prisonerRetryService,
+      negativeVisitOrderRepository,
+      26,
+    )
   }
 
   // --- Start Allocation Tests --- \\
