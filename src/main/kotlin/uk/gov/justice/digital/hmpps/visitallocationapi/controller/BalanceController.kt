@@ -17,7 +17,7 @@ const val VO_BALANCE = "/visits/allocation/prisoner/{prisonerId}/balance"
 
 @RestController
 class BalanceController(val balanceService: BalanceService) {
-  @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__PRISONER_BALANCE')")
+  @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @GetMapping(VO_BALANCE)
   @Operation(
     summary = "Endpoint to get a prisoners current balance. Returns 0 if prisoner not found",

@@ -23,7 +23,7 @@ class BalanceControllerTest : IntegrationTestBase() {
 
   companion object {
     const val PRISONER_ID = "AA123456"
-    const val AUTH_ROLES = "ROLE_VISIT_ALLOCATION_API__PRISONER_BALANCE"
+    const val AUTH_ROLES = "ROLE_VISIT_ALLOCATION_API__NOMIS_API"
   }
 
   @Test
