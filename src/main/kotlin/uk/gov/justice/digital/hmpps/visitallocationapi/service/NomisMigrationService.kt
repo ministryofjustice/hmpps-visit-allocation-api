@@ -28,6 +28,7 @@ class NomisMigrationService(
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
+    const val NULL_LAST_ALLOCATION_DATE_OFFSET = 28L
   }
 
   @Transactional
@@ -37,7 +38,7 @@ class NomisMigrationService(
     // Due to bad data in NOMIS, it's possible for a prisoner to exist with a balance but no IEP date.
     // When this happens, set it to TODAY - 28 DAYS. This allows prisoner to receive IEP allocation ASAP.
     if (migrationDto.lastVoAllocationDate == null) {
-      migrationDto.lastVoAllocationDate = LocalDate.now().minusDays(28)
+      migrationDto.lastVoAllocationDate = LocalDate.now().minusDays(NULL_LAST_ALLOCATION_DATE_OFFSET)
     }
 
     migrateBalance(migrationDto, VisitOrderType.VO)
