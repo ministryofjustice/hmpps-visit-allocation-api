@@ -39,14 +39,12 @@ class NomisSyncService(
 
     validateSyncRequest(syncDto)
 
-    val prisonerBalance: PrisonerBalanceDto
-    if (prisonerDetailsService.getPrisoner(syncDto.prisonerId) != null) {
-      // If prisoner is existing, get their balance and do a comparison validation.
-      prisonerBalance = balanceService.getPrisonerBalance(syncDto.prisonerId)
+    // Only do a balance comparison if prisoner exists.
+    var prisonerBalance = balanceService.getPrisonerBalance(syncDto.prisonerId)
+    if (prisonerBalance != null) {
       compareBalanceBeforeSync(syncDto, prisonerBalance)
     } else {
-      // If they don't exist in our system we initialise their balance to 0 ready for sync.
-      prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, 0, 0)
+      prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
     }
 
     // If VO balance has changed, sync it
