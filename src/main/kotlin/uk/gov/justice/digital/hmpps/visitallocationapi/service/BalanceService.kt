@@ -16,14 +16,21 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepo
 class BalanceService(
   private val visitOrderRepository: VisitOrderRepository,
   private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
+  private val prisonerDetailsService: PrisonerDetailsService,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   @Transactional(readOnly = true)
-  fun getPrisonerBalance(prisonerId: String): PrisonerBalanceDto {
+  fun getPrisonerBalance(prisonerId: String): PrisonerBalanceDto? {
     LOG.info("Entered BalanceService - getPrisonerBalance for prisoner $prisonerId")
+
+    // If prisoner doesn't exist in DB, return null
+    if (prisonerDetailsService.getPrisoner(prisonerId) == null) {
+      LOG.info("Prisoner $prisonerId not found in DB, returning null balance")
+      return null
+    }
 
     val positiveBalance = visitOrderRepository.getPrisonerPositiveBalance(prisonerId)
     val positiveVoBalance = getBalanceForVoType(positiveBalance, VisitOrderType.VO)

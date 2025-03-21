@@ -14,7 +14,9 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callGet
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import java.time.LocalDate
 
 @DisplayName("Balance Controller tests - $VO_BALANCE")
 class BalanceControllerTest : IntegrationTestBase() {
@@ -30,6 +32,7 @@ class BalanceControllerTest : IntegrationTestBase() {
     visitOrderRepository.save(VisitOrder(prisonerId = PRISONER_ID, type = VisitOrderType.VO, status = VisitOrderStatus.AVAILABLE))
     visitOrderRepository.save(VisitOrder(prisonerId = PRISONER_ID, type = VisitOrderType.VO, status = VisitOrderStatus.EXPIRED))
     visitOrderRepository.save(VisitOrder(prisonerId = PRISONER_ID, type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE))
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), null))
 
     // When
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(AUTH_ROLES)))
@@ -48,6 +51,7 @@ class BalanceControllerTest : IntegrationTestBase() {
     // Given
     negativeVisitOrderRepository.save(NegativeVisitOrder(prisonerId = PRISONER_ID, type = NegativeVisitOrderType.NEGATIVE_VO, status = NegativeVisitOrderStatus.USED))
     negativeVisitOrderRepository.save(NegativeVisitOrder(prisonerId = PRISONER_ID, type = NegativeVisitOrderType.NEGATIVE_PVO, status = NegativeVisitOrderStatus.USED))
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), null))
 
     // When
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(AUTH_ROLES)))
@@ -62,18 +66,13 @@ class BalanceControllerTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `when request to get an unknown prisoner, then return empty (zero) balance`() {
+  fun `when request to get an unknown prisoner, then status 404 NOT_FOUND is returned`() {
     // Given
     // When
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(AUTH_ROLES)))
 
     // Then
-    responseSpec.expectStatus().isOk
-
-    val prisonerBalance = getVoBalanceResponse(responseSpec)
-
-    assertThat(prisonerBalance.voBalance).isEqualTo(0)
-    assertThat(prisonerBalance.pvoBalance).isEqualTo(0)
+    responseSpec.expectStatus().isNotFound
   }
 
   @Test
