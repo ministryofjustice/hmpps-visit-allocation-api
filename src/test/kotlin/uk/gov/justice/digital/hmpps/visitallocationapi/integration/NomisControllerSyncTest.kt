@@ -353,6 +353,42 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `when changeToVoBalance is given but oldVoBalance is null, return a 400 Bad Request`() {
+    // Given
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = null,
+      changeToVoBalance = 1,
+      oldPvoBalance = 2,
+      changeToPvoBalance = 1,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isBadRequest
+  }
+
+  @Test
+  fun `when changeToPvoBalance is given but oldPvoBalance is null, return a 400 Bad Request`() {
+    // Given
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 2,
+      changeToVoBalance = 1,
+      oldPvoBalance = null,
+      changeToPvoBalance = 1,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isBadRequest
+  }
+
+  @Test
   fun `when request body validation fails then 400 bad request is returned`() {
     // Given
     val prisonerSyncDto = VisitAllocationPrisonerSyncDto("", 5, 1, 2, 0, LocalDate.now().minusDays(1), AdjustmentReasonCode.VO_ISSUE, ChangeLogSource.SYSTEM, "issued vo")

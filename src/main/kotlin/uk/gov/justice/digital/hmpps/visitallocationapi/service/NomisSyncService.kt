@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
@@ -35,6 +36,8 @@ class NomisSyncService(
   @Transactional
   fun syncPrisoner(syncDto: VisitAllocationPrisonerSyncDto) {
     LOG.info("Entered NomisSyncService - syncPrisoner with sync dto {}", syncDto)
+
+    validateSyncRequest(syncDto)
 
     val prisonerBalance: PrisonerBalanceDto
     if (prisonerDetailsService.getPrisoner(syncDto.prisonerId) != null) {
@@ -194,6 +197,16 @@ class NomisSyncService(
         )
         telemetryService.trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryBalanceProperties)
       }
+    }
+  }
+
+  private fun validateSyncRequest(syncDto: VisitAllocationPrisonerSyncDto) {
+    LOG.info("Entered NomisSyncService - validateSyncRequest")
+    val invalidVoRequest = syncDto.oldVoBalance == null && syncDto.changeToVoBalance != null
+    val invalidPvoRequest = syncDto.oldPvoBalance == null && syncDto.changeToPvoBalance != null
+    if (invalidVoRequest || invalidPvoRequest) {
+      LOG.error("Invalid sync request found, throwing InvalidSyncRequestException exception - $syncDto")
+      throw InvalidSyncRequestException("Balance is null but change to balance found in request - $syncDto")
     }
   }
 
