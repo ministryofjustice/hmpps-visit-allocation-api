@@ -164,7 +164,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
     assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 6, expectedPvoCount = 3, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
-    verify(telemetryClientService, times(1)).trackEvent(any(), any())
+    verify(telemetryClientService, times(2)).trackEvent(any(), any())
   }
 
   /**
@@ -191,7 +191,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
     assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 6, expectedPvoCount = 3, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
-    verify(telemetryClientService, times(1)).trackEvent(any(), any())
+    verify(telemetryClientService, times(2)).trackEvent(any(), any())
   }
 
   /**
@@ -265,7 +265,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
     assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 0, expectedPvoCount = 0, expectedNegativeVoCount = 2, expectedNegativePvoCount = 2)
-    verify(telemetryClientService, times(1)).trackEvent(any(), any())
+    verify(telemetryClientService, times(2)).trackEvent(any(), any())
   }
 
   /**
@@ -293,7 +293,97 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
     assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 1, expectedPvoCount = 1, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
-    verify(telemetryClientService, times(1)).trackEvent(any(), any())
+    verify(telemetryClientService, times(2)).trackEvent(any(), any())
+  }
+
+  /**
+   * Scenario 11: Existing Prisoner with no change to VO balance, then VO processing is skipped.
+   */
+  @Test
+  fun `when an existing prisoner with only a PVO balance change, then VO processing is skipped`() {
+    // Given
+    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
+    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = null,
+      changeToVoBalance = null,
+      oldPvoBalance = 2,
+      changeToPvoBalance = 1,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 5, expectedPvoCount = 3, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
+    verifyNoInteractions(telemetryClientService)
+  }
+
+  /**
+   * Scenario 12: Existing Prisoner with no change to PVO balance, then PVO processing is skipped.
+   */
+  @Test
+  fun `when an existing prisoner with only a VO balance change, then PVO processing is skipped`() {
+    // Given
+    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
+    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 5,
+      changeToVoBalance = 1,
+      oldPvoBalance = null,
+      changeToPvoBalance = null,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 6, expectedPvoCount = 2, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
+    verifyNoInteractions(telemetryClientService)
+  }
+
+  @Test
+  fun `when changeToVoBalance is given but oldVoBalance is null, return a 400 Bad Request`() {
+    // Given
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = null,
+      changeToVoBalance = 1,
+      oldPvoBalance = 2,
+      changeToPvoBalance = 1,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isBadRequest
+  }
+
+  @Test
+  fun `when changeToPvoBalance is given but oldPvoBalance is null, return a 400 Bad Request`() {
+    // Given
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 2,
+      changeToVoBalance = 1,
+      oldPvoBalance = null,
+      changeToPvoBalance = 1,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+
+    // Then
+    responseSpec.expectStatus().isBadRequest
   }
 
   @Test
@@ -345,9 +435,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
 
   private fun createSyncRequest(
     prisonerId: String,
-    oldVoBalance: Int,
+    oldVoBalance: Int? = null,
     changeToVoBalance: Int? = null,
-    oldPvoBalance: Int,
+    oldPvoBalance: Int? = null,
     changeToPvoBalance: Int? = null,
     createdDate: LocalDate = LocalDate.now(),
     adjustmentReasonCode: AdjustmentReasonCode = AdjustmentReasonCode.IEP,
