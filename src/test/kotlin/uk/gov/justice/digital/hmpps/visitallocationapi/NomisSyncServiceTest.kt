@@ -199,8 +199,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN
-    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, 1)
-    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, 1)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, 1)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, 1)
 
     verify(changeLogService, times(1)).logSyncChange(syncDto)
 
@@ -225,8 +225,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN
-    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
-    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, null)
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
 
     val visitOrdersSaved = visitOrderCaptor.allValues[0]
@@ -500,7 +500,7 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN - Capture the visit orders that were saved
-    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
 
     // Retrieve the captured values
@@ -545,8 +545,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisoner(syncDto)
 
     // THEN - Capture the visit orders that were saved
-    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
-    verify(negativeVisitOrderRepository, times(1)).repayVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, null)
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
 
     // Retrieve the captured values

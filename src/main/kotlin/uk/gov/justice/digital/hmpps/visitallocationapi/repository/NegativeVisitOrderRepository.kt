@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.NegativePrisonerBalance
@@ -21,6 +22,15 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
   fun getPrisonerNegativeBalance(
     prisonerId: String,
   ): List<NegativePrisonerBalance>
+
+  @Query(
+    "SELECT COUNT(nvo) FROM NegativeVisitOrder nvo WHERE nvo.prisonerId = :prisonerId AND nvo.type = :type AND nvo.status = :status",
+  )
+  fun countAllNegativeVisitOrders(
+    prisonerId: String,
+    type: NegativeVisitOrderType,
+    status: NegativeVisitOrderStatus,
+  ): Int
 
   @Transactional
   @Modifying
@@ -40,7 +50,7 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
     """,
     nativeQuery = true,
   )
-  fun repayVisitOrdersGivenAmount(
+  fun repayNegativeVisitOrdersGivenAmount(
     prisonerId: String,
     negativeVisitOrderType: NegativeVisitOrderType,
     amountToExpire: Long?,
