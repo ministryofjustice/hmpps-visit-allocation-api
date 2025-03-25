@@ -12,4 +12,5 @@ enum class AdjustmentReasonCode {
   PVO_ISSUE,
   VO_CANCEL,
   VO_ISSUE,
+  VO_RECREDIT,
 }
