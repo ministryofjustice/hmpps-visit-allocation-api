@@ -302,8 +302,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with only a PVO balance change, then VO processing is skipped`() {
     // Given
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -329,8 +329,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with only a VO balance change, then PVO processing is skipped`() {
     // Given
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
