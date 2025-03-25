@@ -6,8 +6,6 @@ import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
 import org.awaitility.kotlin.untilCallTo
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
@@ -17,10 +15,13 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
@@ -31,20 +32,6 @@ import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
-  @BeforeEach
-  fun setup() {
-    visitOrderAllocationPrisonJobRepository.deleteAll()
-    visitOrderRepository.deleteAll()
-    prisonerDetailsRepository.deleteAll()
-  }
-
-  @AfterEach
-  fun cleanUp() {
-    visitOrderAllocationPrisonJobRepository.deleteAll()
-    visitOrderRepository.deleteAll()
-    prisonerDetailsRepository.deleteAll()
-  }
-
   companion object {
     const val PRISON_CODE = "MDI"
     val prisoner1 = PrisonerDto(prisonerId = "ABC121", prisonId = PRISON_CODE)
@@ -243,6 +230,79 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     verify(prisonerDetailsRepository, times(3)).save(any())
     verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
+  }
+
+  /**
+   * Scenario - Allocation with negative balances: Visit allocation job is run, and all prisoners with negative balances are repaid (VO / PVO).
+   * Prisoner1 - Start balance (VO=-2, PVO=-1) - Standard incentive, Gets 1 VO, 0 PVO. End balance (VO=-1, PVO=-1)
+   * Prisoner2 - Start balance (VO=-1, PVO=-1) - Enhanced2 incentive, Gets 3 VO, 2 PVOs. End balance (VO=2, PVO=1)
+   */
+  @Test
+  fun `when visit allocation job run for a prison with prisoners in a negative balance, then processMessage is called and negative visit orders are repaid for convicted prisoners`() {
+    // Given - message sent to start allocation job for prison
+    val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
+    val allocationJobReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
+    val message = objectMapper.writeValueAsString(event)
+    val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
+    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+
+    // Negative balance for prisoner1
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, NegativeVisitOrderType.NEGATIVE_VO, 2)
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, 1)
+
+    // Negative balance for prisoner2
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner2.prisonerId, NegativeVisitOrderType.NEGATIVE_VO, 1)
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner2.prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, 1)
+
+    // When
+    val convictedPrisoners = listOf(prisoner1, prisoner2)
+    prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = PRISON_CODE,
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
+
+    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+
+    await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
+    await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any()) }
+
+    val visitOrders = visitOrderRepository.findAll()
+    val negativeVisitOrders = negativeVisitOrderRepository.findAll()
+
+    assertThat(visitOrders.size).isEqualTo(3)
+
+    // Prisoner1 should have 1 Negative_VO repaid, and the rest remain unchanged
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 0)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, NegativeVisitOrderType.NEGATIVE_VO, NegativeVisitOrderStatus.USED, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, NegativeVisitOrderType.NEGATIVE_VO, NegativeVisitOrderStatus.REPAID, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, NegativeVisitOrderStatus.USED, 1)
+
+    // Prisoner2 should have all Negative_VOs / Negative_PVOs repaid, and 2 VOs and 1 PVO.
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 2)
+    assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, NegativeVisitOrderType.NEGATIVE_VO, NegativeVisitOrderStatus.USED, 0)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, NegativeVisitOrderStatus.USED, 0)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, NegativeVisitOrderType.NEGATIVE_VO, NegativeVisitOrderStatus.REPAID, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, NegativeVisitOrderStatus.REPAID, 1)
+
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 2, processedPrisoners = 2, failedPrisoners = 0)
+
+    verify(prisonerDetailsRepository, times(1)).save(any())
+    verify(prisonerDetailsRepository, times(1)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
   /**
@@ -662,6 +722,10 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   }
 
   private fun assertVisitOrdersAssignedBy(visitOrders: List<VisitOrder>, prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, total: Int) {
+    assertThat(visitOrders.count { it.prisonerId == prisonerId && it.type == type && it.status == status }).isEqualTo(total)
+  }
+
+  private fun assertNegativeVisitOrdersAssignedBy(visitOrders: List<NegativeVisitOrder>, prisonerId: String, type: NegativeVisitOrderType, status: NegativeVisitOrderStatus, total: Int) {
     assertThat(visitOrders.count { it.prisonerId == prisonerId && it.type == type && it.status == status }).isEqualTo(total)
   }
 

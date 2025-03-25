@@ -123,11 +123,11 @@ class NomisSyncService(
     } else {
       if ((prisonerDpsBalance + balanceChange) <= 0) {
         LOG.info("Balance increased but remains negative for prisoner $prisonerId, repaying $balanceChange, $negativeVoType")
-        negativeVisitOrderRepository.repayVisitOrdersGivenAmount(prisonerId, negativeVoType, abs(balanceChange).toLong())
+        negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(prisonerId, negativeVoType, abs(balanceChange).toLong())
       } else {
         val positiveVosToCreate = prisonerDpsBalance + balanceChange
         LOG.info("Balance increased and is positive for prisoner $prisonerId, repaying all $negativeVoType and creating $positiveVosToCreate $visitOrderType")
-        negativeVisitOrderRepository.repayVisitOrdersGivenAmount(prisonerId, negativeVoType, null)
+        negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(prisonerId, negativeVoType, null)
         createAndSaveVisitOrders(prisonerId, visitOrderType, positiveVosToCreate)
       }
     }

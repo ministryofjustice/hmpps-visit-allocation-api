@@ -20,9 +20,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPost
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import java.time.LocalDate
 
 @DisplayName("NomisController sync tests - $VO_PRISONER_SYNC")
@@ -38,8 +36,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a positive balance increases, then DPS service successfully syncs`() {
     // Given
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -65,8 +63,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a negative balance decreases, then DPS service successfully syncs`() {
     // Given
-    createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 5)
-    createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 2)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 5)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 2)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -93,8 +91,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a positive balance decreases below zero, then DPS service successfully syncs`() {
     // Given
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -121,8 +119,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a negative balance increases above zero, then DPS service successfully syncs`() {
     // Given
-    createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 2)
-    createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 1)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 2)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 1)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -148,8 +146,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with an out of sync (DPS higher) positive balance increases, then DPS service successfully syncs`() {
     // Given
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 6)
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 3)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 6)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 3)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -175,8 +173,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with an out of sync (NOMIS higher) positive balance increases, then DPS service successfully syncs`() {
     // Given
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 4)
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 4)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -249,8 +247,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with an out of sync (DPS higher) and a positive balance decreases below zero, then DPS service successfully syncs`() {
     // Given
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
-    createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -277,8 +275,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with an out of sync (NOMIS higher) and a negative balance increases above zero, then DPS service successfully syncs`() {
     // Given
-    createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 1)
-    createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 1)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 1)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 1)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -456,34 +454,6 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     changeLogSource,
     comment,
   )
-
-  private fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, amountToCreate: Int) {
-    val visitOrders = mutableListOf<VisitOrder>()
-    repeat(amountToCreate) {
-      visitOrders.add(
-        VisitOrder(
-          prisonerId = prisonerId,
-          type = visitOrderType,
-          status = VisitOrderStatus.AVAILABLE,
-        ),
-      )
-    }
-    visitOrderRepository.saveAll(visitOrders)
-  }
-
-  private fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: NegativeVisitOrderType, amountToCreate: Int) {
-    val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
-    repeat(amountToCreate) {
-      negativeVisitOrders.add(
-        NegativeVisitOrder(
-          prisonerId = prisonerId,
-          type = negativeVoType,
-          status = NegativeVisitOrderStatus.USED,
-        ),
-      )
-    }
-    negativeVisitOrderRepository.saveAll(negativeVisitOrders)
-  }
 
   private fun assertSyncResults(prisonerSyncDto: VisitAllocationPrisonerSyncDto, expectedVoCount: Int, expectedPvoCount: Int, expectedNegativeVoCount: Int, expectedNegativePvoCount: Int) {
     val visitOrders = visitOrderRepository.findAll()
