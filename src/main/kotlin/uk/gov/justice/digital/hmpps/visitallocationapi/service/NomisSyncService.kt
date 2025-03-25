@@ -13,6 +13,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
@@ -36,6 +37,8 @@ class NomisSyncService(
   fun syncPrisoner(syncDto: VisitAllocationPrisonerSyncDto) {
     LOG.info("Entered NomisSyncService - syncPrisoner with sync dto {}", syncDto)
 
+    validateSyncRequest(syncDto)
+
     // Only do a balance comparison if prisoner exists.
     var prisonerBalance = balanceService.getPrisonerBalance(syncDto.prisonerId)
     if (prisonerBalance != null) {
@@ -45,12 +48,30 @@ class NomisSyncService(
     }
 
     // If VO balance has changed, sync it
-    val wantedVoChange = calculateAmountToChange(prisonerBalance.voBalance, syncDto.oldVoBalance, syncDto.changeToVoBalance ?: 0)
-    processSync(syncDto.prisonerId, prisonerBalance.voBalance, wantedVoChange, VisitOrderType.VO, NegativeVisitOrderType.NEGATIVE_VO)
+    if (syncDto.oldVoBalance != null) {
+      val wantedVoChange = calculateAmountToChange(prisonerBalance.voBalance, syncDto.oldVoBalance, syncDto.changeToVoBalance ?: 0)
+
+      processSync(
+        syncDto.prisonerId,
+        prisonerBalance.voBalance,
+        wantedVoChange,
+        VisitOrderType.VO,
+        NegativeVisitOrderType.NEGATIVE_VO,
+      )
+    }
 
     // If PVO balance has changed, sync it
-    val wantedPvoChange = calculateAmountToChange(prisonerBalance.pvoBalance, syncDto.oldPvoBalance, syncDto.changeToPvoBalance ?: 0)
-    processSync(syncDto.prisonerId, prisonerBalance.pvoBalance, wantedPvoChange, VisitOrderType.PVO, NegativeVisitOrderType.NEGATIVE_PVO)
+    if (syncDto.oldPvoBalance != null) {
+      val wantedPvoChange = calculateAmountToChange(prisonerBalance.pvoBalance, syncDto.oldPvoBalance, syncDto.changeToPvoBalance ?: 0)
+
+      processSync(
+        syncDto.prisonerId,
+        prisonerBalance.pvoBalance,
+        wantedPvoChange,
+        VisitOrderType.PVO,
+        NegativeVisitOrderType.NEGATIVE_PVO,
+      )
+    }
 
     // If this is a VO allocation from the NOMIS system, update the lastVoAllocatedDate to keep this synced.
     if (syncDto.adjustmentReasonCode == AdjustmentReasonCode.IEP && syncDto.changeLogSource == ChangeLogSource.SYSTEM) {
@@ -152,16 +173,38 @@ class NomisSyncService(
   }
 
   private fun compareBalanceBeforeSync(syncDto: VisitAllocationPrisonerSyncDto, prisonerBalance: PrisonerBalanceDto) {
-    if (prisonerBalance.voBalance != syncDto.oldVoBalance || prisonerBalance.pvoBalance != syncDto.oldPvoBalance) {
-      LOG.error("Discovered discrepancy between NOMIS and DPS balances. Logging error to application insights for prisoner ${syncDto.prisonerId}")
-      val telemetryBalanceProperties = mapOf(
-        "prisonerId" to syncDto.prisonerId,
-        "nomisVoBalance" to syncDto.oldVoBalance.toString(),
-        "nomisPvoBalance" to syncDto.oldPvoBalance.toString(),
-        "dpsVoBalance" to prisonerBalance.voBalance.toString(),
-        "dpsPvoBalance" to prisonerBalance.pvoBalance.toString(),
-      )
-      telemetryService.trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryBalanceProperties)
+    if (syncDto.oldVoBalance != null) {
+      if (prisonerBalance.voBalance != syncDto.oldVoBalance) {
+        LOG.error("Discovered discrepancy between NOMIS and DPS VO balances. Logging error to application insights for prisoner ${syncDto.prisonerId}")
+        val telemetryBalanceProperties = mapOf(
+          "prisonerId" to syncDto.prisonerId,
+          "nomisVoBalance" to syncDto.oldVoBalance.toString(),
+          "dpsVoBalance" to prisonerBalance.voBalance.toString(),
+        )
+        telemetryService.trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryBalanceProperties)
+      }
+    }
+
+    if (syncDto.oldPvoBalance != null) {
+      if (prisonerBalance.pvoBalance != syncDto.oldPvoBalance) {
+        LOG.error("Discovered discrepancy between NOMIS and DPS PVO balances. Logging error to application insights for prisoner ${syncDto.prisonerId}")
+        val telemetryBalanceProperties = mapOf(
+          "prisonerId" to syncDto.prisonerId,
+          "nomisPvoBalance" to syncDto.oldPvoBalance.toString(),
+          "dpsPvoBalance" to prisonerBalance.pvoBalance.toString(),
+        )
+        telemetryService.trackEvent(TelemetryEventType.BALANCES_OUT_OF_SYNC, telemetryBalanceProperties)
+      }
+    }
+  }
+
+  private fun validateSyncRequest(syncDto: VisitAllocationPrisonerSyncDto) {
+    LOG.info("Entered NomisSyncService - validateSyncRequest")
+    val invalidVoRequest = syncDto.oldVoBalance == null && syncDto.changeToVoBalance != null
+    val invalidPvoRequest = syncDto.oldPvoBalance == null && syncDto.changeToPvoBalance != null
+    if (invalidVoRequest || invalidPvoRequest) {
+      LOG.error("Invalid sync request found, throwing InvalidSyncRequestException exception - $syncDto")
+      throw InvalidSyncRequestException("Balance is null but change to balance found in request - $syncDto")
     }
   }
 
