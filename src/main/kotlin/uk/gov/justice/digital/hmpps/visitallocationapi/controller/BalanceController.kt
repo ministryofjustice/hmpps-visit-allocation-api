@@ -8,6 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.BalanceService
@@ -17,7 +18,7 @@ const val VO_BALANCE = "/visits/allocation/prisoner/{prisonerId}/balance"
 
 @RestController
 class BalanceController(val balanceService: BalanceService) {
-  @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
+  @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @GetMapping(VO_BALANCE)
   @Operation(
     summary = "Endpoint to get a prisoners current balance.",

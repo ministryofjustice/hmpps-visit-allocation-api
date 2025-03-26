@@ -24,7 +24,7 @@ Run:
 ## Running
 
 The hmpps-visit-allocation-api uses the deployed dev environment to connect to most of the required services,
-with the exception of the visit-allocation-db and localstack (for AWS SNS/SQS services locally).
+except for the visit-allocation-db and localstack (for AWS SNS/SQS services locally).
 
 To run the hmpps-visit-allocation-api, first start the required local services using docker-compose.
 
@@ -49,7 +49,7 @@ Ports
 | localstack                 | 4566 |
 
 ### Populating local Db with data
-TODO
+Manually run in postgresql the ./resources/db/scripts/add_test_data.sql script to populate your local database with a few entries.
 
 ### Auth token retrieval
 
@@ -122,3 +122,10 @@ Below is an example to trigger the cronjob manually -
 ```
 kubectl create job --from=cronjob/hmpps-visit-allocation-api-allocate-visit-orders-job <job-name> -n <namespace>
 ```
+
+### Syncing with NOMIS
+(TODO, change to 2-way when implemented)
+
+This service has a 1-way sync with NOMIS. When visit order data on NOMIS changes for a prisoner, a request will 
+be made to this service, to sync the change so that DPS can be aligned with NOMIS. See the NomisController.kt for more 
+information.
