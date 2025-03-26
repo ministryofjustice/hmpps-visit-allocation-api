@@ -9,6 +9,7 @@ import org.mockito.kotlin.verify
 import org.springframework.http.HttpHeaders
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_MIGRATION
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
@@ -30,7 +31,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, LocalDate.now().minusDays(1))
 
     // When
-    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -61,7 +62,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", -5, -2, LocalDate.now().minusDays(1))
 
     // When
-    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -92,7 +93,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, -2, LocalDate.now().minusDays(1))
 
     // When
-    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -128,7 +129,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, null)
 
     // When
-    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -159,7 +160,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("", 5, 2, LocalDate.now().minusDays(1))
 
     // When
-    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf("ROLE_VISIT_ALLOCATION_API__NOMIS_API")))
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
 
     // Then
     responseSpec.expectStatus().isBadRequest

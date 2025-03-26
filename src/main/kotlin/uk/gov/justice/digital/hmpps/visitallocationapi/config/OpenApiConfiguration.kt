@@ -65,7 +65,7 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     .components(
       Components().addSecuritySchemes(
         "visit-allocation-api-nomis-role",
-        SecurityScheme().addBearerJwtRequirement("ROLE_VISIT_ALLOCATION_API__NOMIS_API"),
+        SecurityScheme().addBearerJwtRequirement(ROLE_VISIT_ALLOCATION_API__NOMIS_API),
       ),
     )
     .addSecurityItem(SecurityRequirement().addList("visit-allocation-api-nomis-role", listOf("read", "write")))
