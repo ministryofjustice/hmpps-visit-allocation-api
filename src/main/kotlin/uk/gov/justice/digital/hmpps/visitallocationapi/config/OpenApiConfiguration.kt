@@ -40,7 +40,7 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
       ),
     )
     .info(
-      Info().title("HMPPS Visit Allocation Api").version(version)
+      Info().title("HMPPS Visit Allocation API").version(version)
         .description(
           """
             |API for managing a prisoner visit order balance on DPS.
