@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
@@ -23,7 +24,6 @@ class BalanceControllerTest : IntegrationTestBase() {
 
   companion object {
     const val PRISONER_ID = "AA123456"
-    const val AUTH_ROLES = "ROLE_VISIT_ALLOCATION_API__NOMIS_API"
   }
 
   @Test
@@ -35,7 +35,7 @@ class BalanceControllerTest : IntegrationTestBase() {
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), null))
 
     // When
-    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(AUTH_ROLES)))
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -54,7 +54,7 @@ class BalanceControllerTest : IntegrationTestBase() {
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), null))
 
     // When
-    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(AUTH_ROLES)))
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -69,7 +69,7 @@ class BalanceControllerTest : IntegrationTestBase() {
   fun `when request to get an unknown prisoner, then status 404 NOT_FOUND is returned`() {
     // Given
     // When
-    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(AUTH_ROLES)))
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
 
     // Then
     responseSpec.expectStatus().isNotFound

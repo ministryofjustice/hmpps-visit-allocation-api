@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisMigrationService
@@ -26,7 +27,7 @@ class NomisController(
   val nomisMigrationService: NomisMigrationService,
   val nomisSyncService: NomisSyncService,
 ) {
-  @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
+  @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @PostMapping(VO_PRISONER_MIGRATION)
   @Operation(
     summary = "Endpoint to migrate prisoner VO / PVO balances from NOMIS to DPS.",
@@ -53,7 +54,7 @@ class NomisController(
     return ResponseEntity.status(HttpStatus.OK).build()
   }
 
-  @PreAuthorize("hasRole('ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
+  @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @PostMapping(VO_PRISONER_SYNC)
   @Operation(
     summary = "Endpoint to sync ongoing changes to prisoner VO / PVO balances from NOMIS to DPS.",
