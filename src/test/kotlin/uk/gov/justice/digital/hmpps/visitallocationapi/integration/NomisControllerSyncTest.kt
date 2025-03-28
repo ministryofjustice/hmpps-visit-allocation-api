@@ -196,10 +196,10 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   /**
-   * Scenario 7: New Prisoner who has a zero balance which is in sync, has an increase to their balance, DPS syncs successfully.
+   * Scenario 7: New Prisoner who has a zero balance which is in sync, has an increase to their balance, DPS onboard them and syncs successfully.
    */
   @Test
-  fun `when a new prisoner with a zero balance increases, then DPS service successfully syncs`() {
+  fun `when a new prisoner with a zero balance increases, then DPS service onboard them and successfully syncs`() {
     // Given
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -219,10 +219,10 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   /**
-   * Scenario 8: New Prisoner who has a zero balance which is in sync, has a decrease to their balance, DPS syncs successfully.
+   * Scenario 8: New Prisoner who has a zero balance which is in sync, has a decrease to their balance, DPS onboard them syncs successfully.
    */
   @Test
-  fun `when a new prisoner with a zero balance decreases, then DPS service successfully syncs`() {
+  fun `when a new prisoner with a zero balance decreases, then DPS service onboard them and successfully syncs`() {
     // Given
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -348,6 +348,30 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
     assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 6, expectedPvoCount = 2, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
+    verifyNoInteractions(telemetryClientService)
+  }
+
+  /**
+   * Scenario 13: New Prisoner who has a zero balance with change reason , has an increase to their balance, DPS onboard them and syncs successfully.
+   */
+  @Test
+  fun `when a new prisoner with a different Adjustment code, then DPS service onboard them and successfully syncs`() {
+    // Given
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 0,
+      changeToVoBalance = 1,
+      oldPvoBalance = 0,
+      changeToPvoBalance = 1,
+      adjustmentReasonCode = AdjustmentReasonCode.VO_RECREDIT,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 1, expectedPvoCount = 1, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
     verifyNoInteractions(telemetryClientService)
   }
 
