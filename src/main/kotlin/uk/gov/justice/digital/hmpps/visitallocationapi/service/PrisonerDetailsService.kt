@@ -28,18 +28,22 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
       prisonerDetailsRepository.updatePrisonerLastVoAllocatedDate(prisonerId, newLastAllocatedDate)
     } else {
       // If prisoner does not exist, create a new record
-      createNewPrisonerDetails(prisonerId, newLastAllocatedDate)
+      createNewPrisonerDetails(prisonerId, newLastAllocatedDate, null)
     }
   }
 
-  private fun createNewPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate) {
+  fun createNewPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?) {
     LOG.info("Prisoner $prisonerId not found, creating new record")
     val newPrisoner = PrisonerDetails(
       prisonerId = prisonerId,
       lastVoAllocatedDate = newLastAllocatedDate,
-      lastPvoAllocatedDate = null,
+      lastPvoAllocatedDate = newLastPvoAllocatedDate,
     )
     prisonerDetailsRepository.save(newPrisoner)
+  }
+
+  fun removePrisonerDetails(prisonerId: String) {
+    prisonerDetailsRepository.deleteByPrisonerId(prisonerId)
   }
 
   fun updatePvoLastCreatedDate(prisonerId: String, newLastAllocatedDate: LocalDate) {

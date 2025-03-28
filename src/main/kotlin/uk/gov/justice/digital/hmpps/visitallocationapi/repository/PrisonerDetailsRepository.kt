@@ -14,6 +14,10 @@ interface PrisonerDetailsRepository : JpaRepository<PrisonerDetails, Long> {
 
   @Transactional
   @Modifying
+  fun deleteByPrisonerId(prisonerId: String)
+
+  @Transactional
+  @Modifying
   @Query("UPDATE PrisonerDetails pd SET pd.lastVoAllocatedDate = :newLastAllocatedDate WHERE pd.prisonerId = :prisonerId")
   fun updatePrisonerLastVoAllocatedDate(prisonerId: String, newLastAllocatedDate: LocalDate)
 

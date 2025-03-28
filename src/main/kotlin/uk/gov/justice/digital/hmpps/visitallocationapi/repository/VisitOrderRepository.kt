@@ -110,4 +110,8 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
     visitOrderType: VisitOrderType,
     amountToExpire: Long?,
   ): Int
+
+  @Transactional
+  @Modifying
+  fun deleteAllByPrisonerId(prisonerId: String)
 }
