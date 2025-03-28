@@ -55,4 +55,8 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
     negativeVisitOrderType: NegativeVisitOrderType,
     amountToExpire: Long?,
   ): Int
+
+  @Transactional
+  @Modifying
+  fun deleteAllByPrisonerId(prisonerId: String)
 }

@@ -10,10 +10,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderT
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -23,8 +21,8 @@ import kotlin.math.abs
 class NomisMigrationService(
   private val visitOrderRepository: VisitOrderRepository,
   private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
-  private val prisonerDetailsRepository: PrisonerDetailsRepository,
   private val changeLogService: ChangeLogService,
+  private val prisonerDetailsService: PrisonerDetailsService,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -35,8 +33,13 @@ class NomisMigrationService(
   fun migratePrisoner(migrationDto: VisitAllocationPrisonerMigrationDto) {
     LOG.info("Entered NomisMigrationService - migratePrisoner with migration dto {}", migrationDto)
 
+    // If prisoner exists, reset their details and balance ready for migration
+    if (prisonerDetailsService.getPrisoner(migrationDto.prisonerId) != null) {
+      resetPrisonerDetailsAndBalance(migrationDto)
+    }
+
     // Due to bad data in NOMIS, it's possible for a prisoner to exist with a balance but no IEP date.
-    // When this happens, set it to TODAY - 28 DAYS. This allows prisoner to receive IEP allocation ASAP.
+    // When this happens, set it to TODAY - 28 DAYS. This allows prisoner to receive IEP allocation on our side ASAP.
     if (migrationDto.lastVoAllocationDate == null) {
       migrationDto.lastVoAllocationDate = LocalDate.now().minusDays(NULL_LAST_ALLOCATION_DATE_OFFSET)
     }
@@ -118,6 +121,16 @@ class NomisMigrationService(
       null
     }
 
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = migrationDto.prisonerId, lastVoAllocatedDate = migrationDto.lastVoAllocationDate!!, lastPvoAllocatedDate = lastPvoAllocatedDate))
+    prisonerDetailsService.createNewPrisonerDetails(prisonerId = migrationDto.prisonerId, newLastAllocatedDate = migrationDto.lastVoAllocationDate!!, newLastPvoAllocatedDate = lastPvoAllocatedDate)
+  }
+
+  private fun resetPrisonerDetailsAndBalance(migrationDto: VisitAllocationPrisonerMigrationDto) {
+    val prisonerId = migrationDto.prisonerId
+
+    LOG.info("Prisoner $prisonerId found in DB, resetting their balance ready for migration")
+
+    visitOrderRepository.deleteAllByPrisonerId(prisonerId)
+    negativeVisitOrderRepository.deleteAllByPrisonerId(prisonerId)
+    prisonerDetailsService.removePrisonerDetails(prisonerId)
   }
 }

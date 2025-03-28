@@ -155,6 +155,44 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `when visit prisoner allocation migration endpoint is called with an existing prisoner, then prisoner information is reset and then successfully migrated to DPS service`() {
+    // Given
+    entityHelper.createAndSaveVisitOrders(prisonerId = "AA123456", visitOrderType = VisitOrderType.VO, amountToCreate = 1)
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = "AA123456", lastVoAllocatedDate = LocalDate.now().minusDays(1), null))
+
+    val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, LocalDate.now().minusDays(1))
+
+    // When
+    val responseSpec = callVisitAllocationMigrationEndpoint(webTestClient, prisonerMigrationDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+
+    // Then
+    responseSpec.expectStatus().isOk
+
+    verify(visitOrderRepository, times(1)).deleteAllByPrisonerId(prisonerId = "AA123456")
+    verify(negativeVisitOrderRepository, times(1)).deleteAllByPrisonerId(prisonerId = "AA123456")
+    verify(prisonerDetailsRepository, times(1)).deleteByPrisonerId(prisonerId = "AA123456")
+
+    verify(visitOrderRepository, times(3)).saveAll<VisitOrder>(any())
+    verify(negativeVisitOrderRepository, times(0)).saveAll<NegativeVisitOrder>(any())
+    verify(prisonerDetailsRepository, times(2)).save<PrisonerDetails>(any())
+    verify(changeLogRepository, times(1)).save<ChangeLog>(any())
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.size).isEqualTo(7)
+    assertThat(visitOrders.filter { it.type == VisitOrderType.VO }.size).isEqualTo(5)
+    assertThat(visitOrders.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(2)
+
+    val prisonerDetails = prisonerDetailsRepository.findAll()
+    assertThat(prisonerDetails.size).isEqualTo(1)
+    assertThat(prisonerDetails.first().prisonerId).isEqualTo(prisonerMigrationDto.prisonerId)
+    assertThat(prisonerDetails.first().lastVoAllocatedDate).isEqualTo(prisonerMigrationDto.lastVoAllocationDate)
+
+    val changeLog = changeLogRepository.findAll()
+    assertThat(changeLog.size).isEqualTo(1)
+    assertThat(changeLog.first().changeType).isEqualTo(ChangeLogType.MIGRATION)
+  }
+
+  @Test
   fun `when request body validation fails then 400 bad request is returned`() {
     // Given
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("", 5, 2, LocalDate.now().minusDays(1))
