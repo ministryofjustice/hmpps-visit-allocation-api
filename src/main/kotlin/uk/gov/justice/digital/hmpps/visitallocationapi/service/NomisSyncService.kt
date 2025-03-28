@@ -39,11 +39,13 @@ class NomisSyncService(
 
     validateSyncRequest(syncDto)
 
-    // Only do a balance comparison if prisoner exists.
     var prisonerBalance = balanceService.getPrisonerBalance(syncDto.prisonerId)
     if (prisonerBalance != null) {
+      // Only do a balance comparison if prisoner exists.
       compareBalanceBeforeSync(syncDto, prisonerBalance)
     } else {
+      // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
+      prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(syncDto.prisonerId, syncDto.createdDate)
       prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
     }
 
