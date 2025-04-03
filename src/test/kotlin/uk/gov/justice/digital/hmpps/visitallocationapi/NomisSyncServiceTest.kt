@@ -76,7 +76,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
@@ -87,7 +87,7 @@ class NomisSyncServiceTest {
     val privilegedVisitOrdersSaved = visitOrderCaptor.allValues[1]
     assertThat(privilegedVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -106,13 +106,13 @@ class NomisSyncServiceTest {
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
 
     // WHEN
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
     verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, 1L)
     verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.PVO, 1L)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -132,7 +132,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val negativeVisitOrderCaptor = argumentCaptor<List<NegativeVisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
     verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, null)
@@ -144,7 +144,7 @@ class NomisSyncServiceTest {
     val negativePrivilegedVisitOrdersSaved = negativeVisitOrderCaptor.allValues[1]
     assertThat(negativePrivilegedVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -166,7 +166,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val negativeVisitOrderCaptor = argumentCaptor<List<NegativeVisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the negative visit orders that were saved
     verify(negativeVisitOrderRepository, times(2)).saveAll(negativeVisitOrderCaptor.capture())
@@ -177,7 +177,7 @@ class NomisSyncServiceTest {
     val privilegedNegativeVisitOrdersSaved = negativeVisitOrderCaptor.allValues[1]
     assertThat(privilegedNegativeVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -196,13 +196,13 @@ class NomisSyncServiceTest {
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
 
     // WHEN
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
     verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, 1)
     verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, 1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -222,7 +222,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
     verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
@@ -234,7 +234,7 @@ class NomisSyncServiceTest {
     val privilegedVisitOrdersSaved = visitOrderCaptor.allValues[1]
     assertThat(privilegedVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -256,7 +256,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
@@ -267,7 +267,7 @@ class NomisSyncServiceTest {
     val privilegedVisitOrdersSaved = visitOrderCaptor.allValues[1]
     assertThat(privilegedVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -287,7 +287,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val negativeVisitOrderCaptor = argumentCaptor<List<NegativeVisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the negative visit orders that were saved
     verify(negativeVisitOrderRepository, times(2)).saveAll(negativeVisitOrderCaptor.capture())
@@ -298,7 +298,7 @@ class NomisSyncServiceTest {
     val privilegedNegativeVisitOrdersSaved = negativeVisitOrderCaptor.allValues[1]
     assertThat(privilegedNegativeVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -321,7 +321,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
@@ -332,7 +332,7 @@ class NomisSyncServiceTest {
     val privilegedVisitOrdersSaved = visitOrderCaptor.allValues[1]
     assertThat(privilegedVisitOrdersSaved.size).isEqualTo(2)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
@@ -365,7 +365,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
@@ -376,7 +376,7 @@ class NomisSyncServiceTest {
     val privilegedVisitOrdersSaved = visitOrderCaptor.allValues[1]
     assertThat(privilegedVisitOrdersSaved.size).isEqualTo(0)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
@@ -409,7 +409,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val negativeVisitOrderCaptor = argumentCaptor<List<NegativeVisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(negativeVisitOrderRepository, times(2)).saveAll(negativeVisitOrderCaptor.capture())
@@ -420,7 +420,7 @@ class NomisSyncServiceTest {
     val privilegedVisitOrdersSaved = negativeVisitOrderCaptor.allValues[1]
     assertThat(privilegedVisitOrdersSaved.size).isEqualTo(2)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
@@ -453,7 +453,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val negativeVisitOrderCaptor = argumentCaptor<List<NegativeVisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(negativeVisitOrderRepository, times(2)).saveAll(negativeVisitOrderCaptor.capture())
@@ -464,7 +464,7 @@ class NomisSyncServiceTest {
     val negativePrivilegedVisitOrdersSaved = negativeVisitOrderCaptor.allValues[1]
     assertThat(negativePrivilegedVisitOrdersSaved.size).isEqualTo(0)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
@@ -497,7 +497,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
@@ -509,7 +509,7 @@ class NomisSyncServiceTest {
     val privilegedVisitOrdersSaved = visitOrderCaptor.allValues[1]
     assertThat(privilegedVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
@@ -542,7 +542,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
@@ -555,7 +555,7 @@ class NomisSyncServiceTest {
     val privilegedVisitOrdersSaved = visitOrderCaptor.allValues[1]
     assertThat(privilegedVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
@@ -588,7 +588,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val negativeVisitOrderCaptor = argumentCaptor<List<NegativeVisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, null)
@@ -600,7 +600,7 @@ class NomisSyncServiceTest {
     val negativePrivilegedVisitOrdersSaved = negativeVisitOrderCaptor.allValues[1]
     assertThat(negativePrivilegedVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,
@@ -634,7 +634,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val negativeVisitOrderCaptor = argumentCaptor<List<NegativeVisitOrder>>()
-    nomisSyncService.syncPrisoner(syncDto)
+    nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN - Capture the visit orders that were saved
     verify(visitOrderRepository, times(1)).expireVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, null)
@@ -647,7 +647,7 @@ class NomisSyncServiceTest {
     val negativePrivilegedVisitOrdersSaved = negativeVisitOrderCaptor.allValues[1]
     assertThat(negativePrivilegedVisitOrdersSaved.size).isEqualTo(1)
 
-    verify(changeLogService, times(1)).logSyncChange(syncDto)
+    verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
     val voTelemetryProperties = createTelemetryVoSyncProperties(
       prisonerId,

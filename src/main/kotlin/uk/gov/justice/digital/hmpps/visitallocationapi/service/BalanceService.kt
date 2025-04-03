@@ -26,7 +26,7 @@ class BalanceService(
   fun getPrisonerBalance(prisonerId: String): PrisonerBalanceDto? {
     LOG.info("Entered BalanceService - getPrisonerBalance for prisoner $prisonerId")
 
-    // If prisoner doesn't exist in DB, return null
+    // If prisoner doesn't exist in DB, return null. Balance endpoint uses null to throw a NOT_FOUND exception.
     if (prisonerDetailsService.getPrisoner(prisonerId) == null) {
       LOG.info("Prisoner $prisonerId not found in DB, returning null balance")
       return null
