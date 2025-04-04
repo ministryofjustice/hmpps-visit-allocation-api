@@ -22,7 +22,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 const val VO_NOMIS = "/visits/allocation/prisoner"
 const val VO_PRISONER_MIGRATION: String = "$VO_NOMIS/migrate"
 const val VO_PRISONER_SYNC: String = "$VO_NOMIS/sync"
-const val VO_PRISONER_BOOKING_SYNC: String = "$VO_PRISONER_SYNC/booking"
+const val VO_PRISONER_BOOKING_MOVE_SYNC: String = "$VO_PRISONER_SYNC/booking-move"
 
 @RestController
 class NomisController(
@@ -84,7 +84,7 @@ class NomisController(
   }
 
   @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
-  @PostMapping(VO_PRISONER_BOOKING_SYNC)
+  @PostMapping(VO_PRISONER_BOOKING_MOVE_SYNC)
   @Operation(
     summary = "Endpoint to sync booking changes made to a prisoner, which effect their VO / PVO balances from NOMIS to DPS.",
     description = "Takes a pair of prisoners who have been effected by a booking being moved between them, and their new balances.",
@@ -105,8 +105,8 @@ class NomisController(
       ),
     ],
   )
-  fun syncPrisonerBookingVisitOrderChanges(@RequestBody @Valid visitAllocationPrisonerSyncBookingDto: VisitAllocationPrisonerSyncBookingDto): ResponseEntity<Void> {
-    nomisSyncService.syncPrisonerBookingChanges(visitAllocationPrisonerSyncBookingDto)
+  fun syncPrisonerBookingMoveVisitOrderChanges(@RequestBody @Valid visitAllocationPrisonerSyncBookingDto: VisitAllocationPrisonerSyncBookingDto): ResponseEntity<Void> {
+    nomisSyncService.syncPrisonerBookingMoveChanges(visitAllocationPrisonerSyncBookingDto)
     return ResponseEntity.status(HttpStatus.OK).build()
   }
 }

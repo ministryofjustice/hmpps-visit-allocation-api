@@ -35,7 +35,7 @@ class NomisSyncService(
   }
 
   @Transactional
-  fun syncPrisonerBookingChanges(syncDto: VisitAllocationPrisonerSyncBookingDto) {
+  fun syncPrisonerBookingMoveChanges(syncDto: VisitAllocationPrisonerSyncBookingDto) {
     // In NOMIS, a booking can be moved from one prisoner to another. When this happens, no triggers occur
     // on the adjustments_table, so the sync endpoint is never called. Introducing this new endpoint,
     // for NOMIS to call when a booking is moved, to help us reconcile the balances of both prisoners.

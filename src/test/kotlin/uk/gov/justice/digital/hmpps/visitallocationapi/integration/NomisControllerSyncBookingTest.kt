@@ -7,7 +7,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
-import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_BOOKING_SYNC
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_BOOKING_MOVE_SYNC
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_SYNC
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncBookingDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
@@ -17,7 +17,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPo
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import java.time.LocalDate
 
-@DisplayName("NomisController sync booking tests - $VO_PRISONER_BOOKING_SYNC")
+@DisplayName("NomisController sync booking tests - $VO_PRISONER_BOOKING_MOVE_SYNC")
 class NomisControllerSyncBookingTest : IntegrationTestBase() {
 
   companion object {
@@ -112,7 +112,7 @@ class NomisControllerSyncBookingTest : IntegrationTestBase() {
   ): ResponseSpec = callPost(
     dto,
     webTestClient,
-    VO_PRISONER_BOOKING_SYNC,
+    VO_PRISONER_BOOKING_MOVE_SYNC,
     authHttpHeaders,
   )
 
