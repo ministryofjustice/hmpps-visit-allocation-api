@@ -31,7 +31,7 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
     )
   }
 
-  fun logSyncChange(syncDto: VisitAllocationPrisonerSyncDto) {
+  fun logSyncAdjustmentChange(syncDto: VisitAllocationPrisonerSyncDto) {
     LOG.info("Logging sync to change_log table for prisoner ${syncDto.prisonerId}, sync - $syncDto")
     changeLogRepository.save(
       ChangeLog(
@@ -40,6 +40,19 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         comment = "synced prisoner ${syncDto.prisonerId}, with adjustment code ${syncDto.adjustmentReasonCode.name}",
+      ),
+    )
+  }
+
+  fun logSyncBookingChange(prisonerId: String) {
+    LOG.info("Logging booking sync to change_log table for prisoner $prisonerId")
+    changeLogRepository.save(
+      ChangeLog(
+        prisonerId = prisonerId,
+        changeType = ChangeLogType.SYNC_BOOKING,
+        changeSource = ChangeLogSource.SYSTEM,
+        userId = "SYSTEM",
+        comment = "synced prisoner $prisonerId, due to booking change on NOMIS",
       ),
     )
   }

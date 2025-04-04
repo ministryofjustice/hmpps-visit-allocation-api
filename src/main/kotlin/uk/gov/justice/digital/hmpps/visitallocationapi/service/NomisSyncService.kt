@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncBookingDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
@@ -34,7 +35,25 @@ class NomisSyncService(
   }
 
   @Transactional
-  fun syncPrisoner(syncDto: VisitAllocationPrisonerSyncDto) {
+  fun syncPrisonerBookingMoveChanges(syncDto: VisitAllocationPrisonerSyncBookingDto) {
+    // In NOMIS, a booking can be moved from one prisoner to another. When this happens, no triggers occur
+    // on the adjustments_table, so the sync endpoint is never called. Introducing this new endpoint,
+    // for NOMIS to call when a booking is moved, to help us reconcile the balances of both prisoners.
+    LOG.info("Entered NomisSyncService - syncPrisonerBookingChanges with sync dto {}", syncDto)
+
+    val firstPrisonerNomisBalance = PrisonerBalanceDto(syncDto.firstPrisonerId, syncDto.firstPrisonerVoBalance, syncDto.firstPrisonerPvoBalance)
+    val firstPrisonerDpsBalance = balanceService.getPrisonerBalance(syncDto.firstPrisonerId) ?: PrisonerBalanceDto(syncDto.firstPrisonerId, 0, 0)
+    processSyncBooking(nomisBalance = firstPrisonerNomisBalance, dpsBalance = firstPrisonerDpsBalance)
+
+    val secondPrisonerNomisBalance = PrisonerBalanceDto(syncDto.secondPrisonerId, syncDto.secondPrisonerVoBalance, syncDto.secondPrisonerPvoBalance)
+    val secondPrisonerDpsBalance = balanceService.getPrisonerBalance(syncDto.secondPrisonerId) ?: PrisonerBalanceDto(syncDto.secondPrisonerId, 0, 0)
+    processSyncBooking(nomisBalance = secondPrisonerNomisBalance, dpsBalance = secondPrisonerDpsBalance)
+  }
+
+  @Transactional
+  fun syncPrisonerAdjustmentChanges(syncDto: VisitAllocationPrisonerSyncDto) {
+    // In NOMIS, when a change is made via the adjustments_table, it will trigger a call
+    // to this endpoint, allowing DPS to sync the prisoner vo & pvo balances with NOMIS.
     LOG.info("Entered NomisSyncService - syncPrisoner with sync dto {}", syncDto)
 
     validateSyncRequest(syncDto)
@@ -81,7 +100,29 @@ class NomisSyncService(
       prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(syncDto.prisonerId, syncDto.createdDate)
     }
 
-    changeLogService.logSyncChange(syncDto)
+    changeLogService.logSyncAdjustmentChange(syncDto)
+  }
+
+  private fun processSyncBooking(nomisBalance: PrisonerBalanceDto, dpsBalance: PrisonerBalanceDto) {
+    val prisonerId = nomisBalance.prisonerId
+
+    processSync(
+      prisonerId,
+      dpsBalance.voBalance,
+      calculateAmountToChange(dpsBalance.voBalance, nomisBalance.voBalance, 0),
+      VisitOrderType.VO,
+      NegativeVisitOrderType.NEGATIVE_VO,
+    )
+
+    processSync(
+      prisonerId,
+      dpsBalance.pvoBalance,
+      calculateAmountToChange(dpsBalance.pvoBalance, nomisBalance.pvoBalance, 0),
+      VisitOrderType.PVO,
+      NegativeVisitOrderType.NEGATIVE_PVO,
+    )
+
+    changeLogService.logSyncBookingChange(prisonerId)
   }
 
   private fun processSync(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType, negativeVoType: NegativeVisitOrderType) {
