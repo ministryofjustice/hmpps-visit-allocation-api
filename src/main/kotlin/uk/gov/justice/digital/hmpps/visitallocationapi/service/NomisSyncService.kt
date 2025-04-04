@@ -70,27 +70,23 @@ class NomisSyncService(
 
     // If VO balance has changed, sync it
     if (syncDto.oldVoBalance != null) {
-      val wantedVoChange = calculateAmountToChange(prisonerBalance.voBalance, syncDto.oldVoBalance, syncDto.changeToVoBalance ?: 0)
-
       processSync(
-        syncDto.prisonerId,
-        prisonerBalance.voBalance,
-        wantedVoChange,
-        VisitOrderType.VO,
-        NegativeVisitOrderType.NEGATIVE_VO,
+        prisonerId = syncDto.prisonerId,
+        prisonerDpsBalance = prisonerBalance.voBalance,
+        balanceChange = syncDto.changeToVoBalance!!,
+        visitOrderType = VisitOrderType.VO,
+        negativeVoType = NegativeVisitOrderType.NEGATIVE_VO,
       )
     }
 
     // If PVO balance has changed, sync it
     if (syncDto.oldPvoBalance != null) {
-      val wantedPvoChange = calculateAmountToChange(prisonerBalance.pvoBalance, syncDto.oldPvoBalance, syncDto.changeToPvoBalance ?: 0)
-
       processSync(
-        syncDto.prisonerId,
-        prisonerBalance.pvoBalance,
-        wantedPvoChange,
-        VisitOrderType.PVO,
-        NegativeVisitOrderType.NEGATIVE_PVO,
+        prisonerId = syncDto.prisonerId,
+        prisonerDpsBalance = prisonerBalance.pvoBalance,
+        balanceChange = syncDto.changeToPvoBalance!!,
+        visitOrderType = VisitOrderType.PVO,
+        negativeVoType = NegativeVisitOrderType.NEGATIVE_PVO,
       )
     }
 
@@ -107,19 +103,19 @@ class NomisSyncService(
     val prisonerId = nomisBalance.prisonerId
 
     processSync(
-      prisonerId,
-      dpsBalance.voBalance,
-      calculateAmountToChange(dpsBalance.voBalance, nomisBalance.voBalance, 0),
-      VisitOrderType.VO,
-      NegativeVisitOrderType.NEGATIVE_VO,
+      prisonerId = prisonerId,
+      prisonerDpsBalance = dpsBalance.voBalance,
+      balanceChange = (nomisBalance.voBalance - dpsBalance.voBalance),
+      visitOrderType = VisitOrderType.VO,
+      negativeVoType = NegativeVisitOrderType.NEGATIVE_VO,
     )
 
     processSync(
-      prisonerId,
-      dpsBalance.pvoBalance,
-      calculateAmountToChange(dpsBalance.pvoBalance, nomisBalance.pvoBalance, 0),
-      VisitOrderType.PVO,
-      NegativeVisitOrderType.NEGATIVE_PVO,
+      prisonerId = prisonerId,
+      prisonerDpsBalance = dpsBalance.pvoBalance,
+      balanceChange = (nomisBalance.pvoBalance - dpsBalance.pvoBalance),
+      visitOrderType = VisitOrderType.PVO,
+      negativeVoType = NegativeVisitOrderType.NEGATIVE_PVO,
     )
 
     changeLogService.logSyncBookingChange(prisonerId)

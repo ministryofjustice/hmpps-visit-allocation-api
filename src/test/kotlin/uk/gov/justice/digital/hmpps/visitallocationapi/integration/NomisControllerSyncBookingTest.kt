@@ -26,7 +26,7 @@ class NomisControllerSyncBookingTest : IntegrationTestBase() {
   }
 
   /**
-   * Scenario 1: Existing Prisoner who has a positive balance which is in sync, has an increase to their balance. DPS syncs successfully.
+   * Scenario 1: When a booking move happens between prisoners, both have their balances set to match nomis.
    */
   @Test
   fun `when a booking sync request comes in, then both prisoners who are effected are successfully processed and synced`() {
