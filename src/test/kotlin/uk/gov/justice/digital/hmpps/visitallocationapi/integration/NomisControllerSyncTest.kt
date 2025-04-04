@@ -31,6 +31,44 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     const val PRISONER_ID = "AA123456"
   }
 
+  @Test
+  fun `two requests, any order, results in correct balance at the end`() {
+    // Given
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 10)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 5)
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+
+    val firstSyncRequest = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 10,
+      changeToVoBalance = -2,
+      oldPvoBalance = 5,
+      changeToPvoBalance = -3,
+    )
+
+    val secondSyncRequest = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 8,
+      changeToVoBalance = -1,
+      oldPvoBalance = 2,
+      changeToPvoBalance = -1,
+    )
+
+    // When
+    val secondResponse = callVisitAllocationSyncEndpoint(webTestClient, secondSyncRequest, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+    val firstResponse = callVisitAllocationSyncEndpoint(webTestClient, firstSyncRequest, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+
+    // Then
+    secondResponse.expectStatus().isOk
+    firstResponse.expectStatus().isOk
+
+    val visitOrders = visitOrderRepository.findAll()
+
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(8)
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE && it.type == VisitOrderType.VO }.size).isEqualTo(7)
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE && it.type == VisitOrderType.PVO }.size).isEqualTo(1)
+  }
+
   /**
    * Scenario 1: Existing Prisoner who has a positive balance which is in sync, has an increase to their balance. DPS syncs successfully.
    */
@@ -142,61 +180,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   /**
-   * Scenario 5: Existing Prisoner who has a positive balance which is out of sync (DPS is higher), has an increase to their balance, DPS syncs successfully.
-   */
-  @Test
-  fun `when an existing prisoner with an out of sync (DPS higher) positive balance increases, then DPS service successfully syncs`() {
-    // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 6)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 3)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
-
-    val prisonerSyncDto = createSyncRequest(
-      prisonerId = PRISONER_ID,
-      oldVoBalance = 5,
-      changeToVoBalance = 1,
-      oldPvoBalance = 2,
-      changeToPvoBalance = 1,
-    )
-
-    // When
-    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
-
-    // Then
-    responseSpec.expectStatus().isOk
-    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 6, expectedPvoCount = 3, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
-    verify(telemetryClientService, times(2)).trackEvent(any(), any())
-  }
-
-  /**
-   * Scenario 6: Existing Prisoner who has a positive balance which is out of sync (NOMIS is higher), has an increase to their balance, DPS syncs successfully.
-   */
-  @Test
-  fun `when an existing prisoner with an out of sync (NOMIS higher) positive balance increases, then DPS service successfully syncs`() {
-    // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 4)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
-
-    val prisonerSyncDto = createSyncRequest(
-      prisonerId = PRISONER_ID,
-      oldVoBalance = 5,
-      changeToVoBalance = 1,
-      oldPvoBalance = 2,
-      changeToPvoBalance = 1,
-    )
-
-    // When
-    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
-
-    // Then
-    responseSpec.expectStatus().isOk
-    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 6, expectedPvoCount = 3, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
-    verify(telemetryClientService, times(2)).trackEvent(any(), any())
-  }
-
-  /**
-   * Scenario 7: New Prisoner who has a zero balance which is in sync, has an increase to their balance, DPS onboard them and syncs successfully.
+   * Scenario 5: New Prisoner who has a zero balance which is in sync, has an increase to their balance, DPS onboard them and syncs successfully.
    */
   @Test
   fun `when a new prisoner with a zero balance increases, then DPS service onboard them and successfully syncs`() {
@@ -219,7 +203,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   /**
-   * Scenario 8: New Prisoner who has a zero balance which is in sync, has a decrease to their balance, DPS onboard them syncs successfully.
+   * Scenario 6: New Prisoner who has a zero balance which is in sync, has a decrease to their balance, DPS onboard them syncs successfully.
    */
   @Test
   fun `when a new prisoner with a zero balance decreases, then DPS service onboard them and successfully syncs`() {
@@ -242,63 +226,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   /**
-   * Scenario 9: Existing Prisoner who has a positive balance which is out of sync (DPS higher), has a decrease to their balance which puts them into negative.
-   * DPS syncs successfully. All visit orders are expired and new negative visit orders are created with status USED.
-   */
-  @Test
-  fun `when an existing prisoner with an out of sync (DPS higher) and a positive balance decreases below zero, then DPS service successfully syncs`() {
-    // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
-
-    val prisonerSyncDto = createSyncRequest(
-      prisonerId = PRISONER_ID,
-      oldVoBalance = 1,
-      changeToVoBalance = -3,
-      oldPvoBalance = 0,
-      changeToPvoBalance = -2,
-    )
-
-    // When
-    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
-
-    // Then
-    responseSpec.expectStatus().isOk
-    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 0, expectedPvoCount = 0, expectedNegativeVoCount = 2, expectedNegativePvoCount = 2)
-    verify(telemetryClientService, times(2)).trackEvent(any(), any())
-  }
-
-  /**
-   * Scenario 10: Existing Prisoner who has a negative balance which is out of sync (NOMIS higher), has an increase to their balance which puts them into positive.
-   * DPS syncs successfully. All negative visit orders are repaid and new visit orders are created with status AVAILABLE.
-   */
-  @Test
-  fun `when an existing prisoner with an out of sync (NOMIS higher) and a negative balance increases above zero, then DPS service successfully syncs`() {
-    // Given
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 1)
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 1)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
-
-    val prisonerSyncDto = createSyncRequest(
-      prisonerId = PRISONER_ID,
-      oldVoBalance = -2,
-      changeToVoBalance = 3,
-      oldPvoBalance = -2,
-      changeToPvoBalance = 3,
-    )
-
-    // When
-    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
-
-    // Then
-    responseSpec.expectStatus().isOk
-    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 1, expectedPvoCount = 1, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
-    verify(telemetryClientService, times(2)).trackEvent(any(), any())
-  }
-
-  /**
-   * Scenario 11: Existing Prisoner with no change to VO balance, then VO processing is skipped.
+   * Scenario 7: Existing Prisoner with no change to VO balance, then VO processing is skipped.
    */
   @Test
   fun `when an existing prisoner with only a PVO balance change, then VO processing is skipped`() {
@@ -325,7 +253,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   /**
-   * Scenario 12: Existing Prisoner with no change to PVO balance, then PVO processing is skipped.
+   * Scenario 8: Existing Prisoner with no change to PVO balance, then PVO processing is skipped.
    */
   @Test
   fun `when an existing prisoner with only a VO balance change, then PVO processing is skipped`() {
@@ -352,7 +280,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   /**
-   * Scenario 13: New Prisoner who has a zero balance with change reason , has an increase to their balance, DPS onboard them and syncs successfully.
+   * Scenario 9: New Prisoner who has a zero balance with change reason , has an increase to their balance, DPS onboard them and syncs successfully.
    */
   @Test
   fun `when a new prisoner with a different Adjustment code, then DPS service onboard them and successfully syncs`() {
@@ -373,6 +301,33 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     responseSpec.expectStatus().isOk
     assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 1, expectedPvoCount = 1, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
     verifyNoInteractions(telemetryClientService)
+  }
+
+  /**
+   * Scenario 10: Existing Prisoner who has a positive balance which is out of sync (NOMIS is higher), is alerted to application insights, and sync is applied.
+   */
+  @Test
+  fun `when an existing prisoner with an out of sync (NOMIS higher) positive balance increases, then DPS service successfully syncs`() {
+    // Given
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 4)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+
+    val prisonerSyncDto = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 5,
+      changeToVoBalance = 1,
+      oldPvoBalance = 2,
+      changeToPvoBalance = 1,
+    )
+
+    // When
+    val responseSpec = callVisitAllocationSyncEndpoint(webTestClient, prisonerSyncDto, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    assertSyncResults(prisonerSyncDto = prisonerSyncDto, expectedVoCount = 5, expectedPvoCount = 2, expectedNegativeVoCount = 0, expectedNegativePvoCount = 0)
+    verify(telemetryClientService, times(2)).trackEvent(any(), any())
   }
 
   @Test
