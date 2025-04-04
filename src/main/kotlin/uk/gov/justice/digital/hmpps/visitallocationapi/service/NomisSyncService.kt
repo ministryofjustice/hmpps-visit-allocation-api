@@ -105,7 +105,7 @@ class NomisSyncService(
     processSync(
       prisonerId = prisonerId,
       prisonerDpsBalance = dpsBalance.voBalance,
-      balanceChange = nomisBalance.voBalance - dpsBalance.voBalance,
+      balanceChange = (nomisBalance.voBalance - dpsBalance.voBalance),
       visitOrderType = VisitOrderType.VO,
       negativeVoType = NegativeVisitOrderType.NEGATIVE_VO,
     )
@@ -113,7 +113,7 @@ class NomisSyncService(
     processSync(
       prisonerId = prisonerId,
       prisonerDpsBalance = dpsBalance.pvoBalance,
-      balanceChange = nomisBalance.pvoBalance - dpsBalance.pvoBalance,
+      balanceChange = (nomisBalance.pvoBalance - dpsBalance.pvoBalance),
       visitOrderType = VisitOrderType.PVO,
       negativeVoType = NegativeVisitOrderType.NEGATIVE_PVO,
     )
