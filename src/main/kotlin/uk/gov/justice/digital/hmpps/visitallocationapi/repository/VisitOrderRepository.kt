@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.PositivePrisonerBalance
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.PrisonerBalance
 
 @Repository
 interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
@@ -21,7 +21,7 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   )
   fun getPrisonerPositiveBalance(
     prisonerId: String,
-  ): List<PositivePrisonerBalance>
+  ): List<PrisonerBalance>
 
   @Query(
     "SELECT COUNT(vo) FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type AND vo.status = :status",

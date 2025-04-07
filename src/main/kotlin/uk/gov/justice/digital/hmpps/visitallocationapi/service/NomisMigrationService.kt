@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
@@ -101,11 +100,7 @@ class NomisMigrationService(
       NegativeVisitOrder(
         prisonerId = migrationDto.prisonerId,
         status = NegativeVisitOrderStatus.USED,
-        type = if (type == VisitOrderType.VO) {
-          NegativeVisitOrderType.NEGATIVE_VO
-        } else {
-          NegativeVisitOrderType.NEGATIVE_PVO
-        },
+        type = type,
         createdTimestamp = LocalDateTime.now(),
       )
     }

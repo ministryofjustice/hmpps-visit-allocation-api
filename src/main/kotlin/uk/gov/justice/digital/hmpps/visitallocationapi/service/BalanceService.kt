@@ -5,10 +5,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.NegativePrisonerBalance
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.PositivePrisonerBalance
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.PrisonerBalance
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 
@@ -37,17 +35,15 @@ class BalanceService(
     val positivePvoBalance = getBalanceForVoType(positiveBalance, VisitOrderType.PVO)
 
     val negativeBalance = negativeVisitOrderRepository.getPrisonerNegativeBalance(prisonerId)
-    val negativeVoBalance = getBalanceForNegativeVoType(negativeBalance, NegativeVisitOrderType.NEGATIVE_VO)
-    val negativePvoBalance = getBalanceForNegativeVoType(negativeBalance, NegativeVisitOrderType.NEGATIVE_PVO)
+    val negativeVoBalance = getBalanceForVoType(negativeBalance, VisitOrderType.VO)
+    val negativePvoBalance = getBalanceForVoType(negativeBalance, VisitOrderType.PVO)
 
     return PrisonerBalanceDto(
       prisonerId = prisonerId,
-      voBalance = positiveVoBalance - negativeVoBalance,
-      pvoBalance = positivePvoBalance - negativePvoBalance,
+      voBalance = (positiveVoBalance - negativeVoBalance),
+      pvoBalance = (positivePvoBalance - negativePvoBalance),
     )
   }
 
-  private fun getBalanceForVoType(positiveBalance: List<PositivePrisonerBalance>, type: VisitOrderType): Int = positiveBalance.firstOrNull { it.type == type }?.balance ?: 0
-
-  private fun getBalanceForNegativeVoType(negativeBalance: List<NegativePrisonerBalance>, type: NegativeVisitOrderType): Int = negativeBalance.firstOrNull { it.type == type }?.balance ?: 0
+  private fun getBalanceForVoType(prisonerBalance: List<PrisonerBalance>, type: VisitOrderType): Int = prisonerBalance.firstOrNull { it.type == type }?.balance ?: 0
 }

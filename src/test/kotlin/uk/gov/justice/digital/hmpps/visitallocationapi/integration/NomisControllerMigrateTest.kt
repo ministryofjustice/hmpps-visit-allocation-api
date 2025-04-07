@@ -13,7 +13,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCAT
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_MIGRATION
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPost
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
@@ -74,8 +73,8 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
 
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.size).isEqualTo(7)
-    assertThat(negativeVisitOrders.filter { it.type == NegativeVisitOrderType.NEGATIVE_VO }.size).isEqualTo(5)
-    assertThat(negativeVisitOrders.filter { it.type == NegativeVisitOrderType.NEGATIVE_PVO }.size).isEqualTo(2)
+    assertThat(negativeVisitOrders.filter { it.type == VisitOrderType.VO }.size).isEqualTo(5)
+    assertThat(negativeVisitOrders.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(2)
 
     val prisonerDetails = prisonerDetailsRepository.findAll()
     assertThat(prisonerDetails.size).isEqualTo(1)
@@ -110,8 +109,8 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
 
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.size).isEqualTo(2)
-    assertThat(negativeVisitOrders.filter { it.type == NegativeVisitOrderType.NEGATIVE_VO }.size).isEqualTo(0)
-    assertThat(negativeVisitOrders.filter { it.type == NegativeVisitOrderType.NEGATIVE_PVO }.size).isEqualTo(2)
+    assertThat(negativeVisitOrders.filter { it.type == VisitOrderType.VO }.size).isEqualTo(0)
+    assertThat(negativeVisitOrders.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(2)
 
     val prisonerDetails = prisonerDetailsRepository.findAll()
     assertThat(prisonerDetails.size).isEqualTo(1)

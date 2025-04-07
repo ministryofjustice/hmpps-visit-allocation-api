@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCAT
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callGet
@@ -49,8 +48,8 @@ class BalanceControllerTest : IntegrationTestBase() {
   @Test
   fun `when request to get existing prisoner with negative balance, then return prisoner balance`() {
     // Given
-    negativeVisitOrderRepository.save(NegativeVisitOrder(prisonerId = PRISONER_ID, type = NegativeVisitOrderType.NEGATIVE_VO, status = NegativeVisitOrderStatus.USED))
-    negativeVisitOrderRepository.save(NegativeVisitOrder(prisonerId = PRISONER_ID, type = NegativeVisitOrderType.NEGATIVE_PVO, status = NegativeVisitOrderStatus.USED))
+    negativeVisitOrderRepository.save(NegativeVisitOrder(prisonerId = PRISONER_ID, type = VisitOrderType.VO, status = NegativeVisitOrderStatus.USED))
+    negativeVisitOrderRepository.save(NegativeVisitOrder(prisonerId = PRISONER_ID, type = VisitOrderType.PVO, status = NegativeVisitOrderStatus.USED))
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), null))
 
     // When
