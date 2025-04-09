@@ -74,7 +74,6 @@ class NomisSyncService(
         prisonerDpsBalance = prisonerBalance.voBalance,
         balanceChange = syncDto.changeToVoBalance!!,
         visitOrderType = VisitOrderType.VO,
-        negativeVoType = VisitOrderType.VO,
       )
     }
 
@@ -85,7 +84,6 @@ class NomisSyncService(
         prisonerDpsBalance = prisonerBalance.pvoBalance,
         balanceChange = syncDto.changeToPvoBalance!!,
         visitOrderType = VisitOrderType.PVO,
-        negativeVoType = VisitOrderType.PVO,
       )
     }
 
@@ -106,7 +104,6 @@ class NomisSyncService(
       prisonerDpsBalance = dpsBalance.voBalance,
       balanceChange = (nomisBalance.voBalance - dpsBalance.voBalance),
       visitOrderType = VisitOrderType.VO,
-      negativeVoType = VisitOrderType.VO,
     )
 
     processSync(
@@ -114,28 +111,27 @@ class NomisSyncService(
       prisonerDpsBalance = dpsBalance.pvoBalance,
       balanceChange = (nomisBalance.pvoBalance - dpsBalance.pvoBalance),
       visitOrderType = VisitOrderType.PVO,
-      negativeVoType = VisitOrderType.PVO,
     )
 
     changeLogService.logSyncBookingChange(prisonerId)
   }
 
-  private fun processSync(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType, negativeVoType: VisitOrderType) {
-    LOG.info("Entered process Sync - $visitOrderType / $negativeVoType - for prisoner $prisonerId, with a DPS balance of $prisonerDpsBalance, and a change of $balanceChange")
+  private fun processSync(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
+    LOG.info("Entered process Sync - $visitOrderType - for prisoner $prisonerId, with a DPS balance of $prisonerDpsBalance, and a change of $balanceChange")
     when {
       prisonerDpsBalance > 0 -> {
-        handlePositiveBalance(prisonerId, prisonerDpsBalance, balanceChange, visitOrderType, negativeVoType)
+        handlePositiveBalance(prisonerId, prisonerDpsBalance, balanceChange, visitOrderType)
       }
       prisonerDpsBalance < 0 -> {
-        handleNegativeBalance(prisonerId, prisonerDpsBalance, balanceChange, visitOrderType, negativeVoType)
+        handleNegativeBalance(prisonerId, prisonerDpsBalance, balanceChange, visitOrderType)
       }
       else -> {
-        handleZeroBalance(prisonerId, balanceChange, visitOrderType, negativeVoType)
+        handleZeroBalance(prisonerId, balanceChange, visitOrderType)
       }
     }
   }
 
-  private fun handlePositiveBalance(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType, negativeVoType: VisitOrderType) {
+  private fun handlePositiveBalance(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
     LOG.info("Positive DPS balance, syncing with nomis for prisoner $prisonerId")
     if (balanceChange >= 0) {
       LOG.info("Balance increased and remains positive for prisoner $prisonerId, creating $balanceChange, $visitOrderType")
@@ -146,39 +142,39 @@ class NomisSyncService(
         visitOrderRepository.expireVisitOrdersGivenAmount(prisonerId, visitOrderType, abs(balanceChange).toLong())
       } else {
         val negativeVosToCreate = abs(prisonerDpsBalance + balanceChange)
-        LOG.info("Balance decreased and is negative for prisoner $prisonerId, expiring all $visitOrderType and creating $negativeVosToCreate $negativeVoType")
+        LOG.info("Balance decreased and is negative for prisoner $prisonerId, expiring all $visitOrderType and creating $negativeVosToCreate $visitOrderType")
         visitOrderRepository.expireVisitOrdersGivenAmount(prisonerId, visitOrderType, null)
-        createAndSaveNegativeVisitOrders(prisonerId, negativeVoType, negativeVosToCreate)
+        createAndSaveNegativeVisitOrders(prisonerId, visitOrderType, negativeVosToCreate)
       }
     }
   }
 
-  private fun handleNegativeBalance(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType, negativeVoType: VisitOrderType) {
+  private fun handleNegativeBalance(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
     LOG.info("Negative DPS balance, syncing with nomis for prisoner $prisonerId")
     if (balanceChange <= 0) {
-      LOG.info("Balance decreased and remains negative for prisoner $prisonerId, creating $balanceChange, $negativeVoType")
-      createAndSaveNegativeVisitOrders(prisonerId, negativeVoType, abs(balanceChange))
+      LOG.info("Balance decreased and remains negative for prisoner $prisonerId, creating $balanceChange, $visitOrderType")
+      createAndSaveNegativeVisitOrders(prisonerId, visitOrderType, abs(balanceChange))
     } else {
       if ((prisonerDpsBalance + balanceChange) <= 0) {
-        LOG.info("Balance increased but remains negative for prisoner $prisonerId, repaying $balanceChange, $negativeVoType")
-        negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(prisonerId, negativeVoType, abs(balanceChange).toLong())
+        LOG.info("Balance increased but remains negative for prisoner $prisonerId, repaying $balanceChange, $visitOrderType")
+        negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(prisonerId, visitOrderType, abs(balanceChange).toLong())
       } else {
         val positiveVosToCreate = prisonerDpsBalance + balanceChange
-        LOG.info("Balance increased and is positive for prisoner $prisonerId, repaying all $negativeVoType and creating $positiveVosToCreate $visitOrderType")
-        negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(prisonerId, negativeVoType, null)
+        LOG.info("Balance increased and is positive for prisoner $prisonerId, repaying all $visitOrderType and creating $positiveVosToCreate $visitOrderType")
+        negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(prisonerId, visitOrderType, null)
         createAndSaveVisitOrders(prisonerId, visitOrderType, positiveVosToCreate)
       }
     }
   }
 
-  private fun handleZeroBalance(prisonerId: String, balanceChange: Int, visitOrderType: VisitOrderType, negativeVoType: VisitOrderType) {
+  private fun handleZeroBalance(prisonerId: String, balanceChange: Int, visitOrderType: VisitOrderType) {
     LOG.info("Zero DPS balance, syncing with nomis for prisoner $prisonerId")
     if (balanceChange >= 0) {
       LOG.info("Balance increased for prisoner $prisonerId, creating $balanceChange $visitOrderType")
       createAndSaveVisitOrders(prisonerId, visitOrderType, balanceChange)
     } else {
-      LOG.info("Balance decreased for prisoner $prisonerId, creating $balanceChange $negativeVoType")
-      createAndSaveNegativeVisitOrders(prisonerId, negativeVoType, abs(balanceChange))
+      LOG.info("Balance decreased for prisoner $prisonerId, creating $balanceChange $visitOrderType")
+      createAndSaveNegativeVisitOrders(prisonerId, visitOrderType, abs(balanceChange))
     }
   }
 
@@ -245,6 +241,4 @@ class NomisSyncService(
       throw InvalidSyncRequestException("Balance is null but change to balance found in request - $syncDto")
     }
   }
-
-  private fun calculateAmountToChange(dpsBalance: Int, oldNomisBalance: Int, changeToNomisBalance: Int): Int = (oldNomisBalance + changeToNomisBalance) - dpsBalance
 }
