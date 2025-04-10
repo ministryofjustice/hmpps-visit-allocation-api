@@ -43,17 +43,4 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
       ),
     )
   }
-
-  fun logSyncBookingChange(prisonerId: String) {
-    LOG.info("Logging booking sync to change_log table for prisoner $prisonerId")
-    changeLogRepository.save(
-      ChangeLog(
-        prisonerId = prisonerId,
-        changeType = ChangeLogType.SYNC_BOOKING,
-        changeSource = ChangeLogSource.SYSTEM,
-        userId = "SYSTEM",
-        comment = "synced prisoner $prisonerId, due to booking change on NOMIS",
-      ),
-    )
-  }
 }
