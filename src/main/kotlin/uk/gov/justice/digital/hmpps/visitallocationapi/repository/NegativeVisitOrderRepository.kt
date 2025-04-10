@@ -6,9 +6,9 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.NegativePrisonerBalance
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.PrisonerBalance
 
 @Repository
 interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long> {
@@ -21,14 +21,14 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
   )
   fun getPrisonerNegativeBalance(
     prisonerId: String,
-  ): List<NegativePrisonerBalance>
+  ): List<PrisonerBalance>
 
   @Query(
     "SELECT COUNT(nvo) FROM NegativeVisitOrder nvo WHERE nvo.prisonerId = :prisonerId AND nvo.type = :type AND nvo.status = :status",
   )
   fun countAllNegativeVisitOrders(
     prisonerId: String,
-    type: NegativeVisitOrderType,
+    type: VisitOrderType,
     status: NegativeVisitOrderStatus,
   ): Int
 
@@ -42,7 +42,7 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
             SELECT id 
             FROM negative_visit_order
             WHERE prisoner_id = :prisonerId
-              AND type = :#{#negativeVisitOrderType.name()}
+              AND type = :#{#visitOrderType.name()}
               AND status = 'USED'
             ORDER BY created_timestamp ASC
             LIMIT :amountToExpire
@@ -52,7 +52,7 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
   )
   fun repayNegativeVisitOrdersGivenAmount(
     prisonerId: String,
-    negativeVisitOrderType: NegativeVisitOrderType,
+    visitOrderType: VisitOrderType,
     amountToExpire: Long?,
   ): Int
 

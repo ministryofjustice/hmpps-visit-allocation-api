@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -156,9 +155,9 @@ class AllocationService(
   private fun generateVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
     val visitOrders = mutableListOf<VisitOrder>()
     if (isDueVO(prisoner.prisonerId)) {
-      val negativeVoCount = negativeVisitOrderRepository.countAllNegativeVisitOrders(prisoner.prisonerId, NegativeVisitOrderType.NEGATIVE_VO, NegativeVisitOrderStatus.USED)
+      val negativeVoCount = negativeVisitOrderRepository.countAllNegativeVisitOrders(prisoner.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.USED)
       if (negativeVoCount > 0) {
-        handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, NegativeVisitOrderType.NEGATIVE_VO, visitOrders)
+        handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, VisitOrderType.VO, visitOrders)
       } else {
         repeat(prisonIncentivesForPrisonerLevel.visitOrders) {
           visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.VO))
@@ -172,9 +171,9 @@ class AllocationService(
     val visitOrders = mutableListOf<VisitOrder>()
 
     if (prisonIncentivesForPrisonerLevel.privilegedVisitOrders != 0 && isDuePVO(prisoner.prisonerId)) {
-      val negativePvoCount = negativeVisitOrderRepository.countAllNegativeVisitOrders(prisoner.prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, NegativeVisitOrderStatus.USED)
+      val negativePvoCount = negativeVisitOrderRepository.countAllNegativeVisitOrders(prisoner.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.USED)
       if (negativePvoCount > 0) {
-        handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.privilegedVisitOrders, negativePvoCount, prisoner, NegativeVisitOrderType.NEGATIVE_PVO, visitOrders)
+        handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.privilegedVisitOrders, negativePvoCount, prisoner, VisitOrderType.PVO, visitOrders)
       } else {
         repeat(prisonIncentivesForPrisonerLevel.privilegedVisitOrders) {
           visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.PVO))
@@ -222,7 +221,7 @@ class AllocationService(
     return incentiveLevelsForPrison
   }
 
-  private fun handleNegativeBalanceRepayment(incentiveAmount: Int, negativeBalance: Int, prisoner: PrisonerDto, type: NegativeVisitOrderType, visitOrders: MutableList<VisitOrder>) {
+  private fun handleNegativeBalanceRepayment(incentiveAmount: Int, negativeBalance: Int, prisoner: PrisonerDto, type: VisitOrderType, visitOrders: MutableList<VisitOrder>) {
     if (incentiveAmount < negativeBalance) {
       negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(
         prisoner.prisonerId,
@@ -237,14 +236,9 @@ class AllocationService(
       )
 
       val visitOrdersToCreate = incentiveAmount - negativeBalance
-      val visitOrderType = if (type == NegativeVisitOrderType.NEGATIVE_VO) {
-        VisitOrderType.VO
-      } else {
-        VisitOrderType.PVO
-      }
 
       repeat(visitOrdersToCreate) {
-        visitOrders.add(createVisitOrder(prisoner.prisonerId, visitOrderType))
+        visitOrders.add(createVisitOrder(prisoner.prisonerId, type))
       }
     }
   }

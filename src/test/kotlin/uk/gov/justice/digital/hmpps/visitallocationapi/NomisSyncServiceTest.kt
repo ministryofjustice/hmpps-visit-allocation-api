@@ -13,7 +13,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
@@ -196,8 +195,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, 1)
-    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, 1)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, 1)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, VisitOrderType.PVO, 1)
 
     verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
 
@@ -222,8 +221,8 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_VO, null)
-    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, NegativeVisitOrderType.NEGATIVE_PVO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, VisitOrderType.VO, null)
+    verify(negativeVisitOrderRepository, times(1)).repayNegativeVisitOrdersGivenAmount(prisonerId, VisitOrderType.PVO, null)
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
 
     val visitOrdersSaved = visitOrderCaptor.allValues[0]

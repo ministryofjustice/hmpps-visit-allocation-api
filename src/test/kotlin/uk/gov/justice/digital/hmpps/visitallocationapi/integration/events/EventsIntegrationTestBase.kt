@@ -14,7 +14,7 @@ import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalStackContainer.setLocalStackProperties
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.EntityHelper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
@@ -188,7 +188,7 @@ abstract class EventsIntegrationTestBase {
     }
   }
 
-  private fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: NegativeVisitOrderType, amountToCreate: Int) {
+  private fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int) {
     val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
     repeat(amountToCreate) {
       negativeVisitOrders.add(

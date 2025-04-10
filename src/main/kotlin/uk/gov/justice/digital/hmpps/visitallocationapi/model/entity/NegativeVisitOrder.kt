@@ -9,7 +9,7 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -29,7 +29,7 @@ data class NegativeVisitOrder(
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val type: NegativeVisitOrderType,
+  val type: VisitOrderType,
 
   @Column(nullable = false)
   val createdTimestamp: LocalDateTime = LocalDateTime.now(),

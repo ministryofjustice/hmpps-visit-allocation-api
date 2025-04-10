@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_SY
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
@@ -102,8 +101,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a negative balance decreases, then DPS service successfully syncs`() {
     // Given
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 5)
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 2)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -158,8 +157,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a negative balance increases above zero, then DPS service successfully syncs`() {
     // Given
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_VO, 2)
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, NegativeVisitOrderType.NEGATIVE_PVO, 1)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
 
     val prisonerSyncDto = createSyncRequest(
@@ -449,8 +448,8 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     val expectedNegativeVisitOrderTotal = expectedNegativeVoCount + expectedNegativePvoCount
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED }.size).isEqualTo(expectedNegativeVisitOrderTotal)
-    assertThat(negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED && it.type == NegativeVisitOrderType.NEGATIVE_VO }.size).isEqualTo(expectedNegativeVoCount)
-    assertThat(negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED && it.type == NegativeVisitOrderType.NEGATIVE_PVO }.size).isEqualTo(expectedNegativePvoCount)
+    assertThat(negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED && it.type == VisitOrderType.VO }.size).isEqualTo(expectedNegativeVoCount)
+    assertThat(negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED && it.type == VisitOrderType.PVO }.size).isEqualTo(expectedNegativePvoCount)
 
     val changeLogs = changeLogRepository.findAll()
     assertThat(changeLogs.size).isEqualTo(1)
