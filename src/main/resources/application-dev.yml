@@ -19,6 +19,10 @@ incentives:
   api:
     url: "https://incentives-api-dev.hmpps.service.justice.gov.uk"
 
+prison:
+  api:
+    url: "https://prison-api-dev.prison.service.justice.gov.uk"
+
 hmpps:
   sqs:
     enabled: true
