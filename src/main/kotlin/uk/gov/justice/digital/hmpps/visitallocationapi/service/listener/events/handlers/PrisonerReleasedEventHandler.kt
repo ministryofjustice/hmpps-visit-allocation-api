@@ -21,10 +21,7 @@ class PrisonerReleasedEventHandler(
   PrisonerReleasedInfo::class.java,
 ) {
 
-  override fun shouldProcess(additionalInfo: PrisonerReleasedInfo): Boolean {
-    val prisoner = prisonerSearchClient.getPrisonerById(additionalInfo.prisonerId)
-    return prisoner.inOutStatus == "IN"
-  }
+  override fun shouldProcess(additionalInfo: PrisonerReleasedInfo): Boolean = true
 
   override fun isDpsPrison(additionalInfo: PrisonerReleasedInfo): Boolean = prisonService.getPrisonByCode(additionalInfo.prisonCode)?.active == true
 

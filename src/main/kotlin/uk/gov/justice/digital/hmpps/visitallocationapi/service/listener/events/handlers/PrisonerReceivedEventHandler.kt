@@ -21,10 +21,8 @@ class PrisonerReceivedEventHandler(
   PrisonerReceivedInfo::class.java,
 ) {
 
-  override fun shouldProcess(additionalInfo: PrisonerReceivedInfo): Boolean {
-    val prisoner = prisonerSearchClient.getPrisonerById(additionalInfo.prisonerId)
-    return prisoner.inOutStatus == "IN"
-  }
+  // TODO: VB-5234 - Do we need to only process certain receive type reasons (E.g. ADMISSION / RETURN_FROM_COURT).
+  override fun shouldProcess(additionalInfo: PrisonerReceivedInfo): Boolean = true
 
   override fun isDpsPrison(additionalInfo: PrisonerReceivedInfo): Boolean = prisonService.getPrisonByCode(additionalInfo.prisonCode)?.active == true
 

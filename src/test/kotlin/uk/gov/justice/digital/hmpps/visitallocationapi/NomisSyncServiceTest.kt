@@ -14,6 +14,7 @@ import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
@@ -299,6 +300,38 @@ class NomisSyncServiceTest {
     assertThat(privilegedNegativeVisitOrdersSaved.size).isEqualTo(1)
 
     verify(changeLogService, times(1)).logSyncAdjustmentChange(syncDto)
+
+    verifyNoInteractions(telemetryClientService)
+  }
+
+  // Nomis Sync via events tests \\
+
+  /**
+   * Scenario 1 - Change event comes in to process, prisoner is synced.
+   */
+  @Test
+  fun `Given a prisoner event comes through, then balance is synced`() {
+    // GIVEN
+    val prisonerId = PRISONER_ID
+    val existingPrisonerBalance = PrisonerBalanceDto(prisonerId = prisonerId, voBalance = 2, pvoBalance = 1)
+    val existingNomisBalance = VisitBalancesDto(remainingVo = 3, remainingPvo = 2)
+
+    // WHEN
+    whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
+    whenever(prisonApiClient.getBookingVisitBalances(prisonerId)).thenReturn(existingNomisBalance)
+
+    // WHEN
+    val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
+    nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId)
+
+    // THEN - Capture the visit orders that were saved
+    verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())
+
+    // Retrieve the captured values
+    val visitOrdersSaved = visitOrderCaptor.allValues[0]
+    assertThat(visitOrdersSaved.size).isEqualTo(1)
+    val privilegedVisitOrdersSaved = visitOrderCaptor.allValues[1]
+    assertThat(privilegedVisitOrdersSaved.size).isEqualTo(1)
 
     verifyNoInteractions(telemetryClientService)
   }

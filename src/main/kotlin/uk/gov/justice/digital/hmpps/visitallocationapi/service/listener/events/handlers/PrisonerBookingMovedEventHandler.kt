@@ -21,6 +21,9 @@ class PrisonerBookingMovedEventHandler(
   PrisonerBookingMovedInfo::class.java,
 ) {
 
+  // TODO: VB-5234 - Is it possible for the prisoners in this event additional information, to be from different prisons? As if yes, it
+  //  might change how we process, and might need to override the "handle" method, to process each prisoner differently if one is from NOMIS prison
+  //  and other is from DPS prison.
   override fun shouldProcess(additionalInfo: PrisonerBookingMovedInfo): Boolean {
     val movedFromPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedFromNomsNumber)
     val movedToPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)

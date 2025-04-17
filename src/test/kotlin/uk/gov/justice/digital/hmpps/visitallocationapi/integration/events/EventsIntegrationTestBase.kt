@@ -13,21 +13,20 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalStackContainer.setLocalStackProperties
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.EntityHelper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener
@@ -115,6 +114,9 @@ abstract class EventsIntegrationTestBase {
   @MockitoSpyBean
   lateinit var negativeVisitOrderRepository: NegativeVisitOrderRepository
 
+  @MockitoSpyBean
+  lateinit var nomisSyncService: NomisSyncService
+
   @BeforeEach
   fun cleanQueue() {
     purgeQueue(domainEventsSqsClient, domainEventsQueueUrl)
@@ -162,6 +164,44 @@ abstract class EventsIntegrationTestBase {
     return createAdditionalInformationJson(jsonValues)
   }
 
+  fun createPrisonerMergedAdditionalInformationJson(prisonerId: String, removedPrisonerId: String): String {
+    val jsonValues = HashMap<String, String>()
+
+    jsonValues["nomsNumber"] = prisonerId
+    jsonValues["removedNomsNumber"] = removedPrisonerId
+
+    return createAdditionalInformationJson(jsonValues)
+  }
+
+  fun createPrisonerBookingMovedAdditionalInformationJson(movedFromPrisonerId: String, movedToPrisonerId: String): String {
+    val jsonValues = HashMap<String, String>()
+
+    jsonValues["movedFromNomsNumber"] = movedFromPrisonerId
+    jsonValues["movedToNomsNumber"] = movedToPrisonerId
+
+    return createAdditionalInformationJson(jsonValues)
+  }
+
+  fun createPrisonerReleasedAdditionalInformationJson(prisonerId: String, prisonId: String, reason: String): String {
+    val jsonValues = HashMap<String, String>()
+
+    jsonValues["nomsNumber"] = prisonerId
+    jsonValues["prisonId"] = prisonId
+    jsonValues["reason"] = reason
+
+    return createAdditionalInformationJson(jsonValues)
+  }
+
+  fun createPrisonerReceivedAdditionalInformationJson(prisonerId: String, prisonId: String, reason: PrisonerReceivedReasonType): String {
+    val jsonValues = HashMap<String, String>()
+
+    jsonValues["nomsNumber"] = prisonerId
+    jsonValues["prisonId"] = prisonId
+    jsonValues["reason"] = reason.name
+
+    return createAdditionalInformationJson(jsonValues)
+  }
+
   private fun createAdditionalInformationJson(jsonValues: Map<String, Any>): String {
     val builder = StringBuilder()
     builder.append("{")
@@ -188,19 +228,5 @@ abstract class EventsIntegrationTestBase {
     else -> {
       ("\"${entry.key}\":\"${entry.value}\"")
     }
-  }
-
-  private fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int) {
-    val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
-    repeat(amountToCreate) {
-      negativeVisitOrders.add(
-        NegativeVisitOrder(
-          prisonerId = prisonerId,
-          type = negativeVoType,
-          status = NegativeVisitOrderStatus.USED,
-        ),
-      )
-    }
-    negativeVisitOrderRepository.saveAll(negativeVisitOrders)
   }
 }
