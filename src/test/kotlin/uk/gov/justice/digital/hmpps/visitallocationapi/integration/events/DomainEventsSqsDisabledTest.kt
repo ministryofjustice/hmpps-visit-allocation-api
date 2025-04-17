@@ -11,7 +11,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.test.context.TestPropertySource
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService.Companion.CONVICTION_STATUS_UPDATED_EVENT_TYPE
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers.DomainEventHandlerRegistry.Companion.CONVICTION_STATUS_UPDATED_EVENT_TYPE
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 @DisplayName("Test for Domain Event Listener disabled")
