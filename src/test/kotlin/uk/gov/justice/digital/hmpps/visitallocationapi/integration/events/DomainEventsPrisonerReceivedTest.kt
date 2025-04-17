@@ -58,7 +58,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
   }
 
   @Test
-  fun `when domain event prisoner received is found, but an error is returned from prisoner search the message is sent to DLQ`() {
+  fun `when domain event prisoner received is found, but an error is returned from prison API the message is sent to DLQ`() {
     // Given
     val prisonerId = "AA123456"
     val prisonId = "HEI"
@@ -74,8 +74,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     val publishRequest = createDomainEventPublishRequest(PRISONER_RECEIVED_EVENT_TYPE, domainEvent)
 
     // And
-    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
-    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, VisitBalancesDto(remainingVo = 0, remainingPvo = 0))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, null)
 
     // When
     awsSnsClient.publish(publishRequest).get()
