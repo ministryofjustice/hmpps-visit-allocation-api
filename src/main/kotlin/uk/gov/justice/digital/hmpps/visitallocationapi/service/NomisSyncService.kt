@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
@@ -27,6 +28,7 @@ class NomisSyncService(
   private val visitOrderRepository: VisitOrderRepository,
   private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
   private val changeLogService: ChangeLogService,
+  private val prisonApiClient: PrisonApiClient,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -89,16 +91,25 @@ class NomisSyncService(
     processSync(
       prisonerId = prisonerId,
       prisonerDpsBalance = prisonerDpsBalance.voBalance,
-      balanceChange = (prisonerNomisBalance.voBalance - prisonerDpsBalance.voBalance),
+      balanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance),
       visitOrderType = VisitOrderType.VO,
     )
 
     processSync(
       prisonerId = prisonerId,
       prisonerDpsBalance = prisonerDpsBalance.pvoBalance,
-      balanceChange = (prisonerNomisBalance.pvoBalance - prisonerDpsBalance.pvoBalance),
+      balanceChange = (prisonerNomisBalance.remainingPvo - prisonerDpsBalance.pvoBalance),
       visitOrderType = VisitOrderType.PVO,
     )
+  }
+
+  @Transactional
+  fun syncPrisonerRemoved(prisonerId: String) {
+    LOG.info("Entered NomisSyncService - syncPrisonerRemoved for prisoner {}", prisonerId)
+
+    visitOrderRepository.deleteAllByPrisonerId(prisonerId)
+    negativeVisitOrderRepository.deleteAllByPrisonerId(prisonerId)
+    prisonerDetailsService.removePrisonerDetails(prisonerId)
   }
 
   private fun processSync(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {

@@ -9,5 +9,6 @@ data class PrisonerMergedInfo(
   val prisonerId: String,
 
   @NotBlank
-  val removedNomsNumber: String,
+  @JsonProperty("removedNomsNumber")
+  val removedPrisonerId: String,
 )

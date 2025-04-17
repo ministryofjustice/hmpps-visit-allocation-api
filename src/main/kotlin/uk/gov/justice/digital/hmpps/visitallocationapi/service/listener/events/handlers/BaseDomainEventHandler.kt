@@ -18,7 +18,7 @@ abstract class BaseDomainEventHandler<T : Any>(
    * Provide a default (concrete) implementation of 'handle', as only some sub-class handlers will need to diverge from the
    * standard approach taken in this method.
    */
-  open fun handle(domainEvent: DomainEvent) {
+  fun handle(domainEvent: DomainEvent) {
     val additionalInfo = objectMapper.readValue(domainEvent.additionalInformation, clazz)
 
     if (shouldProcess(additionalInfo)) {

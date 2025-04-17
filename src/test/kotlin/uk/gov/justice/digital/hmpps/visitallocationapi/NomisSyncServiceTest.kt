@@ -11,6 +11,7 @@ import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -51,6 +52,9 @@ class NomisSyncServiceTest {
 
   @Mock
   private lateinit var changeLogService: ChangeLogService
+
+  @Mock
+  private lateinit var prisonApiClient: PrisonApiClient
 
   @InjectMocks
   private lateinit var nomisSyncService: NomisSyncService

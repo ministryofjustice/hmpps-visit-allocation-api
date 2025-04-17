@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalS
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.EntityHelper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
@@ -43,6 +44,7 @@ import uk.gov.justice.hmpps.sqs.HmppsTopic
   HmppsAuthApiExtension::class,
   PrisonerSearchMockExtension::class,
   IncentivesMockExtension::class,
+  PrisonApiMockExtension::class,
 )
 abstract class EventsIntegrationTestBase {
   companion object {

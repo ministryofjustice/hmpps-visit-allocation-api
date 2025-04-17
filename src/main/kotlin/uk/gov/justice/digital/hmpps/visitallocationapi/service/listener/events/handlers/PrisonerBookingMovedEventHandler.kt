@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerBookingMovedInfo
 
 @Service
@@ -22,16 +21,15 @@ class PrisonerBookingMovedEventHandler(
   PrisonerBookingMovedInfo::class.java,
 ) {
 
-  override fun handle(domainEvent: DomainEvent) {
-    TODO("Not yet implemented")
-  }
-
   override fun shouldProcess(additionalInfo: PrisonerBookingMovedInfo): Boolean {
-    TODO("Not yet implemented")
+    val movedFromPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedFromNomsNumber)
+    val movedToPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)
+    return (movedFromPrisoner.inOutStatus == "IN" || movedToPrisoner.inOutStatus == "IN")
   }
 
   override fun isDpsPrison(additionalInfo: PrisonerBookingMovedInfo): Boolean {
-    TODO("Not yet implemented")
+    val prisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)
+    return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
   }
 
   override fun processDps(additionalInfo: PrisonerBookingMovedInfo) {
@@ -39,6 +37,7 @@ class PrisonerBookingMovedEventHandler(
   }
 
   override fun processNomis(additionalInfo: PrisonerBookingMovedInfo) {
-    TODO("Not yet implemented")
+    nomisSyncService.syncPrisonerBalanceFromEventChange(additionalInfo.movedFromNomsNumber)
+    nomisSyncService.syncPrisonerBalanceFromEventChange(additionalInfo.movedToNomsNumber)
   }
 }
