@@ -31,7 +31,7 @@ class PrisonerBookingMovedEventHandler(
   }
 
   override fun isDpsPrison(additionalInfo: PrisonerBookingMovedInfo): Boolean {
-    val prisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)
+    val prisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedFromNomsNumber)
     return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
   }
 
