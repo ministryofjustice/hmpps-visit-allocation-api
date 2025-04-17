@@ -8,7 +8,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerRecei
 data class PrisonerReceivedInfo(
   @NotBlank
   @JsonProperty("nomsNumber")
-  val prisonerNumber: String,
+  val prisonerId: String,
 
   @NotBlank
   @JsonProperty("prisonId")

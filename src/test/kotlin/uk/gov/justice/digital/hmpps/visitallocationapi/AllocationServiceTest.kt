@@ -79,7 +79,7 @@ class AllocationServiceTest {
     // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
     val prisonerId = "AA123456"
     val prisonId = "HEI"
-    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN")
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
@@ -119,7 +119,7 @@ class AllocationServiceTest {
     // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
     val prisonerId = "AA123456"
     val prisonId = "HEI"
-    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN")
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
@@ -165,7 +165,7 @@ class AllocationServiceTest {
     // GIVEN - An existing prisoner with Standard incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
-    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN")
     val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), null)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 0, levelCode = "STD")
@@ -212,7 +212,7 @@ class AllocationServiceTest {
     // GIVEN - An existing prisoner with Standard incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
-    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN")
     val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), LocalDate.now().minusDays(14))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
@@ -260,7 +260,7 @@ class AllocationServiceTest {
     // GIVEN - An existing prisoner with Enhanced incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
-    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN")
     val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(10), null)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "ENH")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH")
@@ -305,7 +305,7 @@ class AllocationServiceTest {
     // GIVEN - A new prisoner with Standard incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
-    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN")
     val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), LocalDate.now().minusDays(28))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
@@ -356,7 +356,7 @@ class AllocationServiceTest {
     // GIVEN - A new prisoner with Standard incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
-    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN")
     val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), LocalDate.now().minusDays(14))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
@@ -399,7 +399,7 @@ class AllocationServiceTest {
     // GIVEN - An existing prisoner with Standard incentive level, in prison MDI
     val prisonerId = "AA123456"
     val prisonId = "MDI"
-    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId)
+    val prisoner = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN")
     val prisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), LocalDate.now().minusDays(14))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")

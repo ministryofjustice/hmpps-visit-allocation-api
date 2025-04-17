@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank
 data class PrisonerReleasedInfo(
   @NotBlank
   @JsonProperty("nomsNumber")
-  val prisonerNumber: String,
+  val prisonerId: String,
 
   @NotBlank
   @JsonProperty("prisonId")

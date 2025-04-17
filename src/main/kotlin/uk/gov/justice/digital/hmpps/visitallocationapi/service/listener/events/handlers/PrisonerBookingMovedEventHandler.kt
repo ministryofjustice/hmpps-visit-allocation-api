@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerBookingMovedInfo
@@ -12,10 +13,12 @@ class PrisonerBookingMovedEventHandler(
   objectMapper: ObjectMapper,
   prisonService: PrisonService,
   prisonerSearchClient: PrisonerSearchClient,
+  nomisSyncService: NomisSyncService,
 ) : BaseDomainEventHandler<PrisonerBookingMovedInfo>(
   objectMapper,
   prisonService,
   prisonerSearchClient,
+  nomisSyncService,
   PrisonerBookingMovedInfo::class.java,
 ) {
 

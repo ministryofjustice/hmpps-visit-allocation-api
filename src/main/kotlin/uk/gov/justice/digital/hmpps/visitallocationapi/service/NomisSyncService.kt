@@ -21,12 +21,12 @@ import kotlin.math.abs
 
 @Service
 class NomisSyncService(
-  val balanceService: BalanceService,
-  val prisonerDetailsService: PrisonerDetailsService,
-  val telemetryService: TelemetryClientService,
-  val visitOrderRepository: VisitOrderRepository,
-  val negativeVisitOrderRepository: NegativeVisitOrderRepository,
-  val changeLogService: ChangeLogService,
+  private val balanceService: BalanceService,
+  private val prisonerDetailsService: PrisonerDetailsService,
+  private val telemetryService: TelemetryClientService,
+  private val visitOrderRepository: VisitOrderRepository,
+  private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
+  private val changeLogService: ChangeLogService,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -77,6 +77,28 @@ class NomisSyncService(
     }
 
     changeLogService.logSyncAdjustmentChange(syncDto)
+  }
+
+  @Transactional
+  fun syncPrisonerBalanceFromEventChange(prisonerId: String) {
+    LOG.info("Entered NomisSyncService - syncPrisonerBalanceFromEventChange for prisoner {}", prisonerId)
+
+    val prisonerNomisBalance = prisonApiClient.getBookingVisitBalances(prisonerId)
+    val prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId) ?: PrisonerBalanceDto(prisonerId, 0, 0)
+
+    processSync(
+      prisonerId = prisonerId,
+      prisonerDpsBalance = prisonerDpsBalance.voBalance,
+      balanceChange = (prisonerNomisBalance.voBalance - prisonerDpsBalance.voBalance),
+      visitOrderType = VisitOrderType.VO,
+    )
+
+    processSync(
+      prisonerId = prisonerId,
+      prisonerDpsBalance = prisonerDpsBalance.pvoBalance,
+      balanceChange = (prisonerNomisBalance.pvoBalance - prisonerDpsBalance.pvoBalance),
+      visitOrderType = VisitOrderType.PVO,
+    )
   }
 
   private fun processSync(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
