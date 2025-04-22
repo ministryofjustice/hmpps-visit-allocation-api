@@ -27,9 +27,7 @@ class PrisonerReceivedEventHandler(
     processor.handle(domainEvent)
   }
 
-  private fun shouldProcess(info: PrisonerReceivedInfo): Boolean {
-    return true
-  }
+  private fun shouldProcess(info: PrisonerReceivedInfo): Boolean = true
 
   private fun isDpsPrison(info: PrisonerReceivedInfo): Boolean = prisonService.getPrisonByCode(info.prisonCode)?.active == true
 
