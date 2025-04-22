@@ -18,7 +18,7 @@ class DomainEventHandlerRegistry(
     const val PRISONER_BOOKING_MOVED_EVENT_TYPE = "prison-offender-events.prisoner.booking.moved"
   }
 
-  private val handlers: Map<String, BaseDomainEventHandler<*>> = mapOf(
+  private val handlers: Map<String, DomainEventHandler> = mapOf(
     CONVICTION_STATUS_UPDATED_EVENT_TYPE to convictionStatusChangedHandler,
     PRISONER_RECEIVED_EVENT_TYPE to prisonerReceivedHandler,
     PRISONER_RELEASED_EVENT_TYPE to prisonerReleasedHandler,
@@ -26,5 +26,5 @@ class DomainEventHandlerRegistry(
     PRISONER_BOOKING_MOVED_EVENT_TYPE to prisonerBookingMovedHandler,
   )
 
-  fun getHandler(eventType: String): BaseDomainEventHandler<*>? = handlers[eventType]
+  fun getHandler(eventType: String): DomainEventHandler? = handlers[eventType]
 }

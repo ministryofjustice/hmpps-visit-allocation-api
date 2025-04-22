@@ -2,33 +2,43 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
-import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerReceivedInfo
 
 @Service
 class PrisonerReceivedEventHandler(
   objectMapper: ObjectMapper,
-  prisonService: PrisonService,
-  prisonerSearchClient: PrisonerSearchClient,
-  nomisSyncService: NomisSyncService,
-) : BaseDomainEventHandler<PrisonerReceivedInfo>(
-  objectMapper,
-  prisonService,
-  prisonerSearchClient,
-  nomisSyncService,
-  PrisonerReceivedInfo::class.java,
-) {
+  private val prisonService: PrisonService,
+  private val nomisSyncService: NomisSyncService,
+) : DomainEventHandler {
 
-  // TODO: VB-5234 - Do we need to only process certain receive type reasons (E.g. ADMISSION / RETURN_FROM_COURT).
-  override fun shouldProcess(additionalInfo: PrisonerReceivedInfo): Boolean = true
+  private val processor = StandardDomainEventHandler(
+    objectMapper = objectMapper,
+    clazz = PrisonerReceivedInfo::class.java,
+    shouldProcess = ::shouldProcess,
+    isDpsPrison = ::isDpsPrison,
+    processDps = ::processDps,
+    processNomis = ::processNomis,
+  )
 
-  override fun isDpsPrison(additionalInfo: PrisonerReceivedInfo): Boolean = prisonService.getPrisonByCode(additionalInfo.prisonCode)?.active == true
-
-  override fun processDps(additionalInfo: PrisonerReceivedInfo) {
-    TODO("Not yet implemented")
+  override fun handle(domainEvent: DomainEvent) {
+    processor.handle(domainEvent)
   }
 
-  override fun processNomis(additionalInfo: PrisonerReceivedInfo) = nomisSyncService.syncPrisonerBalanceFromEventChange(additionalInfo.prisonerId)
+  private fun shouldProcess(info: PrisonerReceivedInfo): Boolean {
+    // TODO: VB-5234 - Filter by receive type reasons (e.g. ADMISSION, RETURN_FROM_COURT)
+    return true
+  }
+
+  private fun isDpsPrison(info: PrisonerReceivedInfo): Boolean = prisonService.getPrisonByCode(info.prisonCode)?.active == true
+
+  private fun processDps(info: PrisonerReceivedInfo) {
+    TODO("processDps not yet implemented")
+  }
+
+  private fun processNomis(info: PrisonerReceivedInfo) {
+    nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId)
+  }
 }

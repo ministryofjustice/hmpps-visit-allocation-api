@@ -5,35 +5,43 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerMergedInfo
 
 @Service
 class PrisonerMergedEventHandler(
   objectMapper: ObjectMapper,
-  prisonService: PrisonService,
-  prisonerSearchClient: PrisonerSearchClient,
-  nomisSyncService: NomisSyncService,
-) : BaseDomainEventHandler<PrisonerMergedInfo>(
-  objectMapper,
-  prisonService,
-  prisonerSearchClient,
-  nomisSyncService,
-  PrisonerMergedInfo::class.java,
-) {
+  private val prisonService: PrisonService,
+  private val prisonerSearchClient: PrisonerSearchClient,
+  private val nomisSyncService: NomisSyncService,
+) : DomainEventHandler {
 
-  override fun shouldProcess(additionalInfo: PrisonerMergedInfo): Boolean = true
+  private val processor = StandardDomainEventHandler(
+    objectMapper = objectMapper,
+    clazz = PrisonerMergedInfo::class.java,
+    shouldProcess = ::shouldProcess,
+    isDpsPrison = ::isDpsPrison,
+    processDps = ::processDps,
+    processNomis = ::processNomis,
+  )
 
-  override fun isDpsPrison(additionalInfo: PrisonerMergedInfo): Boolean {
-    val prisoner = prisonerSearchClient.getPrisonerById(additionalInfo.prisonerId)
+  override fun handle(domainEvent: DomainEvent) {
+    processor.handle(domainEvent)
+  }
+
+  private fun shouldProcess(info: PrisonerMergedInfo): Boolean = true
+
+  private fun isDpsPrison(info: PrisonerMergedInfo): Boolean {
+    val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
     return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
   }
 
-  override fun processDps(additionalInfo: PrisonerMergedInfo) {
-    TODO("Not yet implemented")
+  private fun processDps(info: PrisonerMergedInfo) {
+    TODO("processDps not yet implemented")
   }
 
-  override fun processNomis(additionalInfo: PrisonerMergedInfo) {
-    nomisSyncService.syncPrisonerBalanceFromEventChange(additionalInfo.prisonerId)
-    nomisSyncService.syncPrisonerRemoved(additionalInfo.removedPrisonerId)
+  private fun processNomis(info: PrisonerMergedInfo) {
+    nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId)
+    nomisSyncService.syncPrisonerRemoved(info.removedPrisonerId)
   }
 }

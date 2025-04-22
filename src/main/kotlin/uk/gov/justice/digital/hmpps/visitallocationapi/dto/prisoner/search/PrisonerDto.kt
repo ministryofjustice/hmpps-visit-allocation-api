@@ -13,4 +13,7 @@ data class PrisonerDto(
 
   @Schema(description = "In / out status of prisoner", example = "IN")
   val inOutStatus: String,
+
+  @Schema(description = "Last prison ID of the prisoner", example = "IN")
+  val lastPrisonId: String,
 )

@@ -5,29 +5,42 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerReleasedInfo
 
 @Service
 class PrisonerReleasedEventHandler(
   objectMapper: ObjectMapper,
-  prisonService: PrisonService,
-  prisonerSearchClient: PrisonerSearchClient,
-  nomisSyncService: NomisSyncService,
-) : BaseDomainEventHandler<PrisonerReleasedInfo>(
-  objectMapper,
-  prisonService,
-  prisonerSearchClient,
-  nomisSyncService,
-  PrisonerReleasedInfo::class.java,
-) {
+  private val prisonService: PrisonService,
+  private val prisonerSearchClient: PrisonerSearchClient,
+  private val nomisSyncService: NomisSyncService,
+) : DomainEventHandler {
 
-  override fun shouldProcess(additionalInfo: PrisonerReleasedInfo): Boolean = true
+  private val processor = StandardDomainEventHandler(
+    objectMapper = objectMapper,
+    clazz = PrisonerReleasedInfo::class.java,
+    shouldProcess = ::shouldProcess,
+    isDpsPrison = ::isDpsPrison,
+    processDps = ::processDps,
+    processNomis = ::processNomis,
+  )
 
-  override fun isDpsPrison(additionalInfo: PrisonerReleasedInfo): Boolean = prisonService.getPrisonByCode(additionalInfo.prisonCode)?.active == true
-
-  override fun processDps(additionalInfo: PrisonerReleasedInfo) {
-    TODO("Not yet implemented")
+  override fun handle(domainEvent: DomainEvent) {
+    processor.handle(domainEvent)
   }
 
-  override fun processNomis(additionalInfo: PrisonerReleasedInfo) = nomisSyncService.syncPrisonerBalanceFromEventChange(additionalInfo.prisonerId)
+  private fun shouldProcess(info: PrisonerReleasedInfo): Boolean = true
+
+  private fun isDpsPrison(info: PrisonerReleasedInfo): Boolean {
+    val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
+    return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
+  }
+
+  private fun processDps(info: PrisonerReleasedInfo) {
+    TODO("processDps not yet implemented")
+  }
+
+  private fun processNomis(info: PrisonerReleasedInfo) {
+    nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId)
+  }
 }

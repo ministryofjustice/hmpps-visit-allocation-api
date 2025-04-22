@@ -33,10 +33,10 @@ import java.util.concurrent.TimeUnit
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   companion object {
     const val PRISON_CODE = "MDI"
-    val prisoner1 = PrisonerDto(prisonerId = "ABC121", prisonId = PRISON_CODE, inOutStatus = "IN")
-    val prisoner2 = PrisonerDto(prisonerId = "ABC122", prisonId = PRISON_CODE, inOutStatus = "IN")
-    val prisoner3 = PrisonerDto(prisonerId = "ABC123", prisonId = PRISON_CODE, inOutStatus = "IN")
-    val prisoner4 = PrisonerDto(prisonerId = "ABC124", prisonId = PRISON_CODE, inOutStatus = "IN")
+    val prisoner1 = PrisonerDto(prisonerId = "ABC121", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI")
+    val prisoner2 = PrisonerDto(prisonerId = "ABC122", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI")
+    val prisoner3 = PrisonerDto(prisonerId = "ABC123", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI")
+    val prisoner4 = PrisonerDto(prisonerId = "ABC124", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI")
   }
 
   /**
