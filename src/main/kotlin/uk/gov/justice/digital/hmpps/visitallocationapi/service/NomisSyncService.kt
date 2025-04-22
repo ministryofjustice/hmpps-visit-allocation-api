@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisi
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
+import java.time.LocalDate
 import kotlin.math.abs
 
 @Service
@@ -86,7 +87,13 @@ class NomisSyncService(
     LOG.info("Entered NomisSyncService - syncPrisonerBalanceFromEventChange for prisoner {}", prisonerId)
 
     val prisonerNomisBalance = prisonApiClient.getBookingVisitBalances(prisonerId)
-    val prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId) ?: PrisonerBalanceDto(prisonerId, 0, 0)
+    var prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId)
+
+    if (prisonerDpsBalance == null) {
+      // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
+      prisonerDetailsService.createNewPrisonerDetails(prisonerId, LocalDate.now(), null)
+      prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
+    }
 
     processSync(
       prisonerId = prisonerId,
