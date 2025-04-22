@@ -28,7 +28,6 @@ class PrisonerReceivedEventHandler(
   }
 
   private fun shouldProcess(info: PrisonerReceivedInfo): Boolean {
-    // TODO: VB-5234 - Filter by receive type reasons (e.g. ADMISSION, RETURN_FROM_COURT)
     return true
   }
 
