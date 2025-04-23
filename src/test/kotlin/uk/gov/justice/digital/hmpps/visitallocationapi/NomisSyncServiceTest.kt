@@ -315,7 +315,7 @@ class NomisSyncServiceTest {
     // GIVEN
     val prisonerId = PRISONER_ID
     val existingPrisonerBalance = PrisonerBalanceDto(prisonerId = prisonerId, voBalance = 2, pvoBalance = 1)
-    val existingNomisBalance = VisitBalancesDto(remainingVo = 3, remainingPvo = 2)
+    val existingNomisBalance = VisitBalancesDto(remainingVo = 3, remainingPvo = 2, latestIepAdjustDate = LocalDate.now().minusDays(1), latestPrivIepAdjustDate = LocalDate.now().minusDays(1))
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)

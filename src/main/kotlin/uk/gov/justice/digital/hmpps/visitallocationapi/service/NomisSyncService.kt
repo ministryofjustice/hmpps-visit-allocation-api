@@ -96,8 +96,9 @@ class NomisSyncService(
     var prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId)
 
     if (prisonerDpsBalance == null) {
+      val lastVoAllocatedDate = prisonerNomisBalance.latestIepAdjustDate ?: LocalDate.now()
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      prisonerDetailsService.createNewPrisonerDetails(prisonerId, LocalDate.now(), null)
+      prisonerDetailsService.createNewPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
       prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
     }
 

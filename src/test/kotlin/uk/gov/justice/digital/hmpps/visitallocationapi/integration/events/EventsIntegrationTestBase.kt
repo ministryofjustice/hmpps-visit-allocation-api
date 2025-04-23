@@ -13,6 +13,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReleasedReasonType
@@ -39,6 +40,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocati
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsTopic
+import java.time.LocalDate
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -209,6 +211,8 @@ abstract class EventsIntegrationTestBase {
   }
 
   protected fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)
+
+  protected fun createVisitBalancesDto(remainingVo: Int, remainingPvo: Int, latestIepAdjustDate: LocalDate? = null, latestPrivIepAdjustDate: LocalDate? = null): VisitBalancesDto = VisitBalancesDto(remainingVo, remainingPvo, latestIepAdjustDate, latestPrivIepAdjustDate)
 
   private fun createAdditionalInformationJson(jsonValues: Map<String, Any>): String {
     val builder = StringBuilder()

@@ -11,13 +11,13 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import java.time.LocalDate
 
 @DisplayName("Test for Domain Event Prisoner Merged")
 class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
@@ -41,7 +41,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
 
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
-    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, VisitBalancesDto(remainingVo = 3, remainingPvo = 2))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -80,7 +80,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
 
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
-    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, VisitBalancesDto(remainingVo = 0, remainingPvo = 0))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(0, 0))
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -116,5 +116,43 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
+  }
+
+  @Test
+  fun `when domain event prisoner merged is found, then new prisoner balance is synced`() {
+    // Given
+    val prisonerId = "AA123456"
+    val removedPrisonerId = "BB123456"
+    val prisonId = "HEI"
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
+      createPrisonerMergedAdditionalInformationJson(prisonerId = prisonerId, removedPrisonerId = removedPrisonerId),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_MERGED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
+    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerRemoved(any()) }
+    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(5)
+
+    val prisonerDetails = prisonerDetailsRepository.findAll()
+    assertThat(prisonerDetails.size).isEqualTo(1)
+    assertThat(prisonerDetails[0].prisonerId).isEqualTo(prisonerId)
+    assertThat(prisonerDetails[0].lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetails[0].lastPvoAllocatedDate).isNull()
   }
 }

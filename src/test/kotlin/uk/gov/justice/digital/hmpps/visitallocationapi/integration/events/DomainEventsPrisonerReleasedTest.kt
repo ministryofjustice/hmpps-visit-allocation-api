@@ -11,7 +11,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -20,6 +19,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerRelea
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import java.time.LocalDate
 
 @DisplayName("Test for Domain Event Prisoner Released")
 class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
@@ -42,7 +42,7 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
 
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
-    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, VisitBalancesDto(remainingVo = 0, remainingPvo = 0))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(0, 0))
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -110,5 +110,38 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
+  }
+
+  @Test
+  fun `when domain event prisoner released is found, then new prisoner balance is synced`() {
+    // Given
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value,
+      createPrisonerReleasedAdditionalInformationJson(prisonerId, prisonId, PrisonerReleasedReasonType.RELEASED),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(0, 0))
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(0)
+
+    val prisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerId)!!
+    assertThat(prisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetails.lastPvoAllocatedDate).isNull()
   }
 }
