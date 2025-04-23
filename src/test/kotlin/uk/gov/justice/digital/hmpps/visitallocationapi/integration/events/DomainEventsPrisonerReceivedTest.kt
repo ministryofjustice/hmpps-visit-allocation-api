@@ -35,7 +35,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
-      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.ADMISSION),
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 
@@ -69,7 +69,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
-      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.ADMISSION),
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 
@@ -96,7 +96,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
-      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.ADMISSION),
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 

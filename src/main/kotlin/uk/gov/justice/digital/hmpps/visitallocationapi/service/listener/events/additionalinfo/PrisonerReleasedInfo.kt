@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.constraints.NotBlank
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReleasedReasonType
 
 data class PrisonerReleasedInfo(
   @NotBlank
@@ -14,5 +15,5 @@ data class PrisonerReleasedInfo(
 
   @NotBlank
   @JsonProperty("reason")
-  val reasonType: String,
+  val reasonType: PrisonerReleasedReasonType,
 )

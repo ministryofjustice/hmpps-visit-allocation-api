@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReleasedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
@@ -35,7 +36,7 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value,
-      createPrisonerReleasedAdditionalInformationJson(prisonerId, prisonId, "released"),
+      createPrisonerReleasedAdditionalInformationJson(prisonerId, prisonId, PrisonerReleasedReasonType.RELEASED),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value, domainEvent)
 
@@ -69,7 +70,7 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value,
-      createPrisonerReleasedAdditionalInformationJson(prisonerId, prisonId, "released"),
+      createPrisonerReleasedAdditionalInformationJson(prisonerId, prisonId, PrisonerReleasedReasonType.RELEASED),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value, domainEvent)
 
@@ -96,7 +97,7 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
-      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.ADMISSION),
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 

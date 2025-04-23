@@ -15,6 +15,7 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReleasedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalStackContainer.setLocalStackProperties
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.EntityHelper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
@@ -187,12 +188,12 @@ abstract class EventsIntegrationTestBase {
     return createAdditionalInformationJson(jsonValues)
   }
 
-  fun createPrisonerReleasedAdditionalInformationJson(prisonerId: String, prisonId: String, reason: String): String {
+  fun createPrisonerReleasedAdditionalInformationJson(prisonerId: String, prisonId: String, reason: PrisonerReleasedReasonType): String {
     val jsonValues = HashMap<String, String>()
 
     jsonValues["nomsNumber"] = prisonerId
     jsonValues["prisonId"] = prisonId
-    jsonValues["reason"] = reason
+    jsonValues["reason"] = reason.name
 
     return createAdditionalInformationJson(jsonValues)
   }
