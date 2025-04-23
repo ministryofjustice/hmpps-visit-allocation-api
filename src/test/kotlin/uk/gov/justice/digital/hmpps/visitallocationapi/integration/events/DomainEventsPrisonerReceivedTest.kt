@@ -10,13 +10,14 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers.DomainEventHandlerRegistry.Companion.PRISONER_RECEIVED_EVENT_TYPE
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 @DisplayName("Test for Domain Event Prisoner Received")
@@ -33,10 +34,10 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
 
     val domainEvent = createDomainEventJson(
-      PRISONER_RECEIVED_EVENT_TYPE,
+      DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
       createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.ADMISSION),
     )
-    val publishRequest = createDomainEventPublishRequest(PRISONER_RECEIVED_EVENT_TYPE, domainEvent)
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
@@ -48,7 +49,8 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any()) }
+    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
@@ -66,13 +68,13 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
 
     val domainEvent = createDomainEventJson(
-      PRISONER_RECEIVED_EVENT_TYPE,
+      DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
       createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.ADMISSION),
     )
-    val publishRequest = createDomainEventPublishRequest(PRISONER_RECEIVED_EVENT_TYPE, domainEvent)
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 
     // And
-    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, null)
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, null, HttpStatus.INTERNAL_SERVER_ERROR)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -80,5 +82,32 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+  }
+
+  @Test
+  fun `when domain event prisoner received is found, but a 404 not found is returned from prison API then message is skipped`() {
+    // Given
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+
+    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.ADMISSION),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
   }
 }

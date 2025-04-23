@@ -17,8 +17,8 @@ class DomainEventListenerService(private val handlerRegistry: DomainEventHandler
     if (handler != null) {
       handler.handle(domainEvent)
     } else {
-      // TODO: Should we throw an error.
       LOG.error("No handler found for event type: {}", domainEvent.eventType)
+      throw IllegalArgumentException("No handler found for event type ${domainEvent.eventType}")
     }
   }
 }

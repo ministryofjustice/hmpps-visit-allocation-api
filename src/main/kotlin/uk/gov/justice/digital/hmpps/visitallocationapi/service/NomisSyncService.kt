@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -49,7 +50,7 @@ class NomisSyncService(
       compareBalanceBeforeSync(syncDto, prisonerBalance)
     } else {
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(syncDto.prisonerId, syncDto.createdDate)
+      prisonerDetailsService.createNewPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
       prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
     }
 
@@ -83,10 +84,15 @@ class NomisSyncService(
   }
 
   @Transactional
-  fun syncPrisonerBalanceFromEventChange(prisonerId: String) {
+  fun syncPrisonerBalanceFromEventChange(prisonerId: String, domainEventType: DomainEventType) {
     LOG.info("Entered NomisSyncService - syncPrisonerBalanceFromEventChange for prisoner {}", prisonerId)
 
     val prisonerNomisBalance = prisonApiClient.getBookingVisitBalances(prisonerId)
+    if (prisonerNomisBalance == null) {
+      LOG.warn("Prisoner $prisonerId balance not found on NOMIS. Skipping sync")
+      return
+    }
+
     var prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId)
 
     if (prisonerDpsBalance == null) {
@@ -95,19 +101,26 @@ class NomisSyncService(
       prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
     }
 
+    val voBalanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance)
     processSync(
       prisonerId = prisonerId,
       prisonerDpsBalance = prisonerDpsBalance.voBalance,
-      balanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance),
+      balanceChange = voBalanceChange,
       visitOrderType = VisitOrderType.VO,
     )
 
+    val pvoBalanceChange = (prisonerNomisBalance.remainingPvo - prisonerDpsBalance.pvoBalance)
     processSync(
       prisonerId = prisonerId,
       prisonerDpsBalance = prisonerDpsBalance.pvoBalance,
-      balanceChange = (prisonerNomisBalance.remainingPvo - prisonerDpsBalance.pvoBalance),
+      balanceChange = pvoBalanceChange,
       visitOrderType = VisitOrderType.PVO,
     )
+
+    if (voBalanceChange != 0 || pvoBalanceChange != 0) {
+      LOG.info("Balance has changed as a result of sync for prisoner $prisonerId, for domain event ${domainEventType.value}")
+      changeLogService.logSyncEventChange(prisonerId, domainEventType)
+    }
   }
 
   @Transactional
@@ -116,6 +129,7 @@ class NomisSyncService(
 
     visitOrderRepository.deleteAllByPrisonerId(prisonerId)
     negativeVisitOrderRepository.deleteAllByPrisonerId(prisonerId)
+    changeLogService.removePrisonerLogs(prisonerId)
     prisonerDetailsService.removePrisonerDetails(prisonerId)
   }
 

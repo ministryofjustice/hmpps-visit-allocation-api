@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalan
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.MockUtils.Companion.getJsonString
 
 class PrisonApiMockServer : WireMockServer(8096) {
-  fun stubGetVisitBalances(prisonerId: String, visitBalances: VisitBalancesDto?) {
+  fun stubGetVisitBalances(prisonerId: String, visitBalances: VisitBalancesDto?, httpStatus: HttpStatus? = null) {
     val responseBuilder = aResponse()
       .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 
@@ -21,8 +21,13 @@ class PrisonApiMockServer : WireMockServer(8096) {
       get("/api/bookings/offenderNo/$prisonerId/visit/balances")
         .willReturn(
           if (visitBalances == null) {
-            responseBuilder
-              .withStatus(HttpStatus.NOT_FOUND.value())
+            if (httpStatus != null) {
+              responseBuilder
+                .withStatus(httpStatus.value())
+            } else {
+              responseBuilder
+                .withStatus(HttpStatus.NOT_FOUND.value())
+            }
           } else {
             responseBuilder
               .withStatus(HttpStatus.OK.value())

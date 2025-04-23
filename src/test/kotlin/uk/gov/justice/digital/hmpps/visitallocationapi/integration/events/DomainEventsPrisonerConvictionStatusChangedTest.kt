@@ -13,11 +13,11 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers.DomainEventHandlerRegistry.Companion.CONVICTION_STATUS_UPDATED_EVENT_TYPE
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 @DisplayName("Test for Domain Event Prisoner Conviction Status Changed")
@@ -34,10 +34,10 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
 
     val domainEvent = createDomainEventJson(
-      CONVICTION_STATUS_UPDATED_EVENT_TYPE,
+      DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
       createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId = prisonerId, convictedStatus = "Convicted"),
     )
-    val publishRequest = createDomainEventPublishRequest(CONVICTION_STATUS_UPDATED_EVENT_TYPE, domainEvent)
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value, domainEvent)
 
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
@@ -49,7 +49,8 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     // Then
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any()) }
+    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
@@ -67,10 +68,10 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
 
     val domainEvent = createDomainEventJson(
-      CONVICTION_STATUS_UPDATED_EVENT_TYPE,
+      DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
       createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId, prisonId),
     )
-    val publishRequest = createDomainEventPublishRequest(CONVICTION_STATUS_UPDATED_EVENT_TYPE, domainEvent)
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value, domainEvent)
 
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
@@ -85,6 +86,34 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
   }
 
   @Test
+  fun `when domain event prisoner conviction status changed is found, but a 404 not found is returned from prison API then message is skipped`() {
+    // Given
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+
+    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
+      createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId, prisonId),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
+  }
+
+  @Test
   fun `when domain event prisoner conviction status changed is found, but prisoner status is OUT then message is skipped`() {
     // Given
     val prisonerId = "AA123456"
@@ -95,10 +124,10 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
 
     val domainEvent = createDomainEventJson(
-      CONVICTION_STATUS_UPDATED_EVENT_TYPE,
+      DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
       createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId = prisonerId, convictedStatus = "Convicted"),
     )
-    val publishRequest = createDomainEventPublishRequest(CONVICTION_STATUS_UPDATED_EVENT_TYPE, domainEvent)
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value, domainEvent)
 
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "OUT"))

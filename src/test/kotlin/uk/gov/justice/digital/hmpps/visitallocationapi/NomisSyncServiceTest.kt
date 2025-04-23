@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
@@ -322,7 +323,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     val visitOrderCaptor = argumentCaptor<List<VisitOrder>>()
-    nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId)
+    nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE)
 
     // THEN - Capture the visit orders that were saved
     verify(visitOrderRepository, times(2)).saveAll(visitOrderCaptor.capture())

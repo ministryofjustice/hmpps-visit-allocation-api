@@ -4,4 +4,5 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.enums
 enum class ChangeLogType {
   MIGRATION,
   SYNC,
+  PRISONER_REMOVED,
 }

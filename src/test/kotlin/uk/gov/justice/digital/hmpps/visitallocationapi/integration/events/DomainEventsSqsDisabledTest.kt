@@ -11,7 +11,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.test.context.TestPropertySource
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers.DomainEventHandlerRegistry.Companion.CONVICTION_STATUS_UPDATED_EVENT_TYPE
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 @DisplayName("Test for Domain Event Listener disabled")
@@ -22,10 +22,10 @@ class DomainEventsSqsDisabledTest : EventsIntegrationTestBase() {
   fun `when domain event processing is set to disabled no domain events are processed`() {
     // Given
     val domainEvent = createDomainEventJson(
-      CONVICTION_STATUS_UPDATED_EVENT_TYPE,
+      DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
       createPrisonerConvictionStatusChangedAdditionalInformationJson("TEST", "Convicted"),
     )
-    val publishRequest = createDomainEventPublishRequest(CONVICTION_STATUS_UPDATED_EVENT_TYPE, domainEvent)
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value, domainEvent)
 
     // When
     awsSnsClient.publish(publishRequest).get()

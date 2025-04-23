@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
@@ -36,6 +37,6 @@ class PrisonerReceivedEventHandler(
   }
 
   private fun processNomis(info: PrisonerReceivedInfo) {
-    nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId)
+    nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId, DomainEventType.PRISONER_RECEIVED_EVENT_TYPE)
   }
 }
