@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
@@ -42,5 +43,22 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
         comment = "synced prisoner ${syncDto.prisonerId}, with adjustment code ${syncDto.adjustmentReasonCode.name}",
       ),
     )
+  }
+
+  fun logSyncEventChange(prisonerId: String, domainEventType: DomainEventType) {
+    LOG.info("Logging sync to change_log table for prisoner $prisonerId, event - ${domainEventType.value}")
+    changeLogRepository.save(
+      ChangeLog(
+        prisonerId = prisonerId,
+        changeType = ChangeLogType.SYNC,
+        changeSource = ChangeLogSource.SYSTEM,
+        userId = "SYSTEM",
+        comment = "synced prisoner $prisonerId, with domain event ${domainEventType.value}",
+      ),
+    )
+  }
+
+  fun removePrisonerLogs(prisonerId: String) {
+    changeLogRepository.deleteAllByPrisonerId(prisonerId)
   }
 }

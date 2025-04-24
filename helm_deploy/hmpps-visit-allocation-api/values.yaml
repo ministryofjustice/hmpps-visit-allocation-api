@@ -27,7 +27,6 @@ generic-service:
     JAVA_OPTS: "-Xmx512m"
     SERVER_PORT: "8080"
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
-    SQS_DOMAIN_EVENT_PROCESSING_ENABLED: false
 
   namespace_secrets:
     hmpps-visit-allocation-api:

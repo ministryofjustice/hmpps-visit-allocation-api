@@ -13,6 +13,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitO
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
+import java.time.LocalDate
 
 @Component
 @Transactional
@@ -22,11 +24,17 @@ class EntityHelper(
   val negativeVisitOrderRepository: NegativeVisitOrderRepository,
   val changeLogRepository: ChangeLogRepository,
   private val prisonerDetailsRepository: PrisonerDetailsRepository,
+  private val prisonerDetailsService: PrisonerDetailsService,
 ) {
 
   @Transactional
   fun savePrison(visitOrderPrison: VisitOrderPrison) {
     visitOrderPrisonRepository.saveAndFlush(visitOrderPrison)
+  }
+
+  @Transactional
+  fun createPrisonerDetails(prisonerId: String) {
+    prisonerDetailsService.createNewPrisonerDetails(prisonerId = prisonerId, newLastAllocatedDate = LocalDate.now(), newLastPvoAllocatedDate = LocalDate.now())
   }
 
   @Transactional

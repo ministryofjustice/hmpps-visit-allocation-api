@@ -27,6 +27,10 @@ incentives:
   api:
     url: http://localhost:8095
 
+prison:
+  api:
+    url: "http://localhost:8096"
+
 hmpps:
   sqs:
     enabled: true

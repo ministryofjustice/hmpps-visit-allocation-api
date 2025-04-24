@@ -4,8 +4,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -17,16 +19,18 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisi
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
+import java.time.LocalDate
 import kotlin.math.abs
 
 @Service
 class NomisSyncService(
-  val balanceService: BalanceService,
-  val prisonerDetailsService: PrisonerDetailsService,
-  val telemetryService: TelemetryClientService,
-  val visitOrderRepository: VisitOrderRepository,
-  val negativeVisitOrderRepository: NegativeVisitOrderRepository,
-  val changeLogService: ChangeLogService,
+  private val balanceService: BalanceService,
+  private val prisonerDetailsService: PrisonerDetailsService,
+  private val telemetryService: TelemetryClientService,
+  private val visitOrderRepository: VisitOrderRepository,
+  private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
+  private val changeLogService: ChangeLogService,
+  private val prisonApiClient: PrisonApiClient,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -46,7 +50,7 @@ class NomisSyncService(
       compareBalanceBeforeSync(syncDto, prisonerBalance)
     } else {
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(syncDto.prisonerId, syncDto.createdDate)
+      prisonerDetailsService.createNewPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
       prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
     }
 
@@ -77,6 +81,57 @@ class NomisSyncService(
     }
 
     changeLogService.logSyncAdjustmentChange(syncDto)
+  }
+
+  @Transactional
+  fun syncPrisonerBalanceFromEventChange(prisonerId: String, domainEventType: DomainEventType) {
+    LOG.info("Entered NomisSyncService - syncPrisonerBalanceFromEventChange for prisoner {}", prisonerId)
+
+    val prisonerNomisBalance = prisonApiClient.getBookingVisitBalances(prisonerId)
+    if (prisonerNomisBalance == null) {
+      LOG.warn("Prisoner $prisonerId balance not found on NOMIS. Skipping sync")
+      return
+    }
+
+    var prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId)
+
+    if (prisonerDpsBalance == null) {
+      val lastVoAllocatedDate = prisonerNomisBalance.latestIepAdjustDate ?: LocalDate.now()
+      // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
+      prisonerDetailsService.createNewPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
+      prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
+    }
+
+    val voBalanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance)
+    processSync(
+      prisonerId = prisonerId,
+      prisonerDpsBalance = prisonerDpsBalance.voBalance,
+      balanceChange = voBalanceChange,
+      visitOrderType = VisitOrderType.VO,
+    )
+
+    val pvoBalanceChange = (prisonerNomisBalance.remainingPvo - prisonerDpsBalance.pvoBalance)
+    processSync(
+      prisonerId = prisonerId,
+      prisonerDpsBalance = prisonerDpsBalance.pvoBalance,
+      balanceChange = pvoBalanceChange,
+      visitOrderType = VisitOrderType.PVO,
+    )
+
+    if (voBalanceChange != 0 || pvoBalanceChange != 0) {
+      LOG.info("Balance has changed as a result of sync for prisoner $prisonerId, for domain event ${domainEventType.value}")
+      changeLogService.logSyncEventChange(prisonerId, domainEventType)
+    }
+  }
+
+  @Transactional
+  fun syncPrisonerRemoved(prisonerId: String) {
+    LOG.info("Entered NomisSyncService - syncPrisonerRemoved for prisoner {}", prisonerId)
+
+    visitOrderRepository.deleteAllByPrisonerId(prisonerId)
+    negativeVisitOrderRepository.deleteAllByPrisonerId(prisonerId)
+    changeLogService.removePrisonerLogs(prisonerId)
+    prisonerDetailsService.removePrisonerDetails(prisonerId)
   }
 
   private fun processSync(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
