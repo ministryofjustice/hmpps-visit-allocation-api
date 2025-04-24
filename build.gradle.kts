@@ -28,7 +28,7 @@ dependencies {
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.26") {
     exclude(group = "io.swagger.core.v3")
   }
-  testImplementation("org.testcontainers:localstack:1.20.6")
+  testImplementation("org.testcontainers:localstack:1.21.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.3.0")
 }
 
