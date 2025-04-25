@@ -8,21 +8,9 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.PrisonerBalance
 
 @Repository
 interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
-  @Query(
-    "SELECT vo.type AS type, COUNT(*) AS balance FROM visit_order vo " +
-      "WHERE vo.prisoner_id = :prisonerId " +
-      "AND vo.status IN ('AVAILABLE', 'ACCUMULATED') " +
-      "GROUP BY vo.type",
-    nativeQuery = true,
-  )
-  fun getPrisonerPositiveBalance(
-    prisonerId: String,
-  ): List<PrisonerBalance>
-
   @Query(
     value = """
     SELECT COUNT(*) 

@@ -1,8 +1,11 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.model.entity
 
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.LocalDate
 
@@ -18,4 +21,13 @@ data class PrisonerDetails(
 
   @Column(nullable = true)
   val lastPvoAllocatedDate: LocalDate?,
-)
+) {
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  var visitOrders: List<VisitOrder> = emptyList()
+
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  var negativeVisitOrders: List<NegativeVisitOrder> = emptyList()
+
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  var changeLogs: List<ChangeLog> = emptyList()
+}

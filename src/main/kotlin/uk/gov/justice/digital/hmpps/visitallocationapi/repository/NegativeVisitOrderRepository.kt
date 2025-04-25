@@ -8,21 +8,9 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.projections.PrisonerBalance
 
 @Repository
 interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long> {
-  @Query(
-    "SELECT nvo.type AS type, COUNT(*) AS balance FROM negative_visit_order nvo " +
-      "WHERE nvo.prisoner_id = :prisonerId " +
-      "AND nvo.status = 'USED' " +
-      "GROUP BY nvo.type",
-    nativeQuery = true,
-  )
-  fun getPrisonerNegativeBalance(
-    prisonerId: String,
-  ): List<PrisonerBalance>
-
   @Query(
     value = """
     SELECT COUNT(*) 
