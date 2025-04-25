@@ -23,11 +23,11 @@ data class PrisonerDetails(
   val lastPvoAllocatedDate: LocalDate?,
 ) {
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  var visitOrders: List<VisitOrder> = emptyList()
+  var visitOrders: MutableList<VisitOrder> = mutableListOf()
 
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  var negativeVisitOrders: List<NegativeVisitOrder> = emptyList()
+  var negativeVisitOrders: MutableList<NegativeVisitOrder> = mutableListOf()
 
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  var changeLogs: List<ChangeLog> = emptyList()
+  var changeLogs: MutableList<ChangeLog> = mutableListOf()
 }

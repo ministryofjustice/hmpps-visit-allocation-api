@@ -20,17 +20,15 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails) {
+  fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): ChangeLog {
     LOG.info("Logging migration to change_log table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
-    changeLogRepository.save(
-      ChangeLog(
-        prisonerId = migrationChangeDto.prisonerId,
-        changeType = ChangeLogType.MIGRATION,
-        changeSource = ChangeLogSource.SYSTEM,
-        userId = "SYSTEM",
-        comment = "migrated prisoner ${migrationChangeDto.prisonerId}, with vo balance ${migrationChangeDto.voBalance} and pvo balance ${migrationChangeDto.pvoBalance} and lastAllocatedDate ${migrationChangeDto.lastVoAllocationDate}",
-        prisoner = dpsPrisoner,
-      ),
+    return ChangeLog(
+      prisonerId = migrationChangeDto.prisonerId,
+      changeType = ChangeLogType.MIGRATION,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "migrated prisoner ${migrationChangeDto.prisonerId}, with vo balance ${migrationChangeDto.voBalance} and pvo balance ${migrationChangeDto.pvoBalance} and lastAllocatedDate ${migrationChangeDto.lastVoAllocationDate}",
+      prisoner = dpsPrisoner,
     )
   }
 
@@ -60,9 +58,5 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
         prisoner = dpsPrisoner,
       ),
     )
-  }
-
-  fun removePrisonerLogs(prisonerId: String) {
-    changeLogRepository.deleteAllByPrisonerId(prisonerId)
   }
 }

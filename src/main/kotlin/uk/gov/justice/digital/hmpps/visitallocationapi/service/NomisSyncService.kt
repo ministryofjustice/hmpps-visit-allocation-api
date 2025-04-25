@@ -132,10 +132,6 @@ class NomisSyncService(
   @Transactional
   fun syncPrisonerRemoved(prisonerId: String) {
     LOG.info("Entered NomisSyncService - syncPrisonerRemoved for prisoner {}", prisonerId)
-
-    visitOrderRepository.deleteAllByPrisonerId(prisonerId)
-    negativeVisitOrderRepository.deleteAllByPrisonerId(prisonerId)
-    changeLogService.removePrisonerLogs(prisonerId)
     prisonerDetailsService.removePrisonerDetails(prisonerId)
   }
 

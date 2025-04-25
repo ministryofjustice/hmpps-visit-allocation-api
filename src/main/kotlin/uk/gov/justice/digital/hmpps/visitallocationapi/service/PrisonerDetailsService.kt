@@ -41,4 +41,8 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
     LOG.info("Entered PrisonerDetailsService updatePvoLastCreatedDate for prisoner $prisonerId with date $newLastAllocatedDate")
     prisonerDetailsRepository.updatePrisonerLastPvoAllocatedDate(prisonerId, newLastAllocatedDate)
   }
+
+  fun updatePrisonerDetails(prisoner: PrisonerDetails) {
+    prisonerDetailsRepository.save(prisoner)
+  }
 }

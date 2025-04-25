@@ -105,12 +105,4 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
     visitOrderType: VisitOrderType,
     amountToExpire: Long?,
   ): Int
-
-  @Transactional
-  @Modifying
-  @Query(
-    value = "DELETE FROM visit_order WHERE prisoner_id = :prisonerId",
-    nativeQuery = true,
-  )
-  fun deleteAllByPrisonerId(prisonerId: String)
 }

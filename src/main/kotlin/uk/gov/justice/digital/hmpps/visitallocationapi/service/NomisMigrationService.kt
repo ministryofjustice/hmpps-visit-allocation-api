@@ -35,7 +35,8 @@ class NomisMigrationService(
 
     // If prisoner exists, reset their details and balance ready for migration
     if (prisonerDetailsService.getPrisoner(migrationDto.prisonerId) != null) {
-      resetPrisonerDetailsAndBalance(migrationDto)
+      LOG.info("Prisoner ${migrationDto.prisonerId} found in DB, resetting their balance ready for migration")
+      prisonerDetailsService.removePrisonerDetails(migrationDto.prisonerId)
     }
 
     // Due to bad data in NOMIS, it's possible for a prisoner to exist with a balance but no IEP date.
@@ -48,8 +49,9 @@ class NomisMigrationService(
     migrateBalance(migrationDto, VisitOrderType.VO, dpsPrisoner)
     migrateBalance(migrationDto, VisitOrderType.PVO, dpsPrisoner)
 
-    changeLogService.logMigrationChange(migrationDto, dpsPrisoner)
+    dpsPrisoner.changeLogs.add(changeLogService.logMigrationChange(migrationDto, dpsPrisoner))
 
+    prisonerDetailsService.updatePrisonerDetails(dpsPrisoner)
     LOG.info("Finished NomisMigrationService - migratePrisoner ${migrationDto.prisonerId} successfully")
   }
 
@@ -62,10 +64,10 @@ class NomisMigrationService(
 
     when {
       balance > 0 -> {
-        createPositiveVisitOrders(migrationDto, type, balance, prisoner)
+        prisoner.visitOrders.addAll(createPositiveVisitOrders(migrationDto, type, balance, prisoner))
       }
       balance < 0 -> {
-        createNegativeVisitOrders(migrationDto, type, balance, prisoner)
+        prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(migrationDto, type, balance, prisoner))
       }
       else -> {
         LOG.info("Not migrating ${type.name} balance for prisoner ${migrationDto.prisonerId} as it's 0")
@@ -78,7 +80,7 @@ class NomisMigrationService(
     type: VisitOrderType,
     balance: Int,
     prisoner: PrisonerDetails,
-  ) {
+  ): List<VisitOrder> {
     LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a ${type.name} balance of $balance")
     val visitOrders = List(balance) {
       VisitOrder(
@@ -90,7 +92,7 @@ class NomisMigrationService(
         prisoner = prisoner,
       )
     }
-    visitOrderRepository.saveAll(visitOrders)
+    return visitOrders
   }
 
   private fun createNegativeVisitOrders(
@@ -98,7 +100,7 @@ class NomisMigrationService(
     type: VisitOrderType,
     balance: Int,
     prisoner: PrisonerDetails,
-  ) {
+  ): List<NegativeVisitOrder> {
     LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a negative ${type.name} balance of $balance")
     val negativeVisitOrders = List(abs(balance)) {
       NegativeVisitOrder(
@@ -109,7 +111,7 @@ class NomisMigrationService(
         prisoner = prisoner,
       )
     }
-    negativeVisitOrderRepository.saveAll(negativeVisitOrders)
+    return negativeVisitOrders
   }
 
   private fun migratePrisonerDetails(migrationDto: VisitAllocationPrisonerMigrationDto): PrisonerDetails {
@@ -122,16 +124,5 @@ class NomisMigrationService(
     }
 
     return prisonerDetailsService.createNewPrisonerDetails(prisonerId = migrationDto.prisonerId, newLastAllocatedDate = migrationDto.lastVoAllocationDate!!, newLastPvoAllocatedDate = lastPvoAllocatedDate)
-  }
-
-  private fun resetPrisonerDetailsAndBalance(migrationDto: VisitAllocationPrisonerMigrationDto) {
-    val prisonerId = migrationDto.prisonerId
-
-    LOG.info("Prisoner $prisonerId found in DB, resetting their balance ready for migration")
-
-    visitOrderRepository.deleteAllByPrisonerId(prisonerId)
-    negativeVisitOrderRepository.deleteAllByPrisonerId(prisonerId)
-    changeLogService.removePrisonerLogs(prisonerId)
-    prisonerDetailsService.removePrisonerDetails(prisonerId)
   }
 }
