@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
 
@@ -29,9 +30,10 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    val prisoner = entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2, prisoner)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1, prisoner)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
@@ -50,7 +52,7 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
-    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
@@ -63,9 +65,10 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    val prisoner = entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2, prisoner)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1, prisoner)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
@@ -91,9 +94,10 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    val prisoner = entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2, prisoner)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1, prisoner)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
@@ -119,9 +123,10 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    val prisoner = entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2, prisoner)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1, prisoner)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
@@ -167,7 +172,7 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
-    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()

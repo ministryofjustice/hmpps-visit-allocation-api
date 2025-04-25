@@ -24,7 +24,7 @@ data class NegativeVisitOrder(
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val status: NegativeVisitOrderStatus,
+  var status: NegativeVisitOrderStatus,
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)

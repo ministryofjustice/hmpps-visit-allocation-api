@@ -23,40 +23,36 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
   fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): ChangeLog {
     LOG.info("Logging migration to change_log table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
     return ChangeLog(
-      prisonerId = migrationChangeDto.prisonerId,
+      prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.MIGRATION,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",
-      comment = "migrated prisoner ${migrationChangeDto.prisonerId}, with vo balance ${migrationChangeDto.voBalance} and pvo balance ${migrationChangeDto.pvoBalance} and lastAllocatedDate ${migrationChangeDto.lastVoAllocationDate}",
+      comment = "migrated prisoner ${dpsPrisoner.prisonerId}, with vo balance ${migrationChangeDto.voBalance} and pvo balance ${migrationChangeDto.pvoBalance} and lastAllocatedDate ${migrationChangeDto.lastVoAllocationDate}",
       prisoner = dpsPrisoner,
     )
   }
 
-  fun logSyncAdjustmentChange(syncDto: VisitAllocationPrisonerSyncDto, dpsPrisoner: PrisonerDetails) {
+  fun logSyncAdjustmentChange(syncDto: VisitAllocationPrisonerSyncDto, dpsPrisoner: PrisonerDetails): ChangeLog {
     LOG.info("Logging sync to change_log table for prisoner ${syncDto.prisonerId}, sync - $syncDto")
-    changeLogRepository.save(
-      ChangeLog(
-        prisonerId = syncDto.prisonerId,
-        changeType = ChangeLogType.SYNC,
-        changeSource = ChangeLogSource.SYSTEM,
-        userId = "SYSTEM",
-        comment = "synced prisoner ${syncDto.prisonerId}, with adjustment code ${syncDto.adjustmentReasonCode.name}",
-        prisoner = dpsPrisoner,
-      ),
+    return ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.SYNC,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "synced prisoner ${syncDto.prisonerId}, with adjustment code ${syncDto.adjustmentReasonCode.name}",
+      prisoner = dpsPrisoner,
     )
   }
 
-  fun logSyncEventChange(prisonerId: String, domainEventType: DomainEventType, dpsPrisoner: PrisonerDetails) {
-    LOG.info("Logging sync to change_log table for prisoner $prisonerId, event - ${domainEventType.value}")
-    changeLogRepository.save(
-      ChangeLog(
-        prisonerId = prisonerId,
-        changeType = ChangeLogType.SYNC,
-        changeSource = ChangeLogSource.SYSTEM,
-        userId = "SYSTEM",
-        comment = "synced prisoner $prisonerId, with domain event ${domainEventType.value}",
-        prisoner = dpsPrisoner,
-      ),
+  fun logSyncEventChange(dpsPrisoner: PrisonerDetails, domainEventType: DomainEventType): ChangeLog {
+    LOG.info("Logging sync to change_log table for prisoner ${dpsPrisoner.prisonerId}, event - ${domainEventType.value}")
+    return ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.SYNC,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "synced prisoner ${dpsPrisoner.prisonerId}, with domain event ${domainEventType.value}",
+      prisoner = dpsPrisoner,
     )
   }
 }

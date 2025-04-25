@@ -28,7 +28,7 @@ data class VisitOrder(
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val status: VisitOrderStatus,
+  var status: VisitOrderStatus,
 
   @Column(nullable = false)
   val createdTimestamp: LocalDateTime = LocalDateTime.now(),

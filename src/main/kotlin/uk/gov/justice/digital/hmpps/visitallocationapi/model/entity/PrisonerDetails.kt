@@ -17,7 +17,7 @@ data class PrisonerDetails(
   val prisonerId: String,
 
   @Column(nullable = false)
-  val lastVoAllocatedDate: LocalDate,
+  var lastVoAllocatedDate: LocalDate,
 
   @Column(nullable = true)
   val lastPvoAllocatedDate: LocalDate?,
