@@ -36,11 +36,9 @@ data class VisitOrder(
   @Column(nullable = false)
   val expiryDate: LocalDate? = null,
 
-  // This column will be for the foreign key
   @Column(name = "prisoner_id", nullable = false)
   val prisonerId: String,
 
-  // Specify the relationship and use the existing prisonerId column
   @ManyToOne
   @JoinColumn(name = "prisoner_id", referencedColumnName = "prisonerId", insertable = false, updatable = false)
   val prisoner: PrisonerDetails,
