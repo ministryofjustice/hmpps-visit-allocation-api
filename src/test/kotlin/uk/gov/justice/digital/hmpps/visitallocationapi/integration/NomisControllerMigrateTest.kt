@@ -156,8 +156,8 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
   @Test
   fun `when visit prisoner allocation migration endpoint is called with an existing prisoner, then prisoner information is reset and then successfully migrated to DPS service`() {
     // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = "AA123456", visitOrderType = VisitOrderType.VO, amountToCreate = 1)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = "AA123456", lastVoAllocatedDate = LocalDate.now().minusDays(1), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = "AA123456", lastVoAllocatedDate = LocalDate.now().minusDays(1), null))
+    entityHelper.createAndSaveVisitOrders(prisonerId = "AA123456", visitOrderType = VisitOrderType.VO, amountToCreate = 1, prisoner)
 
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, LocalDate.now().minusDays(1))
 

@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 import java.time.LocalDate
 
 @Entity
-@Table(name = "PRISONER_DETAILS")
+@Table(name = "prisoner_details")
 data class PrisonerDetails(
   @Id
   @Column(nullable = false)

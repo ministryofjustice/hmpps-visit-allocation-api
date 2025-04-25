@@ -30,9 +30,9 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = entityHelper.createPrisonerDetails(prisonerId = prisonerId)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1, prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value,
@@ -51,7 +51,7 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
-    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
@@ -64,9 +64,9 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = entityHelper.createPrisonerDetails(prisonerId = prisonerId)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1, prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value,
@@ -91,9 +91,9 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = entityHelper.createPrisonerDetails(prisonerId = prisonerId)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1, prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,

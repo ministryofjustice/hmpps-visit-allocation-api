@@ -7,6 +7,8 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -14,14 +16,11 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "NEGATIVE_VISIT_ORDER")
+@Table(name = "negative_visit_order")
 data class NegativeVisitOrder(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,
-
-  @Column(nullable = false)
-  val prisonerId: String,
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
@@ -36,4 +35,13 @@ data class NegativeVisitOrder(
 
   @Column(nullable = false)
   val repaidDate: LocalDate? = null,
+
+  // This column will be for the foreign key
+  @Column(name = "prisoner_id", nullable = false)
+  val prisonerId: String,
+
+  // Specify the relationship and use the existing prisonerId column
+  @ManyToOne
+  @JoinColumn(name = "prisoner_id", referencedColumnName = "prisonerId", insertable = false, updatable = false)
+  val prisoner: PrisonerDetails,
 )

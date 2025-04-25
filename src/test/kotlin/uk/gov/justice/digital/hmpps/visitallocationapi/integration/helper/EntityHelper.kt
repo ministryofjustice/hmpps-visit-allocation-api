@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderS
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPrison
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
@@ -33,19 +34,18 @@ class EntityHelper(
   }
 
   @Transactional
-  fun createPrisonerDetails(prisonerId: String) {
-    prisonerDetailsService.createNewPrisonerDetails(prisonerId = prisonerId, newLastAllocatedDate = LocalDate.now(), newLastPvoAllocatedDate = LocalDate.now())
-  }
+  fun createPrisonerDetails(prisonerId: String): PrisonerDetails = prisonerDetailsService.createNewPrisonerDetails(prisonerId = prisonerId, newLastAllocatedDate = LocalDate.now(), newLastPvoAllocatedDate = LocalDate.now())
 
   @Transactional
-  fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, amountToCreate: Int) {
+  fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails) {
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
-          prisonerId = prisonerId,
+          prisonerId = prisoner.prisonerId,
           type = visitOrderType,
           status = VisitOrderStatus.AVAILABLE,
+          prisoner = prisoner,
         ),
       )
     }
@@ -53,14 +53,15 @@ class EntityHelper(
   }
 
   @Transactional
-  fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int) {
+  fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails) {
     val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
     repeat(amountToCreate) {
       negativeVisitOrders.add(
         NegativeVisitOrder(
-          prisonerId = prisonerId,
+          prisonerId = prisoner.prisonerId,
           type = negativeVoType,
           status = NegativeVisitOrderStatus.USED,
+          prisoner = prisoner,
         ),
       )
     }

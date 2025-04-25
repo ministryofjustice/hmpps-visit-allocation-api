@@ -24,7 +24,14 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
   ): List<PrisonerBalance>
 
   @Query(
-    "SELECT COUNT(nvo) FROM NegativeVisitOrder nvo WHERE nvo.prisonerId = :prisonerId AND nvo.type = :type AND nvo.status = :status",
+    value = """
+    SELECT COUNT(*) 
+    FROM negative_visit_order 
+    WHERE prisoner_id = :prisonerId 
+      AND type = :#{#type.name()}
+      AND status = :#{#status.name()}
+  """,
+    nativeQuery = true,
   )
   fun countAllNegativeVisitOrders(
     prisonerId: String,
@@ -58,5 +65,9 @@ interface NegativeVisitOrderRepository : JpaRepository<NegativeVisitOrder, Long>
 
   @Transactional
   @Modifying
+  @Query(
+    value = "DELETE FROM negative_visit_order WHERE prisoner_id = :prisonerId",
+    nativeQuery = true,
+  )
   fun deleteAllByPrisonerId(prisonerId: String)
 }

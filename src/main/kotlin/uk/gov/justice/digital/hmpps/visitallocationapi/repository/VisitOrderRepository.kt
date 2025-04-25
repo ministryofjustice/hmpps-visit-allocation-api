@@ -24,7 +24,14 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
   ): List<PrisonerBalance>
 
   @Query(
-    "SELECT COUNT(vo) FROM VisitOrder vo WHERE vo.prisonerId = :prisonerId AND vo.type = :type AND vo.status = :status",
+    value = """
+    SELECT COUNT(*) 
+    FROM visit_order 
+    WHERE prisoner_id = :prisonerId 
+      AND type = :#{#type.name()}
+      AND status = :#{#status.name()}
+  """,
+    nativeQuery = true,
   )
   fun countAllVisitOrders(
     prisonerId: String,
@@ -113,5 +120,9 @@ interface VisitOrderRepository : JpaRepository<VisitOrder, Long> {
 
   @Transactional
   @Modifying
+  @Query(
+    value = "DELETE FROM visit_order WHERE prisoner_id = :prisonerId",
+    nativeQuery = true,
+  )
   fun deleteAllByPrisonerId(prisonerId: String)
 }

@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderS
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
@@ -43,16 +44,16 @@ class NomisMigrationService(
       migrationDto.lastVoAllocationDate = LocalDate.now().minusDays(NULL_LAST_ALLOCATION_DATE_OFFSET)
     }
 
-    migrateBalance(migrationDto, VisitOrderType.VO)
-    migrateBalance(migrationDto, VisitOrderType.PVO)
-    migrateLastAllocatedDate(migrationDto)
+    val dpsPrisoner = migratePrisonerDetails(migrationDto)
+    migrateBalance(migrationDto, VisitOrderType.VO, dpsPrisoner)
+    migrateBalance(migrationDto, VisitOrderType.PVO, dpsPrisoner)
 
-    changeLogService.logMigrationChange(migrationDto)
+    changeLogService.logMigrationChange(migrationDto, dpsPrisoner)
 
     LOG.info("Finished NomisMigrationService - migratePrisoner ${migrationDto.prisonerId} successfully")
   }
 
-  private fun migrateBalance(migrationDto: VisitAllocationPrisonerMigrationDto, type: VisitOrderType) {
+  private fun migrateBalance(migrationDto: VisitAllocationPrisonerMigrationDto, type: VisitOrderType, prisoner: PrisonerDetails) {
     val balance = if (type == VisitOrderType.VO) {
       migrationDto.voBalance
     } else {
@@ -61,10 +62,10 @@ class NomisMigrationService(
 
     when {
       balance > 0 -> {
-        createPositiveVisitOrders(migrationDto, type, balance)
+        createPositiveVisitOrders(migrationDto, type, balance, prisoner)
       }
       balance < 0 -> {
-        createNegativeVisitOrders(migrationDto, type, balance)
+        createNegativeVisitOrders(migrationDto, type, balance, prisoner)
       }
       else -> {
         LOG.info("Not migrating ${type.name} balance for prisoner ${migrationDto.prisonerId} as it's 0")
@@ -76,15 +77,17 @@ class NomisMigrationService(
     migrationDto: VisitAllocationPrisonerMigrationDto,
     type: VisitOrderType,
     balance: Int,
+    prisoner: PrisonerDetails,
   ) {
     LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a ${type.name} balance of $balance")
     val visitOrders = List(balance) {
       VisitOrder(
-        prisonerId = migrationDto.prisonerId,
+        prisonerId = prisoner.prisonerId,
         type = type,
         status = VisitOrderStatus.AVAILABLE,
         createdTimestamp = migrationDto.lastVoAllocationDate!!.atStartOfDay(),
         expiryDate = null,
+        prisoner = prisoner,
       )
     }
     visitOrderRepository.saveAll(visitOrders)
@@ -94,20 +97,22 @@ class NomisMigrationService(
     migrationDto: VisitAllocationPrisonerMigrationDto,
     type: VisitOrderType,
     balance: Int,
+    prisoner: PrisonerDetails,
   ) {
     LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a negative ${type.name} balance of $balance")
     val negativeVisitOrders = List(abs(balance)) {
       NegativeVisitOrder(
-        prisonerId = migrationDto.prisonerId,
+        prisonerId = prisoner.prisonerId,
         status = NegativeVisitOrderStatus.USED,
         type = type,
         createdTimestamp = LocalDateTime.now(),
+        prisoner = prisoner,
       )
     }
     negativeVisitOrderRepository.saveAll(negativeVisitOrders)
   }
 
-  private fun migrateLastAllocatedDate(migrationDto: VisitAllocationPrisonerMigrationDto) {
+  private fun migratePrisonerDetails(migrationDto: VisitAllocationPrisonerMigrationDto): PrisonerDetails {
     LOG.info("Migrating prisoner ${migrationDto.prisonerId} details (last allocated date - ${migrationDto.lastVoAllocationDate})")
 
     val lastPvoAllocatedDate = if (migrationDto.pvoBalance != 0) {
@@ -116,7 +121,7 @@ class NomisMigrationService(
       null
     }
 
-    prisonerDetailsService.createNewPrisonerDetails(prisonerId = migrationDto.prisonerId, newLastAllocatedDate = migrationDto.lastVoAllocationDate!!, newLastPvoAllocatedDate = lastPvoAllocatedDate)
+    return prisonerDetailsService.createNewPrisonerDetails(prisonerId = migrationDto.prisonerId, newLastAllocatedDate = migrationDto.lastVoAllocationDate!!, newLastPvoAllocatedDate = lastPvoAllocatedDate)
   }
 
   private fun resetPrisonerDetailsAndBalance(migrationDto: VisitAllocationPrisonerMigrationDto) {
@@ -126,6 +131,7 @@ class NomisMigrationService(
 
     visitOrderRepository.deleteAllByPrisonerId(prisonerId)
     negativeVisitOrderRepository.deleteAllByPrisonerId(prisonerId)
+    changeLogService.removePrisonerLogs(prisonerId)
     prisonerDetailsService.removePrisonerDetails(prisonerId)
   }
 }

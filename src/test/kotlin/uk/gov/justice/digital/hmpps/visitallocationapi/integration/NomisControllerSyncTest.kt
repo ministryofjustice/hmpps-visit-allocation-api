@@ -33,9 +33,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `two requests, any order, results in correct balance at the end`() {
     // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 10)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 5)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 10, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 5, prisoner)
 
     val firstSyncRequest = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -74,9 +74,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a positive balance increases, then DPS service successfully syncs`() {
     // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2, prisoner)
 
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -101,9 +101,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a negative balance decreases, then DPS service successfully syncs`() {
     // Given
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5, prisoner)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2, prisoner)
 
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -129,9 +129,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a positive balance decreases below zero, then DPS service successfully syncs`() {
     // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1, prisoner)
 
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -157,9 +157,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with a negative balance increases above zero, then DPS service successfully syncs`() {
     // Given
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 2, prisoner)
+    entityHelper.createAndSaveNegativeVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1, prisoner)
 
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -230,9 +230,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with only a PVO balance change, then VO processing is skipped`() {
     // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2, prisoner)
 
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -257,9 +257,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with only a VO balance change, then PVO processing is skipped`() {
     // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 5, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 2, prisoner)
 
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -308,9 +308,9 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   @Test
   fun `when an existing prisoner with an out of sync (NOMIS higher) positive balance increases, then DPS service successfully syncs`() {
     // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 4)
-    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.VO, 4, prisoner)
+    entityHelper.createAndSaveVisitOrders(prisonerId = PRISONER_ID, VisitOrderType.PVO, 1, prisoner)
 
     val prisonerSyncDto = createSyncRequest(
       prisonerId = PRISONER_ID,
@@ -453,7 +453,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
 
     val changeLogs = changeLogRepository.findAll()
     assertThat(changeLogs.size).isEqualTo(1)
-    assertThat(changeLogs.first().prisonerId).isEqualTo(prisonerSyncDto.prisonerId)
+    assertThat(changeLogs.first().prisoner.prisonerId).isEqualTo(prisonerSyncDto.prisonerId)
     assertThat(changeLogs.first().changeType).isEqualTo(ChangeLogType.SYNC)
   }
 }

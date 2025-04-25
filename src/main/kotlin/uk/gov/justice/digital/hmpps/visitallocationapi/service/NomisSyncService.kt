@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentRea
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
@@ -45,12 +46,14 @@ class NomisSyncService(
     validateSyncRequest(syncDto)
 
     var prisonerBalance = balanceService.getPrisonerBalance(syncDto.prisonerId)
+    val dpsPrisoner: PrisonerDetails
     if (prisonerBalance != null) {
       // Only do a balance comparison if prisoner exists.
       compareBalanceBeforeSync(syncDto, prisonerBalance)
+      dpsPrisoner = prisonerDetailsService.getPrisoner(syncDto.prisonerId)!!
     } else {
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      prisonerDetailsService.createNewPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
+      dpsPrisoner = prisonerDetailsService.createNewPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
       prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
     }
 
@@ -77,10 +80,10 @@ class NomisSyncService(
     // If this is a VO allocation from the NOMIS system, update the lastVoAllocatedDate to keep this synced.
     if (syncDto.adjustmentReasonCode == AdjustmentReasonCode.IEP && syncDto.changeLogSource == ChangeLogSource.SYSTEM) {
       LOG.info("Nomis Sync reason due to IEP allocation from system, adding /update allocation date for prisoner ${syncDto.prisonerId }in our service")
-      prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(syncDto.prisonerId, syncDto.createdDate)
+      prisonerDetailsService.updateVoLastCreatedDate(syncDto.prisonerId, syncDto.createdDate)
     }
 
-    changeLogService.logSyncAdjustmentChange(syncDto)
+    changeLogService.logSyncAdjustmentChange(syncDto, dpsPrisoner)
   }
 
   @Transactional
@@ -94,12 +97,14 @@ class NomisSyncService(
     }
 
     var prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId)
-
+    val dpsPrisoner: PrisonerDetails
     if (prisonerDpsBalance == null) {
       val lastVoAllocatedDate = prisonerNomisBalance.latestIepAdjustDate ?: LocalDate.now()
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      prisonerDetailsService.createNewPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
+      dpsPrisoner = prisonerDetailsService.createNewPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
       prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
+    } else {
+      dpsPrisoner = prisonerDetailsService.getPrisoner(prisonerId)!!
     }
 
     val voBalanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance)
@@ -120,7 +125,7 @@ class NomisSyncService(
 
     if (voBalanceChange != 0 || pvoBalanceChange != 0) {
       LOG.info("Balance has changed as a result of sync for prisoner $prisonerId, for domain event ${domainEventType.value}")
-      changeLogService.logSyncEventChange(prisonerId, domainEventType)
+      changeLogService.logSyncEventChange(prisonerId, domainEventType, dpsPrisoner)
     }
   }
 
@@ -197,13 +202,15 @@ class NomisSyncService(
   }
 
   private fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, amountToCreate: Int) {
+    val prisonerDetails = prisonerDetailsService.getPrisoner(prisonerId)!!
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
-          prisonerId = prisonerId,
+          prisonerId = prisonerDetails.prisonerId,
           type = visitOrderType,
           status = VisitOrderStatus.AVAILABLE,
+          prisoner = prisonerDetails,
         ),
       )
     }
@@ -211,13 +218,15 @@ class NomisSyncService(
   }
 
   private fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int) {
+    val prisonerDetails = prisonerDetailsService.getPrisoner(prisonerId)!!
     val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
     repeat(amountToCreate) {
       negativeVisitOrders.add(
         NegativeVisitOrder(
-          prisonerId = prisonerId,
+          prisonerId = prisonerDetails.prisonerId,
           type = negativeVoType,
           status = NegativeVisitOrderStatus.USED,
+          prisoner = prisonerDetails,
         ),
       )
     }

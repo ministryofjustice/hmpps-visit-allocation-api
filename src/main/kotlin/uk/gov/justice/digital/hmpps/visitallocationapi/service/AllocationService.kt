@@ -1,5 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -12,6 +14,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Priso
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
@@ -77,27 +80,32 @@ class AllocationService(
     val prisonIncentiveAmounts = allPrisonIncentiveAmounts?.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
       ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)
 
+    val dpsPrisonerDetails: PrisonerDetails = (
+      withContext(Dispatchers.IO) { prisonerDetailsService.getPrisoner(prisonerId) }
+        ?: withContext(Dispatchers.IO) { prisonerDetailsService.createNewPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null) }
+      )
+
     val visitOrders = mutableListOf<VisitOrder>()
 
     // add VOs
-    visitOrders.addAll(generateVos(prisoner, prisonIncentiveAmounts))
+    visitOrders.addAll(generateVos(dpsPrisonerDetails, prisonIncentiveAmounts))
 
     // add PVOs
-    visitOrders.addAll(generatePVos(prisoner, prisonIncentiveAmounts))
+    visitOrders.addAll(generatePVos(dpsPrisonerDetails, prisonIncentiveAmounts))
 
     visitOrderRepository.saveAll(visitOrders)
 
-    updateLastAllocatedDates(prisoner, visitOrders)
+    updateLastAllocatedDates(dpsPrisonerDetails, visitOrders)
 
     LOG.info(
       "Successfully generated ${visitOrders.size} visit orders for prisoner prisoner $prisonerId: " + "${visitOrders.count { it.type == VisitOrderType.PVO }} PVOs and ${visitOrders.count { it.type == VisitOrderType.VO }} VOs",
     )
   }
 
-  private fun updateLastAllocatedDates(prisoner: PrisonerDto, visitOrders: MutableList<VisitOrder>) {
+  private fun updateLastAllocatedDates(prisoner: PrisonerDetails, visitOrders: MutableList<VisitOrder>) {
     // Only update the lastVoAllocatedDate and lastPvoAllocatedDate if VOs and PVOs have been generated.
     if (visitOrders.any { it.type == VisitOrderType.VO }) {
-      prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(prisonerId = prisoner.prisonerId, LocalDate.now())
+      prisonerDetailsService.updateVoLastCreatedDate(prisonerId = prisoner.prisonerId, LocalDate.now())
     }
     if (visitOrders.any { it.type == VisitOrderType.PVO }) {
       prisonerDetailsService.updatePvoLastCreatedDate(prisonerId = prisoner.prisonerId, LocalDate.now())
@@ -128,55 +136,53 @@ class AllocationService(
     LOG.info("Expired $pvosExpired PVOs for prisoner $prisonerId")
   }
 
-  private fun createVisitOrder(prisonerId: String, type: VisitOrderType): VisitOrder = VisitOrder(
-    prisonerId = prisonerId,
+  private fun createVisitOrder(prisoner: PrisonerDetails, type: VisitOrderType): VisitOrder = VisitOrder(
+    prisonerId = prisoner.prisonerId,
     type = type,
     status = VisitOrderStatus.AVAILABLE,
     createdTimestamp = LocalDateTime.now(),
     expiryDate = null,
+    prisoner = prisoner,
   )
 
-  private fun isDueVO(prisonerId: String): Boolean {
-    val lastVODate = prisonerDetailsService.getPrisoner(prisonerId)?.lastVoAllocatedDate
-    return lastVODate == null || lastVODate <= LocalDate.now().minusDays(14)
-  }
+  private fun isDueVO(prisoner: PrisonerDetails): Boolean = prisoner.lastVoAllocatedDate <= LocalDate.now().minusDays(14)
 
-  private fun isDuePVO(prisonerId: String): Boolean {
-    val lastPVODate = prisonerDetailsService.getPrisoner(prisonerId)?.lastPvoAllocatedDate
+  private fun isDuePVO(prisoner: PrisonerDetails): Boolean {
+    val lastPVODate = prisoner.lastPvoAllocatedDate
 
     // If they haven't been given a PVO before, we wait until their VO due date to allocate it, to align the dates.
     if (lastPVODate == null) {
-      return isDueVO(prisonerId)
+      return isDueVO(prisoner)
     }
 
     return lastPVODate <= LocalDate.now().minusDays(28)
   }
 
-  private fun generateVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
+  private fun generateVos(prisoner: PrisonerDetails, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
     val visitOrders = mutableListOf<VisitOrder>()
-    if (isDueVO(prisoner.prisonerId)) {
+    if (isDueVO(prisoner)) {
       val negativeVoCount = negativeVisitOrderRepository.countAllNegativeVisitOrders(prisoner.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.USED)
       if (negativeVoCount > 0) {
         handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, VisitOrderType.VO, visitOrders)
       } else {
         repeat(prisonIncentivesForPrisonerLevel.visitOrders) {
-          visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.VO))
+          visitOrders.add(createVisitOrder(prisoner, VisitOrderType.VO))
         }
       }
     }
     return visitOrders.toList()
   }
 
-  private fun generatePVos(prisoner: PrisonerDto, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
+  private fun generatePVos(prisoner: PrisonerDetails, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
     val visitOrders = mutableListOf<VisitOrder>()
 
-    if (prisonIncentivesForPrisonerLevel.privilegedVisitOrders != 0 && isDuePVO(prisoner.prisonerId)) {
+    if (prisonIncentivesForPrisonerLevel.privilegedVisitOrders != 0 && isDuePVO(prisoner)) {
       val negativePvoCount = negativeVisitOrderRepository.countAllNegativeVisitOrders(prisoner.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.USED)
       if (negativePvoCount > 0) {
         handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.privilegedVisitOrders, negativePvoCount, prisoner, VisitOrderType.PVO, visitOrders)
       } else {
         repeat(prisonIncentivesForPrisonerLevel.privilegedVisitOrders) {
-          visitOrders.add(createVisitOrder(prisoner.prisonerId, VisitOrderType.PVO))
+          visitOrders.add(createVisitOrder(prisoner, VisitOrderType.PVO))
         }
       }
     }
@@ -221,7 +227,7 @@ class AllocationService(
     return incentiveLevelsForPrison
   }
 
-  private fun handleNegativeBalanceRepayment(incentiveAmount: Int, negativeBalance: Int, prisoner: PrisonerDto, type: VisitOrderType, visitOrders: MutableList<VisitOrder>) {
+  private fun handleNegativeBalanceRepayment(incentiveAmount: Int, negativeBalance: Int, prisoner: PrisonerDetails, type: VisitOrderType, visitOrders: MutableList<VisitOrder>) {
     if (incentiveAmount < negativeBalance) {
       negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(
         prisoner.prisonerId,
@@ -238,7 +244,7 @@ class AllocationService(
       val visitOrdersToCreate = incentiveAmount - negativeBalance
 
       repeat(visitOrdersToCreate) {
-        visitOrders.add(createVisitOrder(prisoner.prisonerId, type))
+        visitOrders.add(createVisitOrder(prisoner, type))
       }
     }
   }

@@ -80,6 +80,7 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "HEI"
     val prisoner = createPrisonerDto(prisonerId, prisonId, "IN")
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
@@ -87,6 +88,7 @@ class AllocationServiceTest {
     whenever(prisonerSearchClient.getPrisonerById(prisonerId)).thenReturn(prisoner)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
     whenever(incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)).thenReturn(prisonIncentiveAmounts)
+    whenever(prisonerDetailsService.createNewPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)).thenReturn(dpsPrisoner)
 
     // Begin test
     runBlocking {
@@ -120,6 +122,7 @@ class AllocationServiceTest {
     val prisonerId = "AA123456"
     val prisonId = "HEI"
     val prisoner = createPrisonerDto(prisonerId, prisonId, "IN")
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD")
 
@@ -135,6 +138,7 @@ class AllocationServiceTest {
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)).thenReturn(prisonerIncentive)
+    whenever(prisonerDetailsService.createNewPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)).thenReturn(dpsPrisoner)
 
     // Begin test
     runBlocking {
