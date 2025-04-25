@@ -34,7 +34,7 @@ data class NegativeVisitOrder(
   val createdTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
-  val repaidDate: LocalDate? = null,
+  var repaidDate: LocalDate? = null,
 
   @Column(name = "prisoner_id", nullable = false)
   val prisonerId: String,

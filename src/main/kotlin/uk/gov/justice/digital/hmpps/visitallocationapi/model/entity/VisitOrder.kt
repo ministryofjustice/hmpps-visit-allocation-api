@@ -34,7 +34,7 @@ data class VisitOrder(
   val createdTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
-  val expiryDate: LocalDate? = null,
+  var expiryDate: LocalDate? = null,
 
   @Column(name = "prisoner_id", nullable = false)
   val prisonerId: String,
