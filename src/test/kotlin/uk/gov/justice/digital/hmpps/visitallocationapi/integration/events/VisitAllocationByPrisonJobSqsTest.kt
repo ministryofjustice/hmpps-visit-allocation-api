@@ -54,9 +54,15 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val message = objectMapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
@@ -98,7 +104,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
 
-    verify(prisonerDetailsRepository, times(3)).save(any())
     verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
@@ -123,6 +128,11 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
@@ -164,7 +174,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
 
-    verify(prisonerDetailsRepository, times(3)).save(any())
     verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
@@ -195,6 +204,11 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
       prisonId = PRISON_CODE,
       emptyList(),
     )
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"))
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "ENH", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"))
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "ENH2", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"))
@@ -227,7 +241,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
 
-    verify(prisonerDetailsRepository, times(3)).save(any())
     verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
@@ -247,18 +260,22 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
     // Negative balance for prisoner1
-    val prisoner1Details = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = prisoner1.prisonerId, LocalDate.now().minusDays(14), null))
-    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, 2, prisoner1Details)
-    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.PVO, 1, prisoner1Details)
+    entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner1.prisonerId, LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, 2)
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.PVO, 1)
 
     // Negative balance for prisoner2
-    val prisoner2Details = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = prisoner2.prisonerId, LocalDate.now().minusDays(14), null))
-    entityHelper.createAndSaveNegativeVisitOrders(prisoner2.prisonerId, VisitOrderType.VO, 1, prisoner2Details)
-    entityHelper.createAndSaveNegativeVisitOrders(prisoner2.prisonerId, VisitOrderType.PVO, 1, prisoner2Details)
+    entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner2.prisonerId, LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner2.prisonerId, VisitOrderType.VO, 1)
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner2.prisonerId, VisitOrderType.PVO, 1)
 
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
 
@@ -314,17 +331,11 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   @Test
   fun `when visit allocation job run for a prison then processMessage is called and visit orders are accumulated for convicted prisoners`() {
     // Given - Some prisoners have pre-existing VOs, and a message is sent to start allocation job for prison
-    val existingPrisonerDetails = mutableListOf<PrisonerDetails>().apply {
-      add(PrisonerDetails(prisoner2.prisonerId, LocalDate.now().minusDays(14), null))
-      add(PrisonerDetails(prisoner3.prisonerId, LocalDate.now().minusDays(14), null))
-    }
-    prisonerDetailsRepository.saveAll(existingPrisonerDetails)
+    entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner2.prisonerId, LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveVisitOrders(prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29).atStartOfDay(), 2)
 
-    val existingVOs = mutableListOf<VisitOrder>().apply {
-      addAll(List(2) { createVisitOrder(VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29).atStartOfDay(), prisoner = existingPrisonerDetails[0]) })
-      addAll(List(2) { createVisitOrder(VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(14).atStartOfDay(), prisoner = existingPrisonerDetails[1]) })
-    }
-    visitOrderRepository.saveAll(existingVOs)
+    entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner3.prisonerId, LocalDate.now().minusDays(14), null))
+    entityHelper.createAndSaveVisitOrders(prisoner3.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(14).atStartOfDay(), 2)
 
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
@@ -336,6 +347,11 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
@@ -379,7 +395,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
         assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
 
-        verify(prisonerDetailsRepository, times(1)).save(any())
         verify(prisonerDetailsRepository, times(3)).updatePrisonerLastVoAllocatedDate(any(), any())
         verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
       }
@@ -397,17 +412,11 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   @Test
   fun `when visit allocation job run for a prison then processMessage is called and visit orders are expired for convicted prisoners`() {
     // Given - Some prisoners have pre-existing VOs / PVOs, and a message is sent to start allocation job for prison
-    val existingPrisonerDetails = mutableListOf<PrisonerDetails>().apply {
-      add(PrisonerDetails(prisoner2.prisonerId, LocalDate.now().minusDays(1), null))
-      add(PrisonerDetails(prisoner3.prisonerId, LocalDate.now().minusDays(14), LocalDate.now().minusDays(29)))
-    }
-    prisonerDetailsRepository.saveAll(existingPrisonerDetails)
+    entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner2.prisonerId, LocalDate.now().minusDays(1), null))
+    entityHelper.createAndSaveVisitOrders(prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDate.now().minusDays(1).atStartOfDay(), 28)
 
-    val existingVOs = mutableListOf<VisitOrder>().apply {
-      addAll(List(28) { createVisitOrder(VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDate.now().minusDays(1).atStartOfDay(), prisoner = existingPrisonerDetails[0]) })
-      addAll(List(2) { createVisitOrder(VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29).atStartOfDay(), prisoner = existingPrisonerDetails[1]) })
-    }
-    visitOrderRepository.saveAll(existingVOs)
+    entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner3.prisonerId, LocalDate.now().minusDays(14), LocalDate.now().minusDays(29)))
+    entityHelper.createAndSaveVisitOrders(prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(29).atStartOfDay(), 2)
 
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
@@ -419,6 +428,11 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
@@ -462,7 +476,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
         assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
 
-        verify(prisonerDetailsRepository, times(1)).save(any())
         verify(prisonerDetailsRepository, times(2)).updatePrisonerLastVoAllocatedDate(any(), any())
         verify(prisonerDetailsRepository, times(1)).updatePrisonerLastPvoAllocatedDate(any(), any())
       }
@@ -488,6 +501,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3, prisoner4)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner4.prisonerId, createPrisonerDto(prisonerId = prisoner4.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
 
     // a 404 is being returned for prisoner 2
@@ -536,7 +555,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedPrisoners = 1)
 
-    verify(prisonerDetailsRepository, times(3)).save(any())
     verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
@@ -560,6 +578,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3, prisoner4)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner4.prisonerId, createPrisonerDto(prisonerId = prisoner4.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
 
     // a 500 error is being returned for prisoner 2
@@ -608,7 +632,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedPrisoners = 1)
 
-    verify(prisonerDetailsRepository, times(3)).save(any())
     verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 

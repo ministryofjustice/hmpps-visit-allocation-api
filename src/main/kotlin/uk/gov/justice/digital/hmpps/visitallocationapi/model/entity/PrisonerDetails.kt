@@ -22,12 +22,12 @@ data class PrisonerDetails(
   @Column(nullable = true)
   val lastPvoAllocatedDate: LocalDate?,
 ) {
-  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   var visitOrders: MutableList<VisitOrder> = mutableListOf()
 
-  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   var negativeVisitOrders: MutableList<NegativeVisitOrder> = mutableListOf()
 
-  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   var changeLogs: MutableList<ChangeLog> = mutableListOf()
 }

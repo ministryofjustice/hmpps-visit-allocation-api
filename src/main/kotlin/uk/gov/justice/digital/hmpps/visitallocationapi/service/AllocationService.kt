@@ -61,7 +61,13 @@ class AllocationService(
         // ignore the prisoner and send it to an SQS queue to ensure the whole process does not stop
         LOG.error("Error processing prisoner - ${prisoner.prisonerId}, putting ${prisoner.prisonerId} on prisoner retry queue", e)
         totalConvictedPrisonersFailed++
-        prisonerRetryService.sendMessageToPrisonerRetryQueue(jobReference = jobReference, prisonerId = prisoner.prisonerId)
+
+        withContext(Dispatchers.IO) {
+          prisonerRetryService.sendMessageToPrisonerRetryQueue(
+            jobReference = jobReference,
+            prisonerId = prisoner.prisonerId,
+          )
+        }
       }
     }
 
