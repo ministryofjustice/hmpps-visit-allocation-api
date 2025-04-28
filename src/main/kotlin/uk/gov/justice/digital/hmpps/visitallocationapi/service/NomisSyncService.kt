@@ -46,10 +46,10 @@ class NomisSyncService(
     if (prisonerBalance != null) {
       // Only do a balance comparison if prisoner exists.
       compareBalanceBeforeSync(syncDto, prisonerBalance)
-      dpsPrisoner = prisonerDetailsService.getPrisoner(syncDto.prisonerId)!!
+      dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)!!
     } else {
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      dpsPrisoner = prisonerDetailsService.createNewPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
+      dpsPrisoner = prisonerDetailsService.createPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
       prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
     }
 
@@ -99,10 +99,10 @@ class NomisSyncService(
     if (prisonerDpsBalance == null) {
       val lastVoAllocatedDate = prisonerNomisBalance.latestIepAdjustDate ?: LocalDate.now()
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      dpsPrisoner = prisonerDetailsService.createNewPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
+      dpsPrisoner = prisonerDetailsService.createPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
       prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
     } else {
-      dpsPrisoner = prisonerDetailsService.getPrisoner(prisonerId)!!
+      dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)!!
     }
 
     val voBalanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance)

@@ -103,8 +103,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
-
-    verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
   /**
@@ -173,8 +171,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
-
-    verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
   /**
@@ -240,8 +236,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
-
-    verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
   /**
@@ -318,8 +312,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 2, processedPrisoners = 2, failedPrisoners = 0)
-
-    verify(prisonerDetailsRepository, times(1)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
   /**
@@ -394,9 +386,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
         val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
         assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
-
-        verify(prisonerDetailsRepository, times(3)).updatePrisonerLastVoAllocatedDate(any(), any())
-        verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
       }
   }
 
@@ -475,9 +464,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.EXPIRED, 2)
         val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
         assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
-
-        verify(prisonerDetailsRepository, times(2)).updatePrisonerLastVoAllocatedDate(any(), any())
-        verify(prisonerDetailsRepository, times(1)).updatePrisonerLastPvoAllocatedDate(any(), any())
       }
   }
 
@@ -554,8 +540,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedPrisoners = 1)
-
-    verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
   /**
@@ -631,8 +615,6 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedPrisoners = 1)
-
-    verify(prisonerDetailsRepository, times(2)).updatePrisonerLastPvoAllocatedDate(any(), any())
   }
 
   /**

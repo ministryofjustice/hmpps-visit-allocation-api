@@ -20,7 +20,7 @@ data class PrisonerDetails(
   var lastVoAllocatedDate: LocalDate,
 
   @Column(nullable = true)
-  val lastPvoAllocatedDate: LocalDate?,
+  var lastPvoAllocatedDate: LocalDate?,
 ) {
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   var visitOrders: MutableList<VisitOrder> = mutableListOf()

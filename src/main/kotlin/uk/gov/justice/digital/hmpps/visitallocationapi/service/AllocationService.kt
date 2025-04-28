@@ -20,6 +20,14 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllo
 import java.time.LocalDate
 import java.time.LocalDateTime
 
+// TODO: JPA updates.
+//  1. The problem is that LAZY loading the fields on the Prisoner Details model, is causing a hibernate exception. I've changed it to EAGER for now,
+//  Figure out if EAGER loading is bad, if it is then swap back to LAZY and figure out what the fix should be.
+//  It's happening below when retrieving the DPS prisoner (line 57ish) and will also be happening in the PrisonerRetryService, same get on prisonerDetails.
+//  -
+//  2. Let Karen know we need dev rec report disabled, get this PR approved, and then look to optimise further by re-using the prison call to get all
+//  prisoners, pass them in instead of requiring another call in the processAllocation method.
+
 @Transactional
 @Service
 class AllocationService(
@@ -46,7 +54,7 @@ class AllocationService(
     for (prisoner in allPrisoners) {
       try {
         // Get prisoner on DPS (or create if they're new).
-        val dpsPrisonerDetails: PrisonerDetails = (withContext(Dispatchers.IO) { prisonerDetailsService.getPrisoner(prisoner.prisonerId) } ?: withContext(Dispatchers.IO) { prisonerDetailsService.createNewPrisonerDetails(prisoner.prisonerId, LocalDate.now().minusDays(14), null) })
+        val dpsPrisonerDetails: PrisonerDetails = (withContext(Dispatchers.IO) { prisonerDetailsService.getPrisonerDetails(prisoner.prisonerId) } ?: withContext(Dispatchers.IO) { prisonerDetailsService.createPrisonerDetails(prisoner.prisonerId, LocalDate.now().minusDays(14), null) })
 
         processPrisonerAllocation(dpsPrisonerDetails, allIncentiveLevels)
         processPrisonerAccumulation(dpsPrisonerDetails)
@@ -103,16 +111,6 @@ class AllocationService(
     LOG.info("Successfully generated ${visitOrders.size} visit orders for prisoner ${dpsPrisoner.prisonerId}: " + "${visitOrders.count { it.type == VisitOrderType.PVO }} PVOs and ${visitOrders.count { it.type == VisitOrderType.VO }} VOs")
   }
 
-  private fun updateLastAllocatedDates(prisoner: PrisonerDetails, visitOrders: MutableList<VisitOrder>) {
-    // Only update the lastVoAllocatedDate and lastPvoAllocatedDate if VOs and PVOs have been generated.
-    if (visitOrders.any { it.type == VisitOrderType.VO }) {
-      prisonerDetailsService.updateVoLastCreatedDate(prisonerId = prisoner.prisonerId, LocalDate.now())
-    }
-    if (visitOrders.any { it.type == VisitOrderType.PVO }) {
-      prisonerDetailsService.updatePvoLastCreatedDate(prisonerId = prisoner.prisonerId, LocalDate.now())
-    }
-  }
-
   private fun processPrisonerAccumulation(dpsPrisoner: PrisonerDetails) {
     LOG.info("Entered AllocationService - processPrisonerAccumulation with prisonerId: ${dpsPrisoner.prisonerId}")
 
@@ -152,6 +150,16 @@ class AllocationService(
       }
 
     LOG.info("Completed expiry for prisoner ${dpsPrisoner.prisonerId}")
+  }
+
+  private fun updateLastAllocatedDates(dpsPrisoner: PrisonerDetails, visitOrders: MutableList<VisitOrder>) {
+    // Only update the lastVoAllocatedDate and lastPvoAllocatedDate if VOs and PVOs have been generated.
+    if (visitOrders.any { it.type == VisitOrderType.VO }) {
+      dpsPrisoner.lastVoAllocatedDate = LocalDate.now()
+    }
+    if (visitOrders.any { it.type == VisitOrderType.PVO }) {
+      dpsPrisoner.lastPvoAllocatedDate = LocalDate.now()
+    }
   }
 
   private fun createVisitOrder(prisoner: PrisonerDetails, type: VisitOrderType): VisitOrder = VisitOrder(

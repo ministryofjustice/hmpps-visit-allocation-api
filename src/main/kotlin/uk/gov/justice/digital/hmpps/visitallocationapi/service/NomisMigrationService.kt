@@ -34,7 +34,7 @@ class NomisMigrationService(
     LOG.info("Entered NomisMigrationService - migratePrisoner with migration dto {}", migrationDto)
 
     // If prisoner exists, reset their details and balance ready for migration
-    if (prisonerDetailsService.getPrisoner(migrationDto.prisonerId) != null) {
+    if (prisonerDetailsService.getPrisonerDetails(migrationDto.prisonerId) != null) {
       LOG.info("Prisoner ${migrationDto.prisonerId} found in DB, resetting their balance ready for migration")
       prisonerDetailsService.removePrisonerDetails(migrationDto.prisonerId)
     }
@@ -123,6 +123,6 @@ class NomisMigrationService(
       null
     }
 
-    return prisonerDetailsService.createNewPrisonerDetails(prisonerId = migrationDto.prisonerId, newLastAllocatedDate = migrationDto.lastVoAllocationDate!!, newLastPvoAllocatedDate = lastPvoAllocatedDate)
+    return prisonerDetailsService.createPrisonerDetails(prisonerId = migrationDto.prisonerId, newLastAllocatedDate = migrationDto.lastVoAllocationDate!!, newLastPvoAllocatedDate = lastPvoAllocatedDate)
   }
 }

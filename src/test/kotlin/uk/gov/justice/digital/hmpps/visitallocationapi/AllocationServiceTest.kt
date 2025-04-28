@@ -7,8 +7,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
-import org.mockito.kotlin.times
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
@@ -80,12 +78,10 @@ class AllocationServiceTest {
       allocationService.processPrisonerAllocation(dpsPrisoner = dpsPrisoner)
     }
 
-    // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
+    // THEN
     verify(prisonerSearchClient).getPrisonerById(prisonerId)
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)
     verify(incentivesClient).getPrisonIncentiveLevelByLevelCode(prisonerSearchResult.prisonId, prisonerIncentive.iepCode)
-    verify(prisonerDetailsService, times(1)).updateVoLastCreatedDate(any(), any())
-    verify(prisonerDetailsService, times(1)).updatePvoLastCreatedDate(any(), any())
   }
 
   // --- Continue Allocation Tests --- \\
@@ -114,7 +110,7 @@ class AllocationServiceTest {
       ),
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -123,7 +119,7 @@ class AllocationServiceTest {
       allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
-    // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
+    // THEN
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
     verify(incentivesClient).getPrisonIncentiveLevels(prisonId)
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)
@@ -157,7 +153,7 @@ class AllocationServiceTest {
       ),
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -200,7 +196,7 @@ class AllocationServiceTest {
       ),
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -209,7 +205,7 @@ class AllocationServiceTest {
       allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
-    // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
+    // THEN
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
     verify(incentivesClient).getPrisonIncentiveLevels(prisonId)
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
@@ -243,7 +239,7 @@ class AllocationServiceTest {
       ),
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -252,7 +248,7 @@ class AllocationServiceTest {
       allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
-    // THEN - No VO / PVOs are saved.
+    // THEN
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
     verify(incentivesClient).getPrisonIncentiveLevels(prisonId)
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
@@ -286,7 +282,7 @@ class AllocationServiceTest {
       ),
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -295,7 +291,7 @@ class AllocationServiceTest {
       allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
-    // THEN - 3 Visit orders should be generated (2 VOs and 1 PVO).
+    // THEN
     verify(prisonerSearchClient).getConvictedPrisonersByPrisonId(prisonId)
     verify(incentivesClient).getPrisonIncentiveLevels(prisonId)
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
@@ -331,7 +327,7 @@ class AllocationServiceTest {
       ),
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -340,6 +336,7 @@ class AllocationServiceTest {
       allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
+    // THEN
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
@@ -372,7 +369,7 @@ class AllocationServiceTest {
       ),
     )
     whenever(incentivesClient.getPrisonIncentiveLevels(prisonId)).thenReturn(listOf(prisonIncentiveAmounts))
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -381,7 +378,7 @@ class AllocationServiceTest {
       allocationService.processPrison("allocation-job-ref", prisonId)
     }
 
-    // THEN - updateAvailableVisitOrdersOver28DaysToAccumulated is called but no interactions with expireOldestAccumulatedVisitOrders.
+    // THEN
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 

@@ -74,7 +74,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
@@ -103,7 +103,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -130,7 +130,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
@@ -161,7 +161,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
@@ -190,7 +190,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -217,7 +217,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
@@ -248,7 +248,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
@@ -277,7 +277,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
@@ -313,7 +313,7 @@ class NomisSyncServiceTest {
     // WHEN
     whenever(balanceService.getPrisonerBalance(prisonerId)).thenReturn(existingPrisonerBalance)
     whenever(prisonApiClient.getBookingVisitBalances(prisonerId)).thenReturn(existingNomisBalance)
-    whenever(prisonerDetailsService.getPrisoner(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()

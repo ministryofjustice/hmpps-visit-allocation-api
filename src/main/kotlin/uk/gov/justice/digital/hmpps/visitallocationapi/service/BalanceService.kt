@@ -21,7 +21,7 @@ class BalanceService(private val prisonerDetailsService: PrisonerDetailsService)
     LOG.info("Entered BalanceService - getPrisonerBalance for prisoner $prisonerId")
 
     // Try to fetch prisoner details, if not found, log and return null
-    val prisonerDetails = prisonerDetailsService.getPrisoner(prisonerId)
+    val prisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
       ?: run {
         LOG.info("Prisoner $prisonerId not found in DB, returning null balance")
         return null

@@ -15,15 +15,7 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getPrisoner(prisonerId: String): PrisonerDetails? = prisonerDetailsRepository.findByPrisonerId(prisonerId)
-
-  fun updateVoLastCreatedDate(prisonerId: String, newLastAllocatedDate: LocalDate) {
-    LOG.info("Entered PrisonerDetailsService updateVoLastCreatedDate for prisoner $prisonerId with date $newLastAllocatedDate")
-
-    prisonerDetailsRepository.updatePrisonerLastVoAllocatedDate(prisonerId, newLastAllocatedDate)
-  }
-
-  fun createNewPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
+  fun createPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
     LOG.info("Prisoner $prisonerId not found, creating new record")
     val newPrisoner = PrisonerDetails(
       prisonerId = prisonerId,
@@ -33,16 +25,9 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
     return prisonerDetailsRepository.save(newPrisoner)
   }
 
-  fun removePrisonerDetails(prisonerId: String) {
-    prisonerDetailsRepository.deleteByPrisonerId(prisonerId)
-  }
+  fun getPrisonerDetails(prisonerId: String): PrisonerDetails? = prisonerDetailsRepository.findByPrisonerId(prisonerId)
 
-  fun updatePvoLastCreatedDate(prisonerId: String, newLastAllocatedDate: LocalDate) {
-    LOG.info("Entered PrisonerDetailsService updatePvoLastCreatedDate for prisoner $prisonerId with date $newLastAllocatedDate")
-    prisonerDetailsRepository.updatePrisonerLastPvoAllocatedDate(prisonerId, newLastAllocatedDate)
-  }
+  fun updatePrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails = prisonerDetailsRepository.save(prisoner)
 
-  fun updatePrisonerDetails(prisoner: PrisonerDetails) {
-    prisonerDetailsRepository.save(prisoner)
-  }
+  fun removePrisonerDetails(prisonerId: String) = prisonerDetailsRepository.deleteByPrisonerId(prisonerId)
 }

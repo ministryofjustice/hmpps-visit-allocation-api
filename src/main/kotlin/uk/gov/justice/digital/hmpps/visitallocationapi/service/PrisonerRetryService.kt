@@ -37,19 +37,15 @@ class PrisonerRetryService(
   suspend fun handlePrisonerRetry(prisonerId: String) {
     log.info("handle prisoner - $prisonerId on retry queue")
 
-    val dpsPrisonerDetails: PrisonerDetails = (
-      withContext(Dispatchers.IO) { prisonerDetailsService.getPrisoner(prisonerId) } ?: withContext(
-        Dispatchers.IO,
-      ) { prisonerDetailsService.createNewPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null) }
-      )
+    val dpsPrisonerDetails: PrisonerDetails = withContext(Dispatchers.IO) {
+      prisonerDetailsService.getPrisonerDetails(prisonerId)
+        ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    }
 
     allocationService.processPrisonerAllocation(dpsPrisonerDetails)
 
     withContext(Dispatchers.IO) {
       prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
     }
-
-    val x = "5"
-    println(x)
   }
 }
