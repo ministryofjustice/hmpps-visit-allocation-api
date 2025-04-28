@@ -46,7 +46,10 @@ class AllocationService(
     for (prisoner in allPrisoners) {
       try {
         // Get prisoner on DPS (or create if they're new).
-        val dpsPrisonerDetails: PrisonerDetails = (withContext(Dispatchers.IO) { prisonerDetailsService.getPrisonerDetails(prisoner.prisonerId) } ?: withContext(Dispatchers.IO) { prisonerDetailsService.createPrisonerDetails(prisoner.prisonerId, LocalDate.now().minusDays(14), null) })
+        val dpsPrisonerDetails: PrisonerDetails = withContext(Dispatchers.IO) {
+          prisonerDetailsService.getPrisonerDetails(prisoner.prisonerId)
+            ?: prisonerDetailsService.createPrisonerDetails(prisoner.prisonerId, LocalDate.now().minusDays(14), null)
+        }
 
         processPrisonerAllocation(dpsPrisonerDetails, allIncentiveLevels)
         processPrisonerAccumulation(dpsPrisonerDetails)
