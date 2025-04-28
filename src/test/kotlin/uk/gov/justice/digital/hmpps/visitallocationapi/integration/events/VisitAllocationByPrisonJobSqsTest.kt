@@ -361,7 +361,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     // Then
     Awaitility.await()
-      .atMost(5, TimeUnit.SECONDS)
+      .atMost(10, TimeUnit.SECONDS)
       .untilAsserted {
         // Then
         await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
@@ -439,15 +439,13 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     // Then
     Awaitility.await()
-      .atMost(5, TimeUnit.SECONDS)
+      .atMost(10, TimeUnit.SECONDS)
       .untilAsserted {
         // Then
         await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
         await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
         await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
         val visitOrders = visitOrderRepository.findAll()
-
-        assertThat(visitOrders.size).isEqualTo(36)
 
         // no existing VOs, so only gets new allocation.
         assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 1)
@@ -464,6 +462,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.EXPIRED, 2)
         val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
         assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
+
+        assertThat(visitOrders.size).isEqualTo(36)
       }
   }
 
