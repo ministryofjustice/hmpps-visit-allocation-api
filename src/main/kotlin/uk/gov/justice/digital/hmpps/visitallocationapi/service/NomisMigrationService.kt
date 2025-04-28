@@ -49,7 +49,7 @@ class NomisMigrationService(
     migrateBalance(migrationDto, VisitOrderType.VO, dpsPrisoner)
     migrateBalance(migrationDto, VisitOrderType.PVO, dpsPrisoner)
 
-    dpsPrisoner.changeLogs.add(changeLogService.logMigrationChange(migrationDto, dpsPrisoner))
+    dpsPrisoner.changeLogs.add(changeLogService.createLogMigrationChange(migrationDto, dpsPrisoner))
 
     prisonerDetailsService.updatePrisonerDetails(dpsPrisoner)
     LOG.info("Finished NomisMigrationService - migratePrisoner ${migrationDto.prisonerId} successfully")

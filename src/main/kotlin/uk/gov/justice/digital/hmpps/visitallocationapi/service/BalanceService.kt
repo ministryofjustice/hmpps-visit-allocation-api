@@ -5,10 +5,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 
 @Service
 class BalanceService(private val prisonerDetailsService: PrisonerDetailsService) {
@@ -27,16 +23,6 @@ class BalanceService(private val prisonerDetailsService: PrisonerDetailsService)
         return null
       }
 
-    return PrisonerBalanceDto(
-      prisonerId = prisonerId,
-      voBalance = getVoBalance(prisonerDetails),
-      pvoBalance = getPvoBalance(prisonerDetails),
-    )
+    return prisonerDetails.getBalance()
   }
-
-  private fun getVoBalance(prisonerDetails: PrisonerDetails): Int = prisonerDetails.visitOrders.count { it.type == VisitOrderType.VO && it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
-    .minus(prisonerDetails.negativeVisitOrders.count { it.type == VisitOrderType.VO && it.status == NegativeVisitOrderStatus.USED })
-
-  private fun getPvoBalance(prisonerDetails: PrisonerDetails): Int = prisonerDetails.visitOrders.count { it.type == VisitOrderType.PVO && it.status in listOf(VisitOrderStatus.AVAILABLE) }
-    .minus(prisonerDetails.negativeVisitOrders.count { it.type == VisitOrderType.PVO && it.status == NegativeVisitOrderStatus.USED })
 }

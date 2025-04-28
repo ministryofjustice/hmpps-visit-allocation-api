@@ -11,16 +11,15 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 
 @Transactional
 @Service
-class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
+class ChangeLogService {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): ChangeLog {
+  fun createLogMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): ChangeLog {
     LOG.info("Logging migration to change_log table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
     return ChangeLog(
       prisonerId = dpsPrisoner.prisonerId,
@@ -29,10 +28,12 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
       userId = "SYSTEM",
       comment = "migrated prisoner ${dpsPrisoner.prisonerId}, with vo balance ${migrationChangeDto.voBalance} and pvo balance ${migrationChangeDto.pvoBalance} and lastAllocatedDate ${migrationChangeDto.lastVoAllocationDate}",
       prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 
-  fun logSyncAdjustmentChange(syncDto: VisitAllocationPrisonerSyncDto, dpsPrisoner: PrisonerDetails): ChangeLog {
+  fun createLogSyncAdjustmentChange(syncDto: VisitAllocationPrisonerSyncDto, dpsPrisoner: PrisonerDetails): ChangeLog {
     LOG.info("Logging sync to change_log table for prisoner ${syncDto.prisonerId}, sync - $syncDto")
     return ChangeLog(
       prisonerId = dpsPrisoner.prisonerId,
@@ -41,10 +42,12 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
       userId = "SYSTEM",
       comment = "synced prisoner ${syncDto.prisonerId}, with adjustment code ${syncDto.adjustmentReasonCode.name}",
       prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 
-  fun logSyncEventChange(dpsPrisoner: PrisonerDetails, domainEventType: DomainEventType): ChangeLog {
+  fun createLogSyncEventChange(dpsPrisoner: PrisonerDetails, domainEventType: DomainEventType): ChangeLog {
     LOG.info("Logging sync to change_log table for prisoner ${dpsPrisoner.prisonerId}, event - ${domainEventType.value}")
     return ChangeLog(
       prisonerId = dpsPrisoner.prisonerId,
@@ -53,6 +56,8 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
       userId = "SYSTEM",
       comment = "synced prisoner ${dpsPrisoner.prisonerId}, with domain event ${domainEventType.value}",
       prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 }

@@ -82,7 +82,7 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
-    verify(changeLogService, times(1)).logSyncAdjustmentChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
 
     val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
@@ -109,7 +109,7 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(changeLogService, times(1)).logSyncAdjustmentChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(any())
 
     verifyNoInteractions(telemetryClientService)
@@ -138,7 +138,7 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
-    verify(changeLogService, times(1)).logSyncAdjustmentChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
 
     val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
@@ -169,7 +169,7 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
-    verify(changeLogService, times(1)).logSyncAdjustmentChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
 
     val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
@@ -196,7 +196,7 @@ class NomisSyncServiceTest {
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(changeLogService, times(1)).logSyncAdjustmentChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(any())
 
     verifyNoInteractions(telemetryClientService)
@@ -225,7 +225,7 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
-    verify(changeLogService, times(1)).logSyncAdjustmentChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
 
     val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
@@ -256,7 +256,7 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
-    verify(changeLogService, times(1)).logSyncAdjustmentChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
 
     val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
@@ -285,7 +285,7 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
-    verify(changeLogService, times(1)).logSyncAdjustmentChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
 
     val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
@@ -321,7 +321,7 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
-    verify(changeLogService, times(1)).logSyncEventChange(any(), any())
+    verify(changeLogService, times(1)).createLogSyncEventChange(any(), any())
     verifyNoInteractions(telemetryClientService)
 
     val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]

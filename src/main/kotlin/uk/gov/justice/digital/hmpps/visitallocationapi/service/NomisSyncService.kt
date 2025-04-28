@@ -79,7 +79,7 @@ class NomisSyncService(
       dpsPrisoner.lastVoAllocatedDate = syncDto.createdDate
     }
 
-    dpsPrisoner.changeLogs.add(changeLogService.logSyncAdjustmentChange(syncDto, dpsPrisoner))
+    dpsPrisoner.changeLogs.add(changeLogService.createLogSyncAdjustmentChange(syncDto, dpsPrisoner))
 
     prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
   }
@@ -123,7 +123,7 @@ class NomisSyncService(
 
     if (voBalanceChange != 0 || pvoBalanceChange != 0) {
       LOG.info("Balance has changed as a result of sync for prisoner $prisonerId, for domain event ${domainEventType.value}")
-      dpsPrisoner.changeLogs.add(changeLogService.logSyncEventChange(dpsPrisoner, domainEventType))
+      dpsPrisoner.changeLogs.add(changeLogService.createLogSyncEventChange(dpsPrisoner, domainEventType))
     }
 
     prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
