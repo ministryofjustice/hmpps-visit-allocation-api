@@ -1,7 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -16,7 +14,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -25,7 +22,7 @@ import java.time.LocalDateTime
 class AllocationService(
   private val prisonerSearchClient: PrisonerSearchClient,
   private val incentivesClient: IncentivesClient,
-  private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
+  private val prisonService: PrisonService,
   private val prisonerDetailsService: PrisonerDetailsService,
   private val prisonerRetryService: PrisonerRetryService,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
@@ -34,9 +31,9 @@ class AllocationService(
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  suspend fun processPrison(jobReference: String, prisonId: String) {
+  fun processPrison(jobReference: String, prisonId: String) {
     LOG.info("Entered AllocationService - processPrisonAllocation with job reference - $jobReference , prisonCode - $prisonId")
-    setVisitOrderAllocationPrisonJobStartTime(jobReference, prisonId)
+    prisonService.setVisitOrderAllocationPrisonJobStartTime(jobReference, prisonId)
 
     val allPrisoners = getConvictedPrisonersForPrison(jobReference = jobReference, prisonId = prisonId)
     val allIncentiveLevels = getIncentiveLevelsForPrison(jobReference = jobReference, prisonId = prisonId)
@@ -46,18 +43,14 @@ class AllocationService(
     for (prisoner in allPrisoners) {
       try {
         // Get prisoner on DPS (or create if they're new).
-        val dpsPrisonerDetails: PrisonerDetails = withContext(Dispatchers.IO) {
-          prisonerDetailsService.getPrisonerDetails(prisoner.prisonerId)
-            ?: prisonerDetailsService.createPrisonerDetails(prisoner.prisonerId, LocalDate.now().minusDays(14), null)
-        }
+        val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisoner.prisonerId)
+          ?: prisonerDetailsService.createPrisonerDetails(prisoner.prisonerId, LocalDate.now().minusDays(14), null)
 
         processPrisonerAllocation(dpsPrisonerDetails, allIncentiveLevels)
         processPrisonerAccumulation(dpsPrisonerDetails)
         processPrisonerExpiration(dpsPrisonerDetails)
 
-        withContext(Dispatchers.IO) {
-          prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
-        }
+        prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
 
         totalConvictedPrisonersProcessed++
       } catch (e: Exception) {
@@ -65,16 +58,14 @@ class AllocationService(
         LOG.error("Error processing prisoner - ${prisoner.prisonerId}, putting ${prisoner.prisonerId} on prisoner retry queue", e)
         totalConvictedPrisonersFailed++
 
-        withContext(Dispatchers.IO) {
-          prisonerRetryService.sendMessageToPrisonerRetryQueue(
-            jobReference = jobReference,
-            prisonerId = prisoner.prisonerId,
-          )
-        }
+        prisonerRetryService.sendMessageToPrisonerRetryQueue(
+          jobReference = jobReference,
+          prisonerId = prisoner.prisonerId,
+        )
       }
     }
 
-    setVisitOrderAllocationPrisonJobEndTimeAndStats(
+    prisonService.setVisitOrderAllocationPrisonJobEndTimeAndStats(
       jobReference = jobReference,
       prisonCode = prisonId,
       totalConvictedPrisoners = allPrisoners.size,
@@ -85,7 +76,7 @@ class AllocationService(
     LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
   }
 
-  suspend fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>? = null) {
+  fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>? = null) {
     LOG.info("Entered AllocationService - processPrisonerAllocation with prisonerId ${dpsPrisoner.prisonerId}")
 
     val prisonerPrisonId = prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId).prisonId
@@ -210,25 +201,13 @@ class AllocationService(
     return visitOrders
   }
 
-  private fun setVisitOrderAllocationPrisonJobStartTime(jobReference: String, prisonCode: String) {
-    visitOrderAllocationPrisonJobRepository.updateStartTimestamp(jobReference, prisonCode, LocalDateTime.now())
-  }
-
-  private fun setVisitOrderAllocationPrisonJobEndTimeAndFailureMessage(jobReference: String, prisonCode: String, failureMessage: String) {
-    visitOrderAllocationPrisonJobRepository.updateFailureMessageAndEndTimestamp(allocationJobReference = jobReference, prisonCode = prisonCode, failureMessage, LocalDateTime.now())
-  }
-
-  private fun setVisitOrderAllocationPrisonJobEndTimeAndStats(jobReference: String, prisonCode: String, totalConvictedPrisoners: Int, totalPrisonersProcessed: Int, totalPrisonersFailed: Int) {
-    visitOrderAllocationPrisonJobRepository.updateEndTimestampAndStats(allocationJobReference = jobReference, prisonCode = prisonCode, LocalDateTime.now(), totalPrisoners = totalConvictedPrisoners, processedPrisoners = totalPrisonersProcessed, failedPrisoners = totalPrisonersFailed)
-  }
-
   private fun getConvictedPrisonersForPrison(jobReference: String, prisonId: String): List<PrisonerDto> {
     val convictedPrisonersForPrison = try {
       prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId).content.toList()
     } catch (e: Exception) {
       val failureMessage = "failed to get convicted prisoners by prisonId - $prisonId"
       LOG.error(failureMessage, e)
-      setVisitOrderAllocationPrisonJobEndTimeAndFailureMessage(jobReference, prisonId, failureMessage)
+      prisonService.setVisitOrderAllocationPrisonJobEndTimeAndFailureMessage(jobReference, prisonId, failureMessage)
       throw e
     }
 
@@ -241,7 +220,7 @@ class AllocationService(
     } catch (e: Exception) {
       val failureMessage = "failed to get incentive levels by prisonId - $prisonId"
       LOG.error(failureMessage, e)
-      setVisitOrderAllocationPrisonJobEndTimeAndFailureMessage(jobReference, prisonId, failureMessage)
+      prisonService.setVisitOrderAllocationPrisonJobEndTimeAndFailureMessage(jobReference, prisonId, failureMessage)
       throw e
     }
 

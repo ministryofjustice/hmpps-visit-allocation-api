@@ -13,7 +13,7 @@ class VisitAllocationByPrisonJobListenerService(
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  suspend fun handleVisitAllocationJob(visitAllocationEventJob: VisitAllocationEventJob) {
+  fun handleVisitAllocationJob(visitAllocationEventJob: VisitAllocationEventJob) {
     with(visitAllocationEventJob) {
       log.info("received allocation job event with reference {} and prison code: {}", jobReference, prisonCode.uppercase())
       allocationService.processPrison(jobReference, prisonCode.uppercase())

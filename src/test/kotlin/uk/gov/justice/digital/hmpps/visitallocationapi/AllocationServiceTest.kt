@@ -15,8 +15,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonInce
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.AllocationService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
 import java.time.LocalDate
@@ -34,7 +34,7 @@ class AllocationServiceTest {
   private lateinit var prisonerDetailsService: PrisonerDetailsService
 
   @Mock
-  private lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
+  private lateinit var prisonService: PrisonService
 
   @Mock
   private lateinit var prisonerRetryService: PrisonerRetryService
@@ -46,7 +46,7 @@ class AllocationServiceTest {
     allocationService = AllocationService(
       prisonerSearchClient,
       incentivesClient,
-      visitOrderAllocationPrisonJobRepository,
+      prisonService,
       prisonerDetailsService,
       prisonerRetryService,
       26,

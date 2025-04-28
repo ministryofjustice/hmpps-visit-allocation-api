@@ -1,7 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
@@ -34,18 +32,14 @@ class PrisonerRetryService(
     }
   }
 
-  suspend fun handlePrisonerRetry(prisonerId: String) {
+  fun handlePrisonerRetry(prisonerId: String) {
     log.info("handle prisoner - $prisonerId on retry queue")
 
-    val dpsPrisonerDetails: PrisonerDetails = withContext(Dispatchers.IO) {
-      prisonerDetailsService.getPrisonerDetails(prisonerId)
-        ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    }
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
     allocationService.processPrisonerAllocation(dpsPrisonerDetails)
 
-    withContext(Dispatchers.IO) {
-      prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
-    }
+    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
   }
 }
