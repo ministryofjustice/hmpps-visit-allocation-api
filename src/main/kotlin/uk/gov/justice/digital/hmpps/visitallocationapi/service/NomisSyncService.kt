@@ -16,9 +16,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentRea
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDate
 import kotlin.math.abs
 
@@ -27,8 +26,6 @@ class NomisSyncService(
   private val balanceService: BalanceService,
   private val prisonerDetailsService: PrisonerDetailsService,
   private val telemetryService: TelemetryClientService,
-  private val visitOrderRepository: VisitOrderRepository,
-  private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
   private val changeLogService: ChangeLogService,
   private val prisonApiClient: PrisonApiClient,
 ) {
@@ -45,19 +42,21 @@ class NomisSyncService(
     validateSyncRequest(syncDto)
 
     var prisonerBalance = balanceService.getPrisonerBalance(syncDto.prisonerId)
+    val dpsPrisoner: PrisonerDetails
     if (prisonerBalance != null) {
       // Only do a balance comparison if prisoner exists.
       compareBalanceBeforeSync(syncDto, prisonerBalance)
+      dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)!!
     } else {
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      prisonerDetailsService.createNewPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
+      dpsPrisoner = prisonerDetailsService.createPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
       prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
     }
 
     // If VO balance has changed, sync it
     if (syncDto.oldVoBalance != null) {
       processSync(
-        prisonerId = syncDto.prisonerId,
+        prisoner = dpsPrisoner,
         prisonerDpsBalance = prisonerBalance.voBalance,
         balanceChange = syncDto.changeToVoBalance!!,
         visitOrderType = VisitOrderType.VO,
@@ -67,7 +66,7 @@ class NomisSyncService(
     // If PVO balance has changed, sync it
     if (syncDto.oldPvoBalance != null) {
       processSync(
-        prisonerId = syncDto.prisonerId,
+        prisoner = dpsPrisoner,
         prisonerDpsBalance = prisonerBalance.pvoBalance,
         balanceChange = syncDto.changeToPvoBalance!!,
         visitOrderType = VisitOrderType.PVO,
@@ -77,10 +76,12 @@ class NomisSyncService(
     // If this is a VO allocation from the NOMIS system, update the lastVoAllocatedDate to keep this synced.
     if (syncDto.adjustmentReasonCode == AdjustmentReasonCode.IEP && syncDto.changeLogSource == ChangeLogSource.SYSTEM) {
       LOG.info("Nomis Sync reason due to IEP allocation from system, adding /update allocation date for prisoner ${syncDto.prisonerId }in our service")
-      prisonerDetailsService.updateVoLastCreatedDateOrCreatePrisoner(syncDto.prisonerId, syncDto.createdDate)
+      dpsPrisoner.lastVoAllocatedDate = syncDto.createdDate
     }
 
-    changeLogService.logSyncAdjustmentChange(syncDto)
+    dpsPrisoner.changeLogs.add(changeLogService.logSyncAdjustmentChange(syncDto, dpsPrisoner))
+
+    prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
   }
 
   @Transactional
@@ -94,17 +95,19 @@ class NomisSyncService(
     }
 
     var prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId)
-
+    val dpsPrisoner: PrisonerDetails
     if (prisonerDpsBalance == null) {
       val lastVoAllocatedDate = prisonerNomisBalance.latestIepAdjustDate ?: LocalDate.now()
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      prisonerDetailsService.createNewPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
+      dpsPrisoner = prisonerDetailsService.createPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
       prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
+    } else {
+      dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)!!
     }
 
     val voBalanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance)
     processSync(
-      prisonerId = prisonerId,
+      prisoner = dpsPrisoner,
       prisonerDpsBalance = prisonerDpsBalance.voBalance,
       balanceChange = voBalanceChange,
       visitOrderType = VisitOrderType.VO,
@@ -112,7 +115,7 @@ class NomisSyncService(
 
     val pvoBalanceChange = (prisonerNomisBalance.remainingPvo - prisonerDpsBalance.pvoBalance)
     processSync(
-      prisonerId = prisonerId,
+      prisoner = dpsPrisoner,
       prisonerDpsBalance = prisonerDpsBalance.pvoBalance,
       balanceChange = pvoBalanceChange,
       visitOrderType = VisitOrderType.PVO,
@@ -120,108 +123,116 @@ class NomisSyncService(
 
     if (voBalanceChange != 0 || pvoBalanceChange != 0) {
       LOG.info("Balance has changed as a result of sync for prisoner $prisonerId, for domain event ${domainEventType.value}")
-      changeLogService.logSyncEventChange(prisonerId, domainEventType)
+      dpsPrisoner.changeLogs.add(changeLogService.logSyncEventChange(dpsPrisoner, domainEventType))
     }
+
+    prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
   }
 
   @Transactional
   fun syncPrisonerRemoved(prisonerId: String) {
     LOG.info("Entered NomisSyncService - syncPrisonerRemoved for prisoner {}", prisonerId)
-
-    visitOrderRepository.deleteAllByPrisonerId(prisonerId)
-    negativeVisitOrderRepository.deleteAllByPrisonerId(prisonerId)
-    changeLogService.removePrisonerLogs(prisonerId)
     prisonerDetailsService.removePrisonerDetails(prisonerId)
   }
 
-  private fun processSync(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
-    LOG.info("Entered process Sync - $visitOrderType - for prisoner $prisonerId, with a DPS balance of $prisonerDpsBalance, and a change of $balanceChange")
+  private fun processSync(prisoner: PrisonerDetails, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
+    LOG.info("Entered process Sync - $visitOrderType - for prisoner ${prisoner.prisonerId}, with a DPS balance of $prisonerDpsBalance, and a change of $balanceChange")
     when {
       prisonerDpsBalance > 0 -> {
-        handlePositiveBalance(prisonerId, prisonerDpsBalance, balanceChange, visitOrderType)
+        handlePositiveBalance(prisoner, prisonerDpsBalance, balanceChange, visitOrderType)
       }
       prisonerDpsBalance < 0 -> {
-        handleNegativeBalance(prisonerId, prisonerDpsBalance, balanceChange, visitOrderType)
+        handleNegativeBalance(prisoner, prisonerDpsBalance, balanceChange, visitOrderType)
       }
       else -> {
-        handleZeroBalance(prisonerId, balanceChange, visitOrderType)
+        handleZeroBalance(prisoner, balanceChange, visitOrderType)
       }
     }
   }
 
-  private fun handlePositiveBalance(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
-    LOG.info("Positive DPS balance, syncing with nomis for prisoner $prisonerId")
+  private fun handlePositiveBalance(prisoner: PrisonerDetails, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
+    LOG.info("Positive DPS balance, syncing with nomis for prisoner ${prisoner.prisonerId}")
     if (balanceChange >= 0) {
-      LOG.info("Balance increased and remains positive for prisoner $prisonerId, creating $balanceChange, $visitOrderType")
-      createAndSaveVisitOrders(prisonerId, visitOrderType, balanceChange)
+      LOG.info("Balance increased and remains positive for prisoner ${prisoner.prisonerId}, creating $balanceChange, $visitOrderType")
+      prisoner.visitOrders.addAll(createVisitOrders(prisoner, visitOrderType, balanceChange))
     } else {
       if ((prisonerDpsBalance + balanceChange) >= 0) {
-        LOG.info("Balance decreased but remains positive for prisoner $prisonerId, expiring $balanceChange, $visitOrderType")
-        visitOrderRepository.expireVisitOrdersGivenAmount(prisonerId, visitOrderType, abs(balanceChange).toLong())
+        LOG.info("Balance decreased but remains positive for prisoner ${prisoner.prisonerId}, expiring $balanceChange, $visitOrderType")
+        prisoner.visitOrders
+          .filter { it.type == visitOrderType && it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
+          .sortedBy { it.createdTimestamp }
+          .take(abs(balanceChange))
+          .forEach { it.status = VisitOrderStatus.EXPIRED }
       } else {
         val negativeVosToCreate = abs(prisonerDpsBalance + balanceChange)
-        LOG.info("Balance decreased and is negative for prisoner $prisonerId, expiring all $visitOrderType and creating $negativeVosToCreate $visitOrderType")
-        visitOrderRepository.expireVisitOrdersGivenAmount(prisonerId, visitOrderType, null)
-        createAndSaveNegativeVisitOrders(prisonerId, visitOrderType, negativeVosToCreate)
+        LOG.info("Balance decreased and is negative for prisoner ${prisoner.prisonerId}, expiring all $visitOrderType and creating $negativeVosToCreate $visitOrderType")
+        prisoner.visitOrders.filter { it.type == visitOrderType }.forEach { visitOrder -> visitOrder.status = VisitOrderStatus.EXPIRED }
+        prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(prisoner, visitOrderType, negativeVosToCreate))
       }
     }
   }
 
-  private fun handleNegativeBalance(prisonerId: String, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
-    LOG.info("Negative DPS balance, syncing with nomis for prisoner $prisonerId")
+  private fun handleNegativeBalance(prisoner: PrisonerDetails, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
+    LOG.info("Negative DPS balance, syncing with nomis for prisoner ${prisoner.prisonerId}")
     if (balanceChange <= 0) {
-      LOG.info("Balance decreased and remains negative for prisoner $prisonerId, creating $balanceChange, $visitOrderType")
-      createAndSaveNegativeVisitOrders(prisonerId, visitOrderType, abs(balanceChange))
+      LOG.info("Balance decreased and remains negative for prisoner ${prisoner.prisonerId}, creating $balanceChange, $visitOrderType")
+      prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(prisoner, visitOrderType, abs(balanceChange)))
     } else {
       if ((prisonerDpsBalance + balanceChange) <= 0) {
-        LOG.info("Balance increased but remains negative for prisoner $prisonerId, repaying $balanceChange, $visitOrderType")
-        negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(prisonerId, visitOrderType, abs(balanceChange).toLong())
+        LOG.info("Balance increased but remains negative for prisoner ${prisoner.prisonerId}, repaying $balanceChange, $visitOrderType")
+        prisoner.negativeVisitOrders
+          .filter { it.type == visitOrderType && it.status == NegativeVisitOrderStatus.USED }
+          .sortedBy { it.createdTimestamp }
+          .take(abs(balanceChange))
+          .forEach { it.status = NegativeVisitOrderStatus.REPAID }
       } else {
         val positiveVosToCreate = prisonerDpsBalance + balanceChange
-        LOG.info("Balance increased and is positive for prisoner $prisonerId, repaying all $visitOrderType and creating $positiveVosToCreate $visitOrderType")
-        negativeVisitOrderRepository.repayNegativeVisitOrdersGivenAmount(prisonerId, visitOrderType, null)
-        createAndSaveVisitOrders(prisonerId, visitOrderType, positiveVosToCreate)
+        LOG.info("Balance increased and is positive for prisoner ${prisoner.prisonerId}, repaying all $visitOrderType and creating $positiveVosToCreate $visitOrderType")
+        prisoner.negativeVisitOrders.filter { it.type == visitOrderType }.forEach { visitOrder -> visitOrder.status = NegativeVisitOrderStatus.REPAID }
+        prisoner.visitOrders.addAll(createVisitOrders(prisoner, visitOrderType, positiveVosToCreate))
       }
     }
   }
 
-  private fun handleZeroBalance(prisonerId: String, balanceChange: Int, visitOrderType: VisitOrderType) {
-    LOG.info("Zero DPS balance, syncing with nomis for prisoner $prisonerId")
+  private fun handleZeroBalance(prisoner: PrisonerDetails, balanceChange: Int, visitOrderType: VisitOrderType) {
+    LOG.info("Zero DPS balance, syncing with nomis for prisoner ${prisoner.prisonerId}")
     if (balanceChange >= 0) {
-      LOG.info("Balance increased for prisoner $prisonerId, creating $balanceChange $visitOrderType")
-      createAndSaveVisitOrders(prisonerId, visitOrderType, balanceChange)
+      LOG.info("Balance increased for prisoner ${prisoner.prisonerId}, creating $balanceChange $visitOrderType")
+      prisoner.visitOrders.addAll(createVisitOrders(prisoner, visitOrderType, balanceChange))
     } else {
-      LOG.info("Balance decreased for prisoner $prisonerId, creating $balanceChange $visitOrderType")
-      createAndSaveNegativeVisitOrders(prisonerId, visitOrderType, abs(balanceChange))
+      LOG.info("Balance decreased for prisoner ${prisoner.prisonerId}, creating $balanceChange $visitOrderType")
+      prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(prisoner, visitOrderType, abs(balanceChange)))
     }
   }
 
-  private fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, amountToCreate: Int) {
+  private fun createVisitOrders(prisoner: PrisonerDetails, visitOrderType: VisitOrderType, amountToCreate: Int): List<VisitOrder> {
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
-          prisonerId = prisonerId,
+          prisonerId = prisoner.prisonerId,
           type = visitOrderType,
           status = VisitOrderStatus.AVAILABLE,
+          prisoner = prisoner,
         ),
       )
     }
-    visitOrderRepository.saveAll(visitOrders)
+    return visitOrders
   }
 
-  private fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int) {
+  private fun createNegativeVisitOrders(prisoner: PrisonerDetails, negativeVoType: VisitOrderType, amountToCreate: Int): List<NegativeVisitOrder> {
     val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
     repeat(amountToCreate) {
       negativeVisitOrders.add(
         NegativeVisitOrder(
-          prisonerId = prisonerId,
+          prisonerId = prisoner.prisonerId,
           type = negativeVoType,
           status = NegativeVisitOrderStatus.USED,
+          prisoner = prisoner,
         ),
       )
     }
-    negativeVisitOrderRepository.saveAll(negativeVisitOrders)
+    return negativeVisitOrders
   }
 
   private fun compareBalanceBeforeSync(syncDto: VisitAllocationPrisonerSyncDto, prisonerBalance: PrisonerBalanceDto) {

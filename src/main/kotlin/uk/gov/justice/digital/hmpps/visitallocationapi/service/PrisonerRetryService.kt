@@ -4,13 +4,19 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
+import java.time.LocalDate
 
+@Transactional
 @Service
 class PrisonerRetryService(
   private val visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService,
   @Lazy
   private val allocationService: AllocationService,
+  @Lazy
+  private val prisonerDetailsService: PrisonerDetailsService,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -26,8 +32,14 @@ class PrisonerRetryService(
     }
   }
 
-  suspend fun handlePrisonerRetry(prisonerId: String) {
+  fun handlePrisonerRetry(prisonerId: String) {
     log.info("handle prisoner - $prisonerId on retry queue")
-    allocationService.processPrisonerAllocation(prisonerId)
+
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+
+    allocationService.processPrisonerAllocation(dpsPrisonerDetails)
+
+    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
   }
 }

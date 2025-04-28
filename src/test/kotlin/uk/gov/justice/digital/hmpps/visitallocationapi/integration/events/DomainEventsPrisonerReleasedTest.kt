@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerRecei
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReleasedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
 
@@ -30,9 +31,10 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value,
@@ -64,9 +66,10 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value,
@@ -91,9 +94,10 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,

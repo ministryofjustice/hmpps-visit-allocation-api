@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderS
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPrison
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
@@ -14,7 +15,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetail
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Component
 @Transactional
@@ -33,38 +34,47 @@ class EntityHelper(
   }
 
   @Transactional
-  fun createPrisonerDetails(prisonerId: String) {
-    prisonerDetailsService.createNewPrisonerDetails(prisonerId = prisonerId, newLastAllocatedDate = LocalDate.now(), newLastPvoAllocatedDate = LocalDate.now())
-  }
+  fun createPrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails = prisonerDetailsRepository.saveAndFlush(prisoner)
 
   @Transactional
-  fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, amountToCreate: Int) {
+  fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, status: VisitOrderStatus, createdDateTime: LocalDateTime, amountToCreate: Int) {
+    val prisoner = prisonerDetailsRepository.findByPrisonerId(prisonerId)!!
+
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
-          prisonerId = prisonerId,
+          prisonerId = prisoner.prisonerId,
           type = visitOrderType,
-          status = VisitOrderStatus.AVAILABLE,
+          status = status,
+          prisoner = prisoner,
+          createdTimestamp = createdDateTime,
         ),
       )
     }
-    visitOrderRepository.saveAll(visitOrders)
+
+    prisoner.visitOrders.addAll(visitOrders)
+    prisonerDetailsRepository.saveAndFlush(prisoner)
   }
 
   @Transactional
   fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int) {
+    val prisoner = prisonerDetailsRepository.findByPrisonerId(prisonerId)!!
+
     val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
     repeat(amountToCreate) {
       negativeVisitOrders.add(
         NegativeVisitOrder(
-          prisonerId = prisonerId,
+          prisonerId = prisoner.prisonerId,
           type = negativeVoType,
           status = NegativeVisitOrderStatus.USED,
+          prisoner = prisoner,
         ),
       )
     }
-    negativeVisitOrderRepository.saveAll(negativeVisitOrders)
+
+    prisoner.negativeVisitOrders.addAll(negativeVisitOrders)
+    prisonerDetailsRepository.saveAndFlush(prisoner)
   }
 
   @Transactional

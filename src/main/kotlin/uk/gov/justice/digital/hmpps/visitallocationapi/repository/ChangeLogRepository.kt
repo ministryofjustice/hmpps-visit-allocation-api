@@ -5,6 +5,4 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 
 @Repository
-interface ChangeLogRepository : JpaRepository<ChangeLog, Long> {
-  fun deleteAllByPrisonerId(prisonerId: String)
-}
+interface ChangeLogRepository : JpaRepository<ChangeLog, Long>

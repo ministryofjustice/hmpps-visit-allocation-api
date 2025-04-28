@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
 
@@ -29,9 +30,10 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     val removedPrisonerId = "BB123456"
     val prisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
@@ -68,9 +70,10 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     val prisonerId = "AA123456"
     val removedPrisonerId = "BB123456"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
@@ -96,9 +99,10 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     val prisonerId = "AA123456"
     val removedPrisonerId = "BB123456"
 
-    entityHelper.createPrisonerDetails(prisonerId = prisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = prisonerId, VisitOrderType.PVO, 1)
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
