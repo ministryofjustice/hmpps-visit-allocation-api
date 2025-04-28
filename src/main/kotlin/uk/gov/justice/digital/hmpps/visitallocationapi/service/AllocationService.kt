@@ -20,14 +20,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllo
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-// TODO: JPA updates.
-//  1. The problem is that LAZY loading the fields on the Prisoner Details model, is causing a hibernate exception. I've changed it to EAGER for now,
-//  Figure out if EAGER loading is bad, if it is then swap back to LAZY and figure out what the fix should be.
-//  It's happening below when retrieving the DPS prisoner (line 57ish) and will also be happening in the PrisonerRetryService, same get on prisonerDetails.
-//  -
-//  2. Let Karen know we need dev rec report disabled, get this PR approved, and then look to optimise further by re-using the prison call to get all
-//  prisoners, pass them in instead of requiring another call in the processAllocation method.
-
 @Transactional
 @Service
 class AllocationService(
