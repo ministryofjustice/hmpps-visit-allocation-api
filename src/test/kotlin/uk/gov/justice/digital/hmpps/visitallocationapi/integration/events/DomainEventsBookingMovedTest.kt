@@ -102,11 +102,11 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(3)
 
-    val movedFromPrisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerId = movedFromPrisonerId)!!
+    val movedFromPrisonerDetails = prisonerDetailsRepository.findById(movedFromPrisonerId).get()
     assertThat(movedFromPrisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
     assertThat(movedFromPrisonerDetails.lastPvoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
 
-    val movedToPrisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerId = movedToPrisonerId)!!
+    val movedToPrisonerDetails = prisonerDetailsRepository.findById(movedToPrisonerId).get()
     assertThat(movedToPrisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
     assertThat(movedToPrisonerDetails.lastPvoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
   }

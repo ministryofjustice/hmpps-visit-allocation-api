@@ -450,7 +450,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE && it.type == VisitOrderType.VO }.size).isEqualTo(expectedVoCount)
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE && it.type == VisitOrderType.PVO }.size).isEqualTo(expectedPvoCount)
 
-    val prisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerSyncDto.prisonerId)!!
+    val prisonerDetails = prisonerDetailsRepository.findById(prisonerSyncDto.prisonerId).get()
     assertThat(prisonerDetails.lastVoAllocatedDate).isEqualTo(prisonerSyncDto.createdDate)
 
     val expectedNegativeVisitOrderTotal = expectedNegativeVoCount + expectedNegativePvoCount

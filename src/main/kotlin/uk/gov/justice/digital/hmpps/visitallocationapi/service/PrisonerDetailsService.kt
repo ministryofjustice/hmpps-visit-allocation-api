@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import java.time.LocalDate
+import kotlin.jvm.optionals.getOrNull
 
 @Transactional
 @Service
@@ -28,7 +29,7 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
 
   fun getPrisonerDetails(prisonerId: String): PrisonerDetails? {
     LOG.info("PrisonerDetailsService - getPrisonerDetails called with prisonerId - $prisonerId")
-    return prisonerDetailsRepository.findByPrisonerId(prisonerId)
+    return prisonerDetailsRepository.findById(prisonerId).getOrNull()
   }
 
   fun updatePrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails {
@@ -38,6 +39,9 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
 
   fun removePrisonerDetails(prisonerId: String) {
     LOG.info("PrisonerDetailsService - removePrisonerDetails called with prisonerId - $prisonerId")
-    prisonerDetailsRepository.deleteByPrisonerId(prisonerId)
+    val prisoner = prisonerDetailsRepository.findById(prisonerId)
+    if (prisoner.isPresent) {
+      prisonerDetailsRepository.delete(prisoner.get())
+    }
   }
 }

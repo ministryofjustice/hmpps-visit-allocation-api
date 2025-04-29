@@ -36,7 +36,7 @@ class EntityHelper(
   fun createChangeLog(changeLog: ChangeLog): ChangeLog = changeLogRepository.save(changeLog)
 
   fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, status: VisitOrderStatus, createdDateTime: LocalDateTime, amountToCreate: Int) {
-    val prisoner = prisonerDetailsRepository.findByPrisonerId(prisonerId)!!
+    val prisoner = prisonerDetailsRepository.findById(prisonerId).get()
 
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(amountToCreate) {
@@ -56,7 +56,7 @@ class EntityHelper(
   }
 
   fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int) {
-    val prisoner = prisonerDetailsRepository.findByPrisonerId(prisonerId)!!
+    val prisoner = prisonerDetailsRepository.findById(prisonerId).get()
 
     val negativeVisitOrders = mutableListOf<NegativeVisitOrder>()
     repeat(amountToCreate) {
