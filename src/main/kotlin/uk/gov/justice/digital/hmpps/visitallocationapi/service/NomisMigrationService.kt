@@ -11,16 +11,12 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.math.abs
 
 @Service
 class NomisMigrationService(
-  private val visitOrderRepository: VisitOrderRepository,
-  private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
   private val changeLogService: ChangeLogService,
   private val prisonerDetailsService: PrisonerDetailsService,
 ) {
@@ -49,7 +45,7 @@ class NomisMigrationService(
     migrateBalance(migrationDto, VisitOrderType.VO, dpsPrisoner)
     migrateBalance(migrationDto, VisitOrderType.PVO, dpsPrisoner)
 
-    dpsPrisoner.changeLogs.add(changeLogService.logMigrationChange(migrationDto, dpsPrisoner))
+    dpsPrisoner.changeLogs.add(changeLogService.createLogMigrationChange(migrationDto, dpsPrisoner))
 
     prisonerDetailsService.updatePrisonerDetails(dpsPrisoner)
     LOG.info("Finished NomisMigrationService - migratePrisoner ${migrationDto.prisonerId} successfully")

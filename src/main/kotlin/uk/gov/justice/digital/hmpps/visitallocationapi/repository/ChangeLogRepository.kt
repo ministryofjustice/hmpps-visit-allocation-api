@@ -5,4 +5,6 @@ import org.springframework.stereotype.Repository
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 
 @Repository
-interface ChangeLogRepository : JpaRepository<ChangeLog, Long>
+interface ChangeLogRepository : JpaRepository<ChangeLog, Long> {
+  fun findAllByPrisonerId(prisonerId: String): List<ChangeLog>?
+}

@@ -41,6 +41,12 @@ data class ChangeLog(
   @Column(name = "prisoner_id", nullable = false)
   val prisonerId: String,
 
+  @Column(nullable = false)
+  val visitOrderBalance: Int,
+
+  @Column(nullable = false)
+  val privilegedVisitOrderBalance: Int,
+
   @ManyToOne
   @JoinColumn(name = "prisoner_id", referencedColumnName = "prisonerId", insertable = false, updatable = false)
   val prisoner: PrisonerDetails,

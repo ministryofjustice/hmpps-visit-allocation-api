@@ -61,7 +61,7 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(nomisSyncService, times(2)).syncPrisonerBalanceFromEventChange(any(), any()) }
-    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
@@ -96,17 +96,17 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(nomisSyncService, times(2)).syncPrisonerBalanceFromEventChange(any(), any()) }
-    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(3)
 
-    val movedFromPrisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerId = movedFromPrisonerId)!!
+    val movedFromPrisonerDetails = prisonerDetailsRepository.findById(movedFromPrisonerId).get()
     assertThat(movedFromPrisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
     assertThat(movedFromPrisonerDetails.lastPvoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
 
-    val movedToPrisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerId = movedToPrisonerId)!!
+    val movedToPrisonerDetails = prisonerDetailsRepository.findById(movedToPrisonerId).get()
     assertThat(movedToPrisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
     assertThat(movedToPrisonerDetails.lastPvoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
   }

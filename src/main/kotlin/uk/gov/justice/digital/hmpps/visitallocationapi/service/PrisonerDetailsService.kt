@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import java.time.LocalDate
+import kotlin.jvm.optionals.getOrNull
 
 @Transactional
 @Service
@@ -16,18 +17,31 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
   }
 
   fun createPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
-    LOG.info("Prisoner $prisonerId not found, creating new record")
-    val newPrisoner = PrisonerDetails(
-      prisonerId = prisonerId,
-      lastVoAllocatedDate = newLastAllocatedDate,
-      lastPvoAllocatedDate = newLastPvoAllocatedDate,
+    LOG.info("PrisonerDetailsService - createPrisonerDetails called with prisonerId - $prisonerId and newLastAllocatedDate - $newLastPvoAllocatedDate")
+    return prisonerDetailsRepository.save(
+      PrisonerDetails(
+        prisonerId = prisonerId,
+        lastVoAllocatedDate = newLastAllocatedDate,
+        lastPvoAllocatedDate = newLastPvoAllocatedDate,
+      ),
     )
-    return prisonerDetailsRepository.save(newPrisoner)
   }
 
-  fun getPrisonerDetails(prisonerId: String): PrisonerDetails? = prisonerDetailsRepository.findByPrisonerId(prisonerId)
+  fun getPrisonerDetails(prisonerId: String): PrisonerDetails? {
+    LOG.info("PrisonerDetailsService - getPrisonerDetails called with prisonerId - $prisonerId")
+    return prisonerDetailsRepository.findById(prisonerId).getOrNull()
+  }
 
-  fun updatePrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails = prisonerDetailsRepository.save(prisoner)
+  fun updatePrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails {
+    LOG.info("PrisonerDetailsService - updatePrisonerDetails called with new prisoner details - $prisoner")
+    return prisonerDetailsRepository.save(prisoner)
+  }
 
-  fun removePrisonerDetails(prisonerId: String) = prisonerDetailsRepository.deleteByPrisonerId(prisonerId)
+  fun removePrisonerDetails(prisonerId: String) {
+    LOG.info("PrisonerDetailsService - removePrisonerDetails called with prisonerId - $prisonerId")
+    val prisoner = prisonerDetailsRepository.findById(prisonerId)
+    if (prisoner.isPresent) {
+      prisonerDetailsRepository.delete(prisoner.get())
+    }
+  }
 }
