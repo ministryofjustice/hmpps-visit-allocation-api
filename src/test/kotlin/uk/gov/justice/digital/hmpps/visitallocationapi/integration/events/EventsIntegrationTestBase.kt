@@ -131,6 +131,7 @@ abstract class EventsIntegrationTestBase {
   @MockitoSpyBean
   lateinit var changeLogService: ChangeLogService
 
+  @AfterEach
   @BeforeEach
   fun cleanQueue() {
     purgeQueue(domainEventsSqsClient, domainEventsQueueUrl)

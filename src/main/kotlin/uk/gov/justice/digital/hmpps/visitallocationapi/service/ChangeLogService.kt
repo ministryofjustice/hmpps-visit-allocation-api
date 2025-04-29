@@ -9,12 +9,14 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocation
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 
 @Transactional
 @Service
-class ChangeLogService {
+class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
@@ -59,5 +61,15 @@ class ChangeLogService {
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
+  }
+
+  fun findAllChangeLogsForPrisoner(prisonerId: String): List<ChangeLog> {
+    LOG.info("ChangeLogService - findAllChangeLogsForPrisoner called with prisonerId - $prisonerId")
+    val prisonerChangeLogs = changeLogRepository.findAllByPrisonerId(prisonerId)
+    if (prisonerChangeLogs.isNullOrEmpty()) {
+      throw NotFoundException("No change logs found for prisoner $prisonerId")
+    }
+
+    return prisonerChangeLogs
   }
 }

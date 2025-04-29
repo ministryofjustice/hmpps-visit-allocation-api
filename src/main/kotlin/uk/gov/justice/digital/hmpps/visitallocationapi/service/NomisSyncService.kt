@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerAdjustmentRequestDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerAdjustmentResponseDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
@@ -15,12 +17,15 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import java.time.LocalDate
 import kotlin.math.abs
 
+@Transactional
 @Service
 class NomisSyncService(
   private val balanceService: BalanceService,
@@ -33,7 +38,6 @@ class NomisSyncService(
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Transactional
   fun syncPrisonerAdjustmentChanges(syncDto: VisitAllocationPrisonerSyncDto) {
     // In NOMIS, when a change is made via the adjustments_table, it will trigger a call
     // to this endpoint, allowing DPS to sync the prisoner vo & pvo balances with NOMIS.
@@ -84,7 +88,6 @@ class NomisSyncService(
     prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
   }
 
-  @Transactional
   fun syncPrisonerBalanceFromEventChange(prisonerId: String, domainEventType: DomainEventType) {
     LOG.info("Entered NomisSyncService - syncPrisonerBalanceFromEventChange for prisoner {}", prisonerId)
 
@@ -129,10 +132,41 @@ class NomisSyncService(
     prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
   }
 
-  @Transactional
   fun syncPrisonerRemoved(prisonerId: String) {
     LOG.info("Entered NomisSyncService - syncPrisonerRemoved for prisoner {}", prisonerId)
     prisonerDetailsService.removePrisonerDetails(prisonerId)
+  }
+
+  fun getChangeLogForNomis(requestDto: VisitAllocationPrisonerAdjustmentRequestDto): VisitAllocationPrisonerAdjustmentResponseDto {
+    val prisonerChangeLogs = changeLogService.findAllChangeLogsForPrisoner(requestDto.prisonerId).sortedBy { it.id }
+
+    var previousEntry: ChangeLog? = null
+    var currentEntry: ChangeLog? = null
+
+    for (log in prisonerChangeLogs) {
+      if (log.id == requestDto.changeLogId) {
+        currentEntry = log
+        break
+      }
+      previousEntry = log
+    }
+
+    if (currentEntry == null) {
+      throw NotFoundException("Change log with ID ${requestDto.changeLogId} not found for prisoner ${requestDto.prisonerId}")
+    }
+
+    val previousVoBalance = previousEntry?.visitOrderBalance ?: 0
+    val previousPvoBalance = previousEntry?.privilegedVisitOrderBalance ?: 0
+
+    return VisitAllocationPrisonerAdjustmentResponseDto(
+      prisonerId = requestDto.prisonerId,
+      voBalance = previousVoBalance,
+      changeToVoBalance = currentEntry.visitOrderBalance - previousVoBalance,
+      pvoBalance = previousPvoBalance,
+      changeToPvoBalance = currentEntry.privilegedVisitOrderBalance - previousPvoBalance,
+      changeLogType = currentEntry.changeType,
+      comment = currentEntry.comment,
+    )
   }
 
   private fun processSync(prisoner: PrisonerDetails, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {

@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -14,29 +15,26 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitO
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import java.time.LocalDateTime
 
-@Component
 @Transactional
+@Component
 class EntityHelper(
   val visitOrderPrisonRepository: VisitOrderPrisonRepository,
   val visitOrderRepository: VisitOrderRepository,
   val negativeVisitOrderRepository: NegativeVisitOrderRepository,
   val changeLogRepository: ChangeLogRepository,
   private val prisonerDetailsRepository: PrisonerDetailsRepository,
-  private val prisonerDetailsService: PrisonerDetailsService,
 ) {
 
-  @Transactional
   fun savePrison(visitOrderPrison: VisitOrderPrison) {
     visitOrderPrisonRepository.saveAndFlush(visitOrderPrison)
   }
 
-  @Transactional
   fun createPrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails = prisonerDetailsRepository.saveAndFlush(prisoner)
 
-  @Transactional
+  fun createChangeLog(changeLog: ChangeLog): ChangeLog = changeLogRepository.save(changeLog)
+
   fun createAndSaveVisitOrders(prisonerId: String, visitOrderType: VisitOrderType, status: VisitOrderStatus, createdDateTime: LocalDateTime, amountToCreate: Int) {
     val prisoner = prisonerDetailsRepository.findByPrisonerId(prisonerId)!!
 
@@ -57,7 +55,6 @@ class EntityHelper(
     prisonerDetailsRepository.saveAndFlush(prisoner)
   }
 
-  @Transactional
   fun createAndSaveNegativeVisitOrders(prisonerId: String, negativeVoType: VisitOrderType, amountToCreate: Int) {
     val prisoner = prisonerDetailsRepository.findByPrisonerId(prisonerId)!!
 
@@ -77,7 +74,6 @@ class EntityHelper(
     prisonerDetailsRepository.saveAndFlush(prisoner)
   }
 
-  @Transactional
   fun deleteAll() {
     visitOrderPrisonRepository.deleteAll()
     visitOrderPrisonRepository.flush()
