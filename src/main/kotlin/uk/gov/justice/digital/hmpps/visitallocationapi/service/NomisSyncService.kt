@@ -18,7 +18,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentRea
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -140,20 +139,13 @@ class NomisSyncService(
   fun getChangeLogForNomis(requestDto: VisitAllocationPrisonerAdjustmentRequestDto): VisitAllocationPrisonerAdjustmentResponseDto {
     val prisonerChangeLogs = changeLogService.findAllChangeLogsForPrisoner(requestDto.prisonerId).sortedBy { it.id }
 
-    var previousEntry: ChangeLog? = null
-    var currentEntry: ChangeLog? = null
-
-    for (log in prisonerChangeLogs) {
-      if (log.id == requestDto.changeLogId) {
-        currentEntry = log
-        break
-      }
-      previousEntry = log
-    }
-
-    if (currentEntry == null) {
+    val currentIndex = prisonerChangeLogs.indexOfFirst { it.id == requestDto.changeLogId }
+    if (currentIndex == -1) {
       throw NotFoundException("Change log with ID ${requestDto.changeLogId} not found for prisoner ${requestDto.prisonerId}")
     }
+
+    val currentEntry = prisonerChangeLogs[currentIndex]
+    val previousEntry = if (currentIndex > 0) prisonerChangeLogs[currentIndex - 1] else null
 
     val previousVoBalance = previousEntry?.visitOrderBalance ?: 0
     val previousPvoBalance = previousEntry?.privilegedVisitOrderBalance ?: 0

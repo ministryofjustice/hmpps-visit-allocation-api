@@ -13,7 +13,7 @@ data class VisitAllocationPrisonerAdjustmentResponseDto(
   @Schema(description = "change to previous VO balance (can be negative)", example = "-1", required = false)
   val changeToVoBalance: Int?,
 
-  @Schema(description = "previous PVO balance of prisoner (can be negative)", example = "AA123456", required = false)
+  @Schema(description = "previous PVO balance of prisoner (can be negative)", example = "1", required = false)
   val pvoBalance: Int?,
 
   @Schema(description = "change to previous PVO balance (can be negative)", example = "-1", required = false)
