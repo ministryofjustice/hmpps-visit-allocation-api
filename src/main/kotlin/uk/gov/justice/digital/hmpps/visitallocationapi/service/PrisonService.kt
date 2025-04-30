@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
@@ -11,7 +13,9 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllo
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJobSqsService
+import java.time.LocalDateTime
 
+@Transactional
 @Service
 class PrisonService(
   private val visitOrderPrisonRepository: VisitOrderPrisonRepository,
@@ -38,6 +42,21 @@ class PrisonService(
     }
 
     return VisitAllocationEventJobDto(allocationJobReference, totalActivePrisons = activePrisons.size)
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  fun setVisitOrderAllocationPrisonJobStartTime(jobReference: String, prisonCode: String) {
+    visitOrderAllocationPrisonJobRepository.updateStartTimestamp(jobReference, prisonCode, LocalDateTime.now())
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  fun setVisitOrderAllocationPrisonJobEndTimeAndFailureMessage(jobReference: String, prisonCode: String, failureMessage: String) {
+    visitOrderAllocationPrisonJobRepository.updateFailureMessageAndEndTimestamp(allocationJobReference = jobReference, prisonCode = prisonCode, failureMessage, LocalDateTime.now())
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  fun setVisitOrderAllocationPrisonJobEndTimeAndStats(jobReference: String, prisonCode: String, totalConvictedPrisoners: Int, totalPrisonersProcessed: Int, totalPrisonersFailed: Int) {
+    visitOrderAllocationPrisonJobRepository.updateEndTimestampAndStats(allocationJobReference = jobReference, prisonCode = prisonCode, LocalDateTime.now(), totalPrisoners = totalConvictedPrisoners, processedPrisoners = totalPrisonersProcessed, failedPrisoners = totalPrisonersFailed)
   }
 
   private fun auditOrderAllocationJob(totalActivePrisons: Int): VisitOrderAllocationJob {

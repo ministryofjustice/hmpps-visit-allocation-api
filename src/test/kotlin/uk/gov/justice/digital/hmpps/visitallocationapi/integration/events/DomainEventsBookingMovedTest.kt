@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
 
@@ -30,13 +31,15 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     val prisonId = "HEI"
     val lastPrisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = movedFromPrisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedFromPrisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedFromPrisonerId, VisitOrderType.PVO, 1)
+    val movedFromPrisoner = PrisonerDetails(prisonerId = movedFromPrisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    movedFromPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, movedFromPrisoner))
+    movedFromPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, movedFromPrisoner))
+    prisonerDetailsRepository.saveAndFlush(movedFromPrisoner)
 
-    entityHelper.createPrisonerDetails(prisonerId = movedToPrisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedToPrisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedToPrisonerId, VisitOrderType.PVO, 1)
+    val movedToPrisoner = PrisonerDetails(prisonerId = movedToPrisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    movedToPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, movedToPrisoner))
+    movedToPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, movedToPrisoner))
+    prisonerDetailsRepository.saveAndFlush(movedToPrisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE.value,
@@ -58,7 +61,7 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(nomisSyncService, times(2)).syncPrisonerBalanceFromEventChange(any(), any()) }
-    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
@@ -93,17 +96,17 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(nomisSyncService, times(2)).syncPrisonerBalanceFromEventChange(any(), any()) }
-    await untilAsserted { verify(changeLogService, times(1)).logSyncEventChange(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(3)
 
-    val movedFromPrisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerId = movedFromPrisonerId)!!
+    val movedFromPrisonerDetails = prisonerDetailsRepository.findById(movedFromPrisonerId).get()
     assertThat(movedFromPrisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
     assertThat(movedFromPrisonerDetails.lastPvoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
 
-    val movedToPrisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerId = movedToPrisonerId)!!
+    val movedToPrisonerDetails = prisonerDetailsRepository.findById(movedToPrisonerId).get()
     assertThat(movedToPrisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
     assertThat(movedToPrisonerDetails.lastPvoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
   }
@@ -116,13 +119,15 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     val prisonId = "HEI"
     val lastPrisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = movedFromPrisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedFromPrisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedFromPrisonerId, VisitOrderType.PVO, 1)
+    val movedFromPrisoner = PrisonerDetails(prisonerId = movedFromPrisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    movedFromPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, movedFromPrisoner))
+    movedFromPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, movedFromPrisoner))
+    prisonerDetailsRepository.saveAndFlush(movedFromPrisoner)
 
-    entityHelper.createPrisonerDetails(prisonerId = movedToPrisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedToPrisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedToPrisonerId, VisitOrderType.PVO, 1)
+    val movedToPrisoner = PrisonerDetails(prisonerId = movedToPrisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    movedToPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, movedToPrisoner))
+    movedToPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, movedToPrisoner))
+    prisonerDetailsRepository.saveAndFlush(movedToPrisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE.value,
@@ -152,16 +157,16 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     // Given
     val movedFromPrisonerId = "AA123456"
     val movedToPrisonerId = "BB654321"
-    val prisonId = "HEI"
-    val lastPrisonId = "HEI"
 
-    entityHelper.createPrisonerDetails(prisonerId = movedFromPrisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedFromPrisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedFromPrisonerId, VisitOrderType.PVO, 1)
+    val movedFromPrisoner = PrisonerDetails(prisonerId = movedFromPrisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    movedFromPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, movedFromPrisoner))
+    movedFromPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, movedFromPrisoner))
+    prisonerDetailsRepository.saveAndFlush(movedFromPrisoner)
 
-    entityHelper.createPrisonerDetails(prisonerId = movedToPrisonerId)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedToPrisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveVisitOrders(prisonerId = movedToPrisonerId, VisitOrderType.PVO, 1)
+    val movedToPrisoner = PrisonerDetails(prisonerId = movedToPrisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    movedToPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, movedToPrisoner))
+    movedToPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, movedToPrisoner))
+    prisonerDetailsRepository.saveAndFlush(movedToPrisoner)
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE.value,

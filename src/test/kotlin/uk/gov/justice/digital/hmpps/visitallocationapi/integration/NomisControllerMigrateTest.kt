@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocation
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPost
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -35,10 +34,8 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
 
-    verify(visitOrderRepository, times(2)).saveAll<VisitOrder>(any())
     verify(negativeVisitOrderRepository, times(0)).saveAll<NegativeVisitOrder>(any())
-    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
-    verify(changeLogRepository, times(1)).save<ChangeLog>(any())
+    verify(prisonerDetailsRepository, times(2)).save<PrisonerDetails>(any())
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(7)
@@ -67,9 +64,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     responseSpec.expectStatus().isOk
 
     verify(visitOrderRepository, times(0)).saveAll<VisitOrder>(any())
-    verify(negativeVisitOrderRepository, times(2)).saveAll<NegativeVisitOrder>(any())
-    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
-    verify(changeLogRepository, times(1)).save<ChangeLog>(any())
+    verify(prisonerDetailsRepository, times(2)).save<PrisonerDetails>(any())
 
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.size).isEqualTo(7)
@@ -97,10 +92,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
 
-    verify(visitOrderRepository, times(1)).saveAll<VisitOrder>(any())
-    verify(negativeVisitOrderRepository, times(1)).saveAll<NegativeVisitOrder>(any())
-    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
-    verify(changeLogRepository, times(1)).save<ChangeLog>(any())
+    verify(prisonerDetailsRepository, times(2)).save<PrisonerDetails>(any())
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(5)
@@ -133,10 +125,8 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
 
-    verify(visitOrderRepository, times(2)).saveAll<VisitOrder>(any())
     verify(negativeVisitOrderRepository, times(0)).saveAll<NegativeVisitOrder>(any())
-    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
-    verify(changeLogRepository, times(1)).save<ChangeLog>(any())
+    verify(prisonerDetailsRepository, times(2)).save<PrisonerDetails>(any())
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(7)
@@ -156,8 +146,9 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
   @Test
   fun `when visit prisoner allocation migration endpoint is called with an existing prisoner, then prisoner information is reset and then successfully migrated to DPS service`() {
     // Given
-    entityHelper.createAndSaveVisitOrders(prisonerId = "AA123456", visitOrderType = VisitOrderType.VO, amountToCreate = 1)
-    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = "AA123456", lastVoAllocatedDate = LocalDate.now().minusDays(1), null))
+    val prisoner = PrisonerDetails(prisonerId = "AA123456", lastVoAllocatedDate = LocalDate.now().minusDays(1), null)
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
 
     val prisonerMigrationDto = VisitAllocationPrisonerMigrationDto("AA123456", 5, 2, LocalDate.now().minusDays(1))
 
@@ -167,14 +158,8 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
 
-    verify(visitOrderRepository, times(1)).deleteAllByPrisonerId(prisonerId = "AA123456")
-    verify(negativeVisitOrderRepository, times(1)).deleteAllByPrisonerId(prisonerId = "AA123456")
-    verify(prisonerDetailsRepository, times(1)).deleteByPrisonerId(prisonerId = "AA123456")
-
-    verify(visitOrderRepository, times(3)).saveAll<VisitOrder>(any())
     verify(negativeVisitOrderRepository, times(0)).saveAll<NegativeVisitOrder>(any())
-    verify(prisonerDetailsRepository, times(2)).save<PrisonerDetails>(any())
-    verify(changeLogRepository, times(1)).save<ChangeLog>(any())
+    verify(prisonerDetailsRepository, times(3)).save<PrisonerDetails>(any())
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(7)

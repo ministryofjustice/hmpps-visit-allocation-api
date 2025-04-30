@@ -7,20 +7,19 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "CHANGE_LOG")
+@Table(name = "change_log")
 data class ChangeLog(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,
-
-  @Column(nullable = false)
-  val prisonerId: String,
 
   @Column(nullable = false)
   val changeTimestamp: LocalDateTime = LocalDateTime.now(),
@@ -36,6 +35,19 @@ data class ChangeLog(
   @Column(nullable = false)
   val userId: String,
 
-  @Column(nullable = false)
+  @Column(nullable = true)
   val comment: String? = null,
+
+  @Column(name = "prisoner_id", nullable = false)
+  val prisonerId: String,
+
+  @Column(nullable = false)
+  val visitOrderBalance: Int,
+
+  @Column(nullable = false)
+  val privilegedVisitOrderBalance: Int,
+
+  @ManyToOne
+  @JoinColumn(name = "prisoner_id", referencedColumnName = "prisonerId", insertable = false, updatable = false)
+  val prisoner: PrisonerDetails,
 )

@@ -11,9 +11,15 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.EntityHelper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
@@ -73,5 +79,35 @@ abstract class IntegrationTestBase {
 
   protected fun stubPingWithResponse(status: Int) {
     hmppsAuth.stubHealthPing(status)
+  }
+
+  protected fun createVisitOrders(visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails): List<VisitOrder> {
+    val visitOrders = mutableListOf<VisitOrder>()
+    repeat(amountToCreate) {
+      visitOrders.add(
+        VisitOrder(
+          prisonerId = prisoner.prisonerId,
+          type = visitOrderType,
+          status = VisitOrderStatus.AVAILABLE,
+          prisoner = prisoner,
+        ),
+      )
+    }
+    return visitOrders
+  }
+
+  protected fun createNegativeVisitOrders(visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails): List<NegativeVisitOrder> {
+    val negativeVisitOrder = mutableListOf<NegativeVisitOrder>()
+    repeat(amountToCreate) {
+      negativeVisitOrder.add(
+        NegativeVisitOrder(
+          prisonerId = prisoner.prisonerId,
+          type = visitOrderType,
+          status = NegativeVisitOrderStatus.USED,
+          prisoner = prisoner,
+        ),
+      )
+    }
+    return negativeVisitOrder
   }
 }

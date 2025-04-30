@@ -15,6 +15,9 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReleasedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalStackContainer.setLocalStackProperties
@@ -23,6 +26,9 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.Hmpp
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
@@ -125,6 +131,7 @@ abstract class EventsIntegrationTestBase {
   @MockitoSpyBean
   lateinit var changeLogService: ChangeLogService
 
+  @AfterEach
   @BeforeEach
   fun cleanQueue() {
     purgeQueue(domainEventsSqsClient, domainEventsQueueUrl)
@@ -240,5 +247,35 @@ abstract class EventsIntegrationTestBase {
     else -> {
       ("\"${entry.key}\":\"${entry.value}\"")
     }
+  }
+
+  protected fun createVisitOrders(visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails): List<VisitOrder> {
+    val visitOrders = mutableListOf<VisitOrder>()
+    repeat(amountToCreate) {
+      visitOrders.add(
+        VisitOrder(
+          prisonerId = prisoner.prisonerId,
+          type = visitOrderType,
+          status = VisitOrderStatus.AVAILABLE,
+          prisoner = prisoner,
+        ),
+      )
+    }
+    return visitOrders
+  }
+
+  protected fun createNegativeVisitOrders(visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails): List<NegativeVisitOrder> {
+    val negativeVisitOrder = mutableListOf<NegativeVisitOrder>()
+    repeat(amountToCreate) {
+      negativeVisitOrder.add(
+        NegativeVisitOrder(
+          prisonerId = prisoner.prisonerId,
+          type = visitOrderType,
+          status = NegativeVisitOrderStatus.USED,
+          prisoner = prisoner,
+        ),
+      )
+    }
+    return negativeVisitOrder
   }
 }
