@@ -27,7 +27,7 @@ class PrisonerBookingMovedEventHandler(
     }
 
     val movedToPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)
-    val movedToPrisonerPrison = prisonService.getPrisonByCode(movedFromPrisoner.prisonId)
+    val movedToPrisonerPrison = prisonService.getPrisonByCode(movedToPrisoner.prisonId)
     if (movedToPrisonerPrison == null || !movedToPrisonerPrison.active) {
       processNomis(movedToPrisoner.prisonerId)
     }

@@ -119,6 +119,40 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     val prisonId = "HEI"
     val lastPrisonId = "HEI"
 
+    val movedToPrisoner = PrisonerDetails(prisonerId = movedToPrisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    movedToPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, movedToPrisoner))
+    movedToPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, movedToPrisoner))
+    prisonerDetailsRepository.saveAndFlush(movedToPrisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE.value,
+      createPrisonerBookingMovedAdditionalInformationJson(movedFromPrisonerId = movedFromPrisonerId, movedToPrisonerId = movedToPrisonerId),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = movedFromPrisonerId, createPrisonerDto(prisonerId = movedFromPrisonerId, prisonId = prisonId, inOutStatus = "IN", lastPrisonId = lastPrisonId))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = movedToPrisonerId, createPrisonerDto(prisonerId = movedToPrisonerId, prisonId = prisonId, inOutStatus = "IN", lastPrisonId = lastPrisonId))
+
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = movedFromPrisonerId, null, HttpStatus.NOT_FOUND)
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = movedToPrisonerId, createVisitBalancesDto(2, 1))
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
+  }
+
+  @Test
+  fun `when domain event booking moved is found and a 404 not found is returned from prison API but prisoner exists on DPS then reset balance`() {
+    // Given
+    val movedFromPrisonerId = "AA123456"
+    val movedToPrisonerId = "BB654321"
+    val prisonId = "HEI"
+    val lastPrisonId = "HEI"
+
     val movedFromPrisoner = PrisonerDetails(prisonerId = movedFromPrisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
     movedFromPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, movedFromPrisoner))
     movedFromPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, movedFromPrisoner))
@@ -139,10 +173,8 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = movedFromPrisonerId, createPrisonerDto(prisonerId = movedFromPrisonerId, prisonId = prisonId, inOutStatus = "IN", lastPrisonId = lastPrisonId))
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = movedToPrisonerId, createPrisonerDto(prisonerId = movedToPrisonerId, prisonId = prisonId, inOutStatus = "IN", lastPrisonId = lastPrisonId))
 
-    prisonApiMockServer.stubGetVisitBalances(prisonerId = movedFromPrisonerId, createVisitBalancesDto(0, 0))
-    prisonApiMockServer.stubGetVisitBalances(prisonerId = movedToPrisonerId, createVisitBalancesDto(2, 1))
-
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedFromPrisonerId, null, HttpStatus.NOT_FOUND)
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = movedToPrisonerId, createVisitBalancesDto(2, 1))
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -150,6 +182,11 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
+    await untilAsserted { verify(prisonerDetailsRepository, times(2)).save(any()) }
+
+    val prisoner = prisonerDetailsRepository.findById(movedFromPrisonerId).get()
+    assertThat(prisoner.visitOrders.count()).isEqualTo(3)
+    assertThat(prisoner.visitOrders.count { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }).isEqualTo(0)
   }
 
   @Test
