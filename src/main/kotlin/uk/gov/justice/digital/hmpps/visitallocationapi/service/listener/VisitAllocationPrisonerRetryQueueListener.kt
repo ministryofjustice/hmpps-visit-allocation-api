@@ -23,7 +23,7 @@ class VisitAllocationPrisonerRetryQueueListener(private val prisonerRetryService
   @SqsListener(PRISON_VISITS_ALLOCATION_PRISONER_RETRY_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy")
   fun processMessage(visitAllocationPrisonerRetryJob: VisitAllocationPrisonerRetryJob): CompletableFuture<Void?> = CoroutineScope(Context.current().asContextElement()).future {
     log.debug("Processing prisoner on the visits allocation prisoner retry queue - {}", visitAllocationPrisonerRetryJob)
-    prisonerRetryService.handlePrisonerRetry(visitAllocationPrisonerRetryJob.prisonerId)
+    prisonerRetryService.handlePrisonerRetry(visitAllocationPrisonerRetryJob.jobReference, visitAllocationPrisonerRetryJob.prisonerId)
     null
   }
 }

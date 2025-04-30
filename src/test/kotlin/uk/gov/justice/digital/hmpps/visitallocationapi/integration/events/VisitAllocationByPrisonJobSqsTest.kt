@@ -27,7 +27,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAl
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJob
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
@@ -749,6 +748,4 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     assertThat(visitOrderAllocationPrisonJob.failedPrisoners).isEqualTo(failedPrisoners)
     assertThat(visitOrderAllocationPrisonJob.endTimestamp).isNotNull()
   }
-
-  private fun createVisitOrder(type: VisitOrderType, status: VisitOrderStatus, createdDateTime: LocalDateTime, prisoner: PrisonerDetails): VisitOrder = VisitOrder(prisonerId = prisoner.prisonerId, type = type, status = status, createdTimestamp = createdDateTime, prisoner = prisoner)
 }
