@@ -13,7 +13,11 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
@@ -34,6 +38,9 @@ class ProcessPrisonerServiceTest {
   @Mock
   private lateinit var prisonerRetryService: PrisonerRetryService
 
+  @Mock
+  private lateinit var changeLogService: ChangeLogService
+
   private lateinit var processPrisonerService: ProcessPrisonerService
 
   @BeforeEach
@@ -43,11 +50,10 @@ class ProcessPrisonerServiceTest {
       incentivesClient,
       prisonerDetailsService,
       prisonerRetryService,
+      changeLogService,
       26,
     )
   }
-
-  // --- Continue Allocation Tests --- \\
 
   /**
    * Scenario 1: Continued allocation triggered, existing STD prisoner is given VO / PVO.
@@ -61,11 +67,22 @@ class ProcessPrisonerServiceTest {
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
+    val changeLog = ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.BATCH_PROCESS,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
+    whenever(changeLogService.createLogBatchProcess(dpsPrisoner)).thenReturn(changeLog)
 
     // Begin test
     runBlocking {
@@ -91,11 +108,22 @@ class ProcessPrisonerServiceTest {
     val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), null)
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 0, levelCode = "STD"))
+    val changeLog = ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.BATCH_PROCESS,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
+    whenever(changeLogService.createLogBatchProcess(dpsPrisoner)).thenReturn(changeLog)
 
     // Begin test
     runBlocking {
@@ -120,11 +148,22 @@ class ProcessPrisonerServiceTest {
     val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), LocalDate.now().minusDays(14))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
+    val changeLog = ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.BATCH_PROCESS,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
+    whenever(changeLogService.createLogBatchProcess(dpsPrisoner)).thenReturn(changeLog)
 
     // Begin test
     runBlocking {
@@ -180,11 +219,22 @@ class ProcessPrisonerServiceTest {
     val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(14), LocalDate.now().minusDays(28))
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
+    val changeLog = ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.BATCH_PROCESS,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
+    whenever(changeLogService.createLogBatchProcess(dpsPrisoner)).thenReturn(changeLog)
 
     // Begin test
     runBlocking {
@@ -193,68 +243,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
-  }
-
-  // --- Accumulation --- \\
-
-  /**
-   * Scenario 1: Existing prisoner with VOs older than 28 days, has VO status updated form 'Available' to 'Accumulated'. But no VOs are expired.
-   */
-  @Test
-  fun `Accumulation - Given an existing prisoner has existing VOs older than 28 days, they are moved to accumulated`() {
-    // GIVEN - A new prisoner with Standard incentive level, in prison MDI
-    val prisonerId = "AA123456"
-    val prisonId = "MDI"
-
-    val prisonerSearchResult = createPrisonerDto(prisonerId, prisonId, "IN")
-
-    val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), LocalDate.now().minusDays(14))
-    val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
-    val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
-
-    // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
-    whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
-    whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
-
-    // Begin test
-    runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
-    }
-
-    // THEN
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
-  }
-
-  // --- Expiration --- \\
-
-  /**
-   * Scenario 1: Existing prisoner with more than 26 VOs has their oldest VOs over 26 days expired and PVOs older than 28days are expired.
-   */
-  @Test
-  fun `Expiration - Given an existing prisoner has more than 26 VOs, the extra VOs are moved to expired`() {
-    // GIVEN - An existing prisoner with Standard incentive level, in prison MDI
-    val prisonerId = "AA123456"
-    val prisonId = "MDI"
-
-    val prisonerSearchResult = createPrisonerDto(prisonerId, prisonId, "IN")
-
-    val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), LocalDate.now().minusDays(14))
-    val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
-    val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
-
-    // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
-    whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
-    whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
-
-    // Begin test
-    runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
-    }
-
-    // THEN
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 

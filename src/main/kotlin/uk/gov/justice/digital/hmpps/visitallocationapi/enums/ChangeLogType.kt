@@ -5,4 +5,5 @@ enum class ChangeLogType {
   MIGRATION,
   SYNC,
   PRISONER_REMOVED,
+  BATCH_PROCESS,
 }

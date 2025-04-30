@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonInce
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import java.time.LocalDate
@@ -23,6 +24,7 @@ class ProcessPrisonerService(
   private val incentivesClient: IncentivesClient,
   private val prisonerDetailsService: PrisonerDetailsService,
   private val prisonerRetryService: PrisonerRetryService,
+  private val changeLogService: ChangeLogService,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
@@ -30,7 +32,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun processPrisoner(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false) {
+  fun processPrisoner(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): ChangeLog? {
     LOG.info("Entered ProcessPrisonerService - processPrisoner for prisoner - $prisonerId")
 
     try {
@@ -38,14 +40,27 @@ class ProcessPrisonerService(
       val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
         ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
+      val dpsPrisonerDetailsBefore = dpsPrisonerDetails.deepCopy()
+
       processPrisonerAllocation(dpsPrisonerDetails, allPrisonIncentiveAmounts)
       processPrisonerAccumulation(dpsPrisonerDetails)
       processPrisonerExpiration(dpsPrisonerDetails)
 
+      val newChangeLog: ChangeLog?
+      if (hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
+        newChangeLog = changeLogService.createLogBatchProcess(dpsPrisonerDetails)
+        dpsPrisonerDetails.changeLogs.add(newChangeLog)
+      } else {
+        newChangeLog = null
+      }
+
       prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+
+      // Return the inserted change log, which can be used by caller to raise event for prisoner processing.
+      return newChangeLog
     } catch (e: Exception) {
-      // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens. Instead
-      // they should go onto the DLQ.
+      // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
+      // Instead, it should go onto the DLQ.
       if (fromRetryQueue == false) {
         LOG.error("Error processing prisoner - $prisonerId, putting $prisonerId on prisoner retry queue", e)
         prisonerRetryService.sendMessageToPrisonerRetryQueue(
@@ -57,6 +72,18 @@ class ProcessPrisonerService(
         throw e
       }
     }
+
+    return null
+  }
+
+  private fun hasChangeOccurred(
+    before: PrisonerDetails,
+    after: PrisonerDetails,
+  ): Boolean {
+    val voChanged = before.visitOrders.toSet() != after.visitOrders.toSet()
+    val nvoChanged = before.negativeVisitOrders.toSet() != after.negativeVisitOrders.toSet()
+
+    return voChanged || nvoChanged
   }
 
   private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>) {

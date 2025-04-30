@@ -36,7 +36,8 @@ class PrisonerRetryService(
     log.info("handle prisoner - $prisonerId on retry queue")
     val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
     val allIncentiveLevels = getIncentiveLevelsForPrison(prisonId = prisoner.prisonId)
-    processPrisonerService.processPrisoner(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
+    val changeLog = processPrisonerService.processPrisoner(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
+    // TODO: Publish event using changeLog captured above
   }
 
   private fun getIncentiveLevelsForPrison(prisonId: String): List<PrisonIncentiveAmountsDto> {
