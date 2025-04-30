@@ -28,7 +28,7 @@ class AllocationService(
     val allPrisoners = getConvictedPrisonersForPrison(jobReference = jobReference, prisonId = prisonId)
     val allIncentiveLevels = getIncentiveLevelsForPrison(jobReference = jobReference, prisonId = prisonId)
     var totalConvictedPrisonersProcessed = 0
-    var totalConvictedPrisonersFailed = 0
+    var totalConvictedPrisonersFailedOrSkipped = 0
 
     for (prisoner in allPrisoners) {
       val changeLog = processPrisonerService.processPrisoner(
@@ -41,7 +41,7 @@ class AllocationService(
         totalConvictedPrisonersProcessed++
         // TODO: Publish event using changeLog captured above
       } else {
-        totalConvictedPrisonersFailed++
+        totalConvictedPrisonersFailedOrSkipped++
       }
     }
 
@@ -50,7 +50,7 @@ class AllocationService(
       prisonCode = prisonId,
       totalConvictedPrisoners = allPrisoners.size,
       totalPrisonersProcessed = totalConvictedPrisonersProcessed,
-      totalPrisonersFailed = totalConvictedPrisonersFailed,
+      totalPrisonersFailedOrSkipped = totalConvictedPrisonersFailedOrSkipped,
     )
 
     LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
