@@ -21,22 +21,16 @@ class PrisonerBookingMovedEventHandler(
     val additionalInfo = objectMapper.readValue(domainEvent.additionalInformation, PrisonerBookingMovedInfo::class.java)
 
     val movedFromPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedFromNomsNumber)
-    if (prisonService.getPrisonByCode(movedFromPrisoner.prisonId)?.active == true) {
-      processDps(movedFromPrisoner.prisonerId)
-    } else {
+    val movedFromPrisonerPrison = prisonService.getPrisonByCode(movedFromPrisoner.prisonId)
+    if (movedFromPrisonerPrison == null || !movedFromPrisonerPrison.active) {
       processNomis(movedFromPrisoner.prisonerId)
     }
 
-    val movedToNomsNumber = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)
-    if (prisonService.getPrisonByCode(movedToNomsNumber.prisonId)?.active == true) {
-      processDps(movedToNomsNumber.prisonerId)
-    } else {
-      processNomis(movedToNomsNumber.prisonerId)
+    val movedToPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)
+    val movedToPrisonerPrison = prisonService.getPrisonByCode(movedFromPrisoner.prisonId)
+    if (movedToPrisonerPrison == null || !movedToPrisonerPrison.active) {
+      processNomis(movedToPrisoner.prisonerId)
     }
-  }
-
-  private fun processDps(prisonerId: String) {
-    TODO("processDps not yet implemented")
   }
 
   private fun processNomis(prisonerId: String) {

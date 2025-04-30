@@ -22,7 +22,7 @@ class PrisonerReleasedEventHandler(
     clazz = PrisonerReleasedInfo::class.java,
     shouldProcess = ::shouldProcess,
     isDpsPrison = ::isDpsPrison,
-    processDps = ::processDps,
+    processDps = { /* no-op */ },
     processNomis = ::processNomis,
   )
 
@@ -35,10 +35,6 @@ class PrisonerReleasedEventHandler(
   private fun isDpsPrison(info: PrisonerReleasedInfo): Boolean {
     val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
     return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
-  }
-
-  private fun processDps(info: PrisonerReleasedInfo) {
-    TODO("processDps not yet implemented")
   }
 
   private fun processNomis(info: PrisonerReleasedInfo) {

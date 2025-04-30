@@ -22,7 +22,7 @@ class ConvictionStatusChangedEventHandler(
     clazz = PrisonerConvictionStatusChangedInfo::class.java,
     shouldProcess = ::shouldProcess,
     isDpsPrison = ::isDpsPrison,
-    processDps = ::processDps,
+    processDps = { /* no-op */ },
     processNomis = ::processNomis,
   )
 
@@ -38,10 +38,6 @@ class ConvictionStatusChangedEventHandler(
   private fun isDpsPrison(info: PrisonerConvictionStatusChangedInfo): Boolean {
     val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
     return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
-  }
-
-  private fun processDps(info: PrisonerConvictionStatusChangedInfo) {
-    TODO("processDps not yet implemented")
   }
 
   private fun processNomis(info: PrisonerConvictionStatusChangedInfo) {
