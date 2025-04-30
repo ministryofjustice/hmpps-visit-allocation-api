@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDeta
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
 import java.time.LocalDate
 
-@Transactional
 @Service
 class PrisonerRetryService(
   private val visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService,
@@ -32,6 +31,7 @@ class PrisonerRetryService(
     }
   }
 
+  @Transactional
   fun handlePrisonerRetry(prisonerId: String) {
     log.info("handle prisoner - $prisonerId on retry queue")
 
