@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import java.time.LocalDate
+import kotlin.jvm.optionals.getOrNull
 
 @Transactional
 @Service
@@ -15,39 +16,32 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getPrisoner(prisonerId: String): PrisonerDetails? = prisonerDetailsRepository.findByPrisonerId(prisonerId)
-
-  fun updateVoLastCreatedDateOrCreatePrisoner(prisonerId: String, newLastAllocatedDate: LocalDate) {
-    LOG.info("Entered PrisonerDetailsService updateVoLastCreatedDateOrCreatePrisoner for prisoner $prisonerId with date $newLastAllocatedDate")
-    // Check if the prisoner exists
-    val prisonerDetails = prisonerDetailsRepository.findByPrisonerId(prisonerId)
-
-    if (prisonerDetails != null) {
-      LOG.info("Existing prisoner $prisonerId found - Updating last VO allocated date to $newLastAllocatedDate")
-      // If prisoner exists, update the record
-      prisonerDetailsRepository.updatePrisonerLastVoAllocatedDate(prisonerId, newLastAllocatedDate)
-    } else {
-      // If prisoner does not exist, create a new record
-      createNewPrisonerDetails(prisonerId, newLastAllocatedDate, null)
-    }
+  fun createPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
+    LOG.info("PrisonerDetailsService - createPrisonerDetails called with prisonerId - $prisonerId and newLastAllocatedDate - $newLastPvoAllocatedDate")
+    return prisonerDetailsRepository.save(
+      PrisonerDetails(
+        prisonerId = prisonerId,
+        lastVoAllocatedDate = newLastAllocatedDate,
+        lastPvoAllocatedDate = newLastPvoAllocatedDate,
+      ),
+    )
   }
 
-  fun createNewPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?) {
-    LOG.info("Prisoner $prisonerId not found, creating new record")
-    val newPrisoner = PrisonerDetails(
-      prisonerId = prisonerId,
-      lastVoAllocatedDate = newLastAllocatedDate,
-      lastPvoAllocatedDate = newLastPvoAllocatedDate,
-    )
-    prisonerDetailsRepository.save(newPrisoner)
+  fun getPrisonerDetails(prisonerId: String): PrisonerDetails? {
+    LOG.info("PrisonerDetailsService - getPrisonerDetails called with prisonerId - $prisonerId")
+    return prisonerDetailsRepository.findById(prisonerId).getOrNull()
+  }
+
+  fun updatePrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails {
+    LOG.info("PrisonerDetailsService - updatePrisonerDetails called with new prisoner details - $prisoner")
+    return prisonerDetailsRepository.save(prisoner)
   }
 
   fun removePrisonerDetails(prisonerId: String) {
-    prisonerDetailsRepository.deleteByPrisonerId(prisonerId)
-  }
-
-  fun updatePvoLastCreatedDate(prisonerId: String, newLastAllocatedDate: LocalDate) {
-    LOG.info("Entered PrisonerDetailsService updatePvoLastCreatedDate for prisoner $prisonerId with date $newLastAllocatedDate")
-    prisonerDetailsRepository.updatePrisonerLastPvoAllocatedDate(prisonerId, newLastAllocatedDate)
+    LOG.info("PrisonerDetailsService - removePrisonerDetails called with prisonerId - $prisonerId")
+    val prisoner = prisonerDetailsRepository.findById(prisonerId)
+    if (prisoner.isPresent) {
+      prisonerDetailsRepository.delete(prisoner.get())
+    }
   }
 }

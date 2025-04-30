@@ -44,7 +44,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { prisonVisitsAllocationPrisonerRetryQueueSqsClient.countMessagesOnQueue(prisonVisitsAllocationPrisonerRetryQueueUrl).get() } matches { it == 0 }
     await untilAsserted { verify(visitAllocationPrisonerRetryQueueListenerSpy, times(1)).processMessage(visitAllocationPrisonerRetryJob) }
-    await untilAsserted { verify(visitOrderRepository, times(1)).saveAll(any<List<VisitOrder>>()) }
+    await untilAsserted { verify(prisonerDetailsRepository, times(2)).save(any()) }
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(3)
   }
