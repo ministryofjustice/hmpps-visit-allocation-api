@@ -116,6 +116,7 @@ class ProcessPrisonerService(
 
     // Expire all VOs over the maximum accumulation cap.
     val currentAccumulatedVoCount = dpsPrisoner.visitOrders.count { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.ACCUMULATED }
+    LOG.info("prisoner ${dpsPrisoner.prisonerId}, has $currentAccumulatedVoCount accumulated VOs. Checking if it's more than allowed maximum $maxAccumulatedVisitOrders")
     if (currentAccumulatedVoCount > maxAccumulatedVisitOrders) {
       val amountToExpire = currentAccumulatedVoCount - maxAccumulatedVisitOrders
       LOG.info("prisoner ${dpsPrisoner.prisonerId} has $currentAccumulatedVoCount VOs. This is more than maximum allowed accumulated VOs $maxAccumulatedVisitOrders. Expiring $amountToExpire VOs")
