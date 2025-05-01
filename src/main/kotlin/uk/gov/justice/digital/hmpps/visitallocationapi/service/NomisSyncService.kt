@@ -100,21 +100,7 @@ class NomisSyncService(
       } else {
         LOG.warn("Prisoner $prisonerId found in DPS allocation service. Resetting balance")
 
-        dpsPrisoner.visitOrders
-          .filter { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
-          .forEach {
-            it.status = VisitOrderStatus.EXPIRED
-            it.expiryDate = LocalDate.now()
-          }
-
-        dpsPrisoner.negativeVisitOrders
-          .filter { it.status == NegativeVisitOrderStatus.USED }
-          .forEach {
-            it.status = NegativeVisitOrderStatus.REPAID
-            it.repaidDate = LocalDate.now()
-          }
-
-        dpsPrisoner.changeLogs.add(changeLogService.createLogSyncEventChange(dpsPrisoner, domainEventType))
+        resetDpsPrisonerBalance(dpsPrisoner, domainEventType)
 
         prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
 
@@ -255,6 +241,27 @@ class NomisSyncService(
       LOG.info("Balance decreased for prisoner ${prisoner.prisonerId}, creating $balanceChange $visitOrderType")
       prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(prisoner, visitOrderType, abs(balanceChange)))
     }
+  }
+
+  private fun resetDpsPrisonerBalance(
+    dpsPrisoner: PrisonerDetails,
+    domainEventType: DomainEventType,
+  ) {
+    dpsPrisoner.visitOrders
+      .filter { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
+      .forEach {
+        it.status = VisitOrderStatus.EXPIRED
+        it.expiryDate = LocalDate.now()
+      }
+
+    dpsPrisoner.negativeVisitOrders
+      .filter { it.status == NegativeVisitOrderStatus.USED }
+      .forEach {
+        it.status = NegativeVisitOrderStatus.REPAID
+        it.repaidDate = LocalDate.now()
+      }
+
+    dpsPrisoner.changeLogs.add(changeLogService.createLogSyncEventChange(dpsPrisoner, domainEventType))
   }
 
   private fun createVisitOrders(prisoner: PrisonerDetails, visitOrderType: VisitOrderType, amountToCreate: Int): List<VisitOrder> {
