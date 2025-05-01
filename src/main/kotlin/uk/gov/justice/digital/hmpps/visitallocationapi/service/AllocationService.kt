@@ -16,6 +16,7 @@ class AllocationService(
   private val incentivesClient: IncentivesClient,
   private val prisonService: PrisonService,
   private val processPrisonerService: ProcessPrisonerService,
+  private val snsService: SnsService,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -39,7 +40,7 @@ class AllocationService(
 
       if (changeLog != null) {
         totalConvictedPrisonersProcessed++
-        // TODO: Publish event using changeLog captured above
+        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
       } else {
         totalConvictedPrisonersFailedOrSkipped++
       }

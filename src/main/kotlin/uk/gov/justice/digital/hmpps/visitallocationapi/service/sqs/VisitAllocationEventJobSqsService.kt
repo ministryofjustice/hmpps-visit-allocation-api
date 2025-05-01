@@ -5,8 +5,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.PublishEventException
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
-import java.util.function.Supplier
 
 @Service
 class VisitAllocationEventJobSqsService(
@@ -47,9 +47,3 @@ data class VisitAllocationEventJob(
   val jobReference: String,
   val prisonCode: String,
 )
-
-class PublishEventException(message: String? = null, cause: Throwable? = null) :
-  RuntimeException(message, cause),
-  Supplier<PublishEventException> {
-  override fun get(): PublishEventException = PublishEventException(message, cause)
-}

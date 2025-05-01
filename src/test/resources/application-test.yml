@@ -54,3 +54,8 @@ hmpps:
 
 domain-event-processing:
   enabled: true
+
+feature:
+  events:
+    sns:
+      enabled: true

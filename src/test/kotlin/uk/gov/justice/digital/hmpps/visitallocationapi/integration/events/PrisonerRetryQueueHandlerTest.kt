@@ -53,6 +53,8 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     await untilCallTo { prisonVisitsAllocationPrisonerRetryQueueSqsClient.countMessagesOnQueue(prisonVisitsAllocationPrisonerRetryQueueUrl).get() } matches { it == 0 }
     await untilAsserted { verify(visitAllocationPrisonerRetryQueueListenerSpy, times(1)).processMessage(visitAllocationPrisonerRetryJob) }
     await untilAsserted { verify(prisonerDetailsRepository, times(2)).save(any()) }
+    await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(1) //  STD level = 1 VO & 0 PVO
   }

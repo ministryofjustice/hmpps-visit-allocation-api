@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.microsoft.applicationinsights.TelemetryClient
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -38,6 +39,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepo
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener
@@ -134,6 +136,12 @@ abstract class EventsIntegrationTestBase {
 
   @MockitoSpyBean
   lateinit var changeLogRepository: ChangeLogRepository
+
+  @MockitoSpyBean
+  lateinit var snsService: SnsService
+
+  @MockitoSpyBean
+  lateinit var telemetryClient: TelemetryClient
 
   @AfterEach
   @BeforeEach
