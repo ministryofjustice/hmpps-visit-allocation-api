@@ -34,7 +34,7 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
 
   fun updatePrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails {
     LOG.info("PrisonerDetailsService - updatePrisonerDetails called with new prisoner details - $prisoner")
-    return prisonerDetailsRepository.save(prisoner)
+    return prisonerDetailsRepository.saveAndFlush(prisoner)
   }
 
   fun removePrisonerDetails(prisonerId: String) {
