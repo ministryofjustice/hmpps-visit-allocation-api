@@ -48,7 +48,7 @@ class SnsService(
         prisonerId = changeLog.prisonerId,
         additionalInformation = AdditionalInformation(
           prisonerId = changeLog.prisonerId,
-          adjustmentId = changeLog.id,
+          adjustmentId = changeLog.id.toString(),
         ),
       ),
     )
@@ -88,7 +88,7 @@ class SnsService(
 
 internal data class AdditionalInformation(
   val prisonerId: String,
-  val adjustmentId: Long,
+  val adjustmentId: String,
 )
 
 internal data class HMPPSDomainEvent(
