@@ -57,4 +57,42 @@ data class PrisonerDetails(
       )
   }
     .minus(this.negativeVisitOrders.count { it.type == VisitOrderType.PVO && it.status == NegativeVisitOrderStatus.USED })
+
+  fun deepCopy(): PrisonerDetails {
+    val copy = PrisonerDetails(
+      prisonerId = this.prisonerId,
+      lastVoAllocatedDate = this.lastVoAllocatedDate,
+      lastPvoAllocatedDate = this.lastPvoAllocatedDate,
+    )
+
+    // Deep copy visit orders
+    copy.visitOrders = this.visitOrders.map {
+      VisitOrder(
+        id = it.id,
+        type = it.type,
+        createdTimestamp = it.createdTimestamp,
+        expiryDate = it.expiryDate,
+        prisonerId = it.prisonerId,
+        status = it.status,
+        prisoner = copy, // Point to the new copy, not the original
+      )
+    }.toMutableList()
+
+    // Deep copy negative visit orders
+    copy.negativeVisitOrders = this.negativeVisitOrders.map {
+      NegativeVisitOrder(
+        id = it.id,
+        type = it.type,
+        status = it.status,
+        createdTimestamp = it.createdTimestamp,
+        repaidDate = it.repaidDate,
+        prisonerId = it.prisonerId,
+        prisoner = copy,
+      )
+    }.toMutableList()
+
+    // !! Don't copy changeLogs as it's lazy and might not be loaded. Also, not needed for deep copy purposes.
+
+    return copy
+  }
 }

@@ -27,7 +27,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAl
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJob
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
@@ -102,7 +101,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
   }
 
   /**
@@ -170,7 +169,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
   }
 
   /**
@@ -235,7 +234,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
   }
 
   /**
@@ -311,7 +310,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 2, processedPrisoners = 2, failedPrisoners = 0)
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 2, processedPrisoners = 2, failedOrSkippedPrisoners = 0)
   }
 
   /**
@@ -385,7 +384,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
 
         val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-        assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
+        assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
       }
   }
 
@@ -461,7 +460,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 2)
         assertVisitOrdersAssignedBy(visitOrders, prisoner3.prisonerId, VisitOrderType.PVO, VisitOrderStatus.EXPIRED, 2)
         val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-        assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedPrisoners = 0)
+        assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
 
         assertThat(visitOrders.size).isEqualTo(36)
       }
@@ -539,7 +538,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedPrisoners = 1)
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedOrSkippedPrisoners = 1)
   }
 
   /**
@@ -614,7 +613,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedPrisoners = 1)
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedOrSkippedPrisoners = 1)
   }
 
   /**
@@ -639,7 +638,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
       assertThat(visitOrders.size).isEqualTo(0)
       val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get convicted prisoners by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedPrisoners = null)
+      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get convicted prisoners by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
     }
   }
 
@@ -666,7 +665,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
       assertThat(visitOrders.size).isEqualTo(0)
       val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get convicted prisoners by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedPrisoners = null)
+      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get convicted prisoners by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
     }
   }
 
@@ -694,7 +693,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
       assertThat(visitOrders.size).isEqualTo(0)
       val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get incentive levels by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedPrisoners = null)
+      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get incentive levels by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
     }
   }
 
@@ -723,8 +722,55 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
       assertThat(visitOrders.size).isEqualTo(0)
       val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get incentive levels by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedPrisoners = null)
+      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get incentive levels by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
     }
+  }
+
+  /**
+   * Scenario - No changes: Visit allocation job is run, but no prisoners are due any changes.
+   */
+  @Test
+  fun `when visit allocation job run for a prison then processMessage is called but prisoner isn't due any changes, no change log is generated`() {
+    // Given - message sent to start allocation job for prison
+    val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
+    val allocationJobReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
+    val message = objectMapper.writeValueAsString(event)
+    val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
+    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+
+    entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner1.prisonerId, LocalDate.now().minusDays(1), LocalDate.now().minusDays(1)))
+    entityHelper.createAndSaveVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDate.now().minusDays(1).atStartOfDay(), 2)
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, 2)
+
+    // When
+    val convictedPrisoners = listOf(prisoner1)
+    prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = PRISON_CODE,
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+      ),
+    )
+
+    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+
+    await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
+    await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any()) }
+
+    val changeLogs = changeLogRepository.findAllByPrisonerId(prisoner1.prisonerId)
+    assertThat(changeLogs).isNullOrEmpty()
+
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 1, processedPrisoners = 0, failedOrSkippedPrisoners = 1)
   }
 
   private fun assertVisitOrdersAssignedBy(visitOrders: List<VisitOrder>, prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, total: Int) {
@@ -740,15 +786,13 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     failureMessage: String?,
     convictedPrisoners: Int?,
     processedPrisoners: Int?,
-    failedPrisoners: Int?,
+    failedOrSkippedPrisoners: Int?,
   ) {
     assertThat(visitOrderAllocationPrisonJob.startTimestamp).isNotNull()
     assertThat(visitOrderAllocationPrisonJob.failureMessage).isEqualTo(failureMessage)
     assertThat(visitOrderAllocationPrisonJob.convictedPrisoners).isEqualTo(convictedPrisoners)
     assertThat(visitOrderAllocationPrisonJob.processedPrisoners).isEqualTo(processedPrisoners)
-    assertThat(visitOrderAllocationPrisonJob.failedPrisoners).isEqualTo(failedPrisoners)
+    assertThat(visitOrderAllocationPrisonJob.failedOrSkippedPrisoners).isEqualTo(failedOrSkippedPrisoners)
     assertThat(visitOrderAllocationPrisonJob.endTimestamp).isNotNull()
   }
-
-  private fun createVisitOrder(type: VisitOrderType, status: VisitOrderStatus, createdDateTime: LocalDateTime, prisoner: PrisonerDetails): VisitOrder = VisitOrder(prisonerId = prisoner.prisonerId, type = type, status = status, createdTimestamp = createdDateTime, prisoner = prisoner)
 }
