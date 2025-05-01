@@ -182,7 +182,7 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
-    await untilAsserted { verify(prisonerDetailsRepository, times(2)).save(any()) }
+    await untilAsserted { verify(prisonerDetailsRepository, times(4)).saveAndFlush(any()) }
 
     val prisoner = prisonerDetailsRepository.findById(movedFromPrisonerId).get()
     assertThat(prisoner.visitOrders.count()).isEqualTo(3)

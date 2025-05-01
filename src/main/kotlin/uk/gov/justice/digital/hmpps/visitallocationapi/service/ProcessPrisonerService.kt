@@ -46,18 +46,14 @@ class ProcessPrisonerService(
       processPrisonerAccumulation(dpsPrisonerDetails)
       processPrisonerExpiration(dpsPrisonerDetails)
 
-      val newChangeLog: ChangeLog?
       if (hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
-        newChangeLog = changeLogService.createLogBatchProcess(dpsPrisonerDetails)
-        dpsPrisonerDetails.changeLogs.add(newChangeLog)
-      } else {
-        newChangeLog = null
+        dpsPrisonerDetails.changeLogs.add(changeLogService.createLogBatchProcess(dpsPrisonerDetails))
       }
 
-      prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+      val savedPrisoner = prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
 
       // Return the inserted change log, which can be used by caller to raise event for prisoner processing.
-      return newChangeLog
+      return savedPrisoner.changeLogs.firstOrNull()
     } catch (e: Exception) {
       // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
       // Instead, it should go onto the DLQ.
