@@ -124,8 +124,13 @@ kubectl create job --from=cronjob/hmpps-visit-allocation-api-allocate-visit-orde
 ```
 
 ### Syncing with NOMIS
-(TODO, change to 2-way when implemented)
+This service has a 2-way sync with NOMIS. 
 
-This service has a 1-way sync with NOMIS. When visit order data on NOMIS changes for a prisoner, a request will 
-be made to this service, to sync the change so that DPS can be aligned with NOMIS. See the NomisController.kt for more 
-information.
+##### NOMIS -> DPS
+When visit order data on NOMIS changes for a prisoner, a request will be made to this service, to sync the change so that 
+DPS can be aligned with NOMIS. See the NomisController.kt for more information.
+
+##### DPS -> NOMIS
+When prisoner balance changes and the prison is owned by this service (enabled in prison DB table), an event will be raised for 
+NOMIS to listen and consume. Event name: "prison-visit-allocation.adjustment.created". The event will contain a prisoner ID and 
+adjustment ID which NOMIS can then use to call via the NomisController "getPrisonerAdjustment" endpoint to re-sync with DPS.

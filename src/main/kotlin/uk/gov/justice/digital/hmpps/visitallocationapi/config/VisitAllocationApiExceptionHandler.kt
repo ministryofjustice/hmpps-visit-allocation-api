@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.config
 
+import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus.BAD_REQUEST
@@ -14,10 +15,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.PublishEventException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
-class VisitAllocationApiExceptionHandler {
+class VisitAllocationApiExceptionHandler(private val telemetryClient: TelemetryClient) {
   private companion object {
     private val log = LoggerFactory.getLogger(this::class.java)
   }
@@ -101,4 +103,25 @@ class VisitAllocationApiExceptionHandler {
         developerMessage = e.message,
       ),
     ).also { log.error("Unexpected exception", e) }
+
+  @ExceptionHandler(PublishEventException::class)
+  fun handlePublishEventException(e: PublishEventException): ResponseEntity<ErrorResponse?>? {
+    log.error("Publish event exception caught: {}", e.message)
+    val error = ErrorResponse(
+      status = INTERNAL_SERVER_ERROR,
+      userMessage = "Failed to publish event: ${e.cause?.message}",
+      developerMessage = e.message,
+    )
+    telemetryClient.trackEvent(
+      "allocation-api-publish-event-error",
+      mapOf(
+        "status" to error.status.toString(),
+        "message" to (error.developerMessage?.take(256) ?: ""),
+        "cause" to (error.userMessage?.take(256) ?: ""),
+      ),
+      null,
+    )
+
+    return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(error)
+  }
 }

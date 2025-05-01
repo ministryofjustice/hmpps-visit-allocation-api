@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.http.HttpStatus
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
@@ -100,6 +101,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
   }
@@ -168,6 +170,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
   }
@@ -233,6 +237,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
   }
@@ -309,6 +315,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    verify(snsService, times(2)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 2, processedPrisoners = 2, failedOrSkippedPrisoners = 0)
   }
@@ -385,6 +393,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
         val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
         assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
+
+        verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
       }
   }
 
@@ -463,6 +473,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
         assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
 
         assertThat(visitOrders.size).isEqualTo(36)
+
+        verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
       }
   }
 
@@ -537,6 +549,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedOrSkippedPrisoners = 1)
   }
@@ -612,6 +626,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedOrSkippedPrisoners = 1)
   }
@@ -769,6 +785,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    verifyNoInteractions(snsService)
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 1, processedPrisoners = 0, failedOrSkippedPrisoners = 1)
   }

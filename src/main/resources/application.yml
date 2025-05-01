@@ -90,3 +90,8 @@ hmpps:
 
 domain-event-processing:
     enabled: ${SQS_DOMAIN_EVENT_PROCESSING_ENABLED}
+
+feature:
+  events:
+    sns:
+      enabled: true

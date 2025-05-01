@@ -5,6 +5,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.PublishEventException
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 
 @Service
