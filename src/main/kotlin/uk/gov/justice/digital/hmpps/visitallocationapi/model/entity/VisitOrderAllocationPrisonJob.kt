@@ -33,7 +33,7 @@ class VisitOrderAllocationPrisonJob(
   val processedPrisoners: Int? = null,
 
   @Column(nullable = false)
-  val failedPrisoners: Int? = null,
+  val failedOrSkippedPrisoners: Int? = null,
 
   @Column
   val endTimestamp: LocalDateTime? = null,

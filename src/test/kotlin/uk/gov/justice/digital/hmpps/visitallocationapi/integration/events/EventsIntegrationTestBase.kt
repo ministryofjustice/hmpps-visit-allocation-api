@@ -29,6 +29,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.Pris
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
@@ -130,6 +131,9 @@ abstract class EventsIntegrationTestBase {
 
   @MockitoSpyBean
   lateinit var changeLogService: ChangeLogService
+
+  @MockitoSpyBean
+  lateinit var changeLogRepository: ChangeLogRepository
 
   @AfterEach
   @BeforeEach

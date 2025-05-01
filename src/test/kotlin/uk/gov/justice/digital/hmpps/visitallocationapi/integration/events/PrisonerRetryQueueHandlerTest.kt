@@ -38,6 +38,14 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // When
     prisonVisitsAllocationPrisonerRetryQueueSqsClient.sendMessage(sendMessageRequest)
     prisonerSearchMockServer.stubGetPrisonerById("TEST", prisoner = createPrisonerDto(prisonerId = prisonerId, prisonId = "HEI", inOutStatus = "IN"))
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = "HEI",
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory("TEST", prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = "HEI", levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
 
@@ -46,7 +54,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitAllocationPrisonerRetryQueueListenerSpy, times(1)).processMessage(visitAllocationPrisonerRetryJob) }
     await untilAsserted { verify(prisonerDetailsRepository, times(2)).save(any()) }
     val visitOrders = visitOrderRepository.findAll()
-    Assertions.assertThat(visitOrders.size).isEqualTo(3)
+    Assertions.assertThat(visitOrders.size).isEqualTo(1) //  STD level = 1 VO & 0 PVO
   }
 
   @Test
@@ -61,6 +69,14 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // When
     prisonVisitsAllocationPrisonerRetryQueueSqsClient.sendMessage(sendMessageRequest)
     prisonerSearchMockServer.stubGetPrisonerById("TEST", null, HttpStatus.NOT_FOUND)
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = "HEI",
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory("TEST", prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = "HEI", levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
 
@@ -85,6 +101,14 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // When
     prisonVisitsAllocationPrisonerRetryQueueSqsClient.sendMessage(sendMessageRequest)
     prisonerSearchMockServer.stubGetPrisonerById("TEST", null, HttpStatus.INTERNAL_SERVER_ERROR)
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = "HEI",
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory("TEST", prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = "HEI", levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
 
@@ -109,6 +133,14 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // When
     prisonVisitsAllocationPrisonerRetryQueueSqsClient.sendMessage(sendMessageRequest)
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = "HEI", inOutStatus = "IN"))
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = "HEI",
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory("TEST", null, HttpStatus.NOT_FOUND)
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = "HEI", levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
 
@@ -133,6 +165,14 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // When
     prisonVisitsAllocationPrisonerRetryQueueSqsClient.sendMessage(sendMessageRequest)
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = "HEI", inOutStatus = "IN"))
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = "HEI",
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory("TEST", null, HttpStatus.INTERNAL_SERVER_ERROR)
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = "HEI", levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
 
@@ -157,6 +197,13 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // When
     prisonVisitsAllocationPrisonerRetryQueueSqsClient.sendMessage(sendMessageRequest)
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = "HEI", inOutStatus = "IN"))
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = "HEI",
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory("TEST", prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = "HEI", levelCode = "STD", null, HttpStatus.NOT_FOUND)
 
@@ -181,6 +228,13 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // When
     prisonVisitsAllocationPrisonerRetryQueueSqsClient.sendMessage(sendMessageRequest)
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = "HEI", inOutStatus = "IN"))
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = "HEI",
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"),
+        PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
+      ),
+    )
     incentivesMockServer.stubGetPrisonerIncentiveReviewHistory("TEST", prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
     incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = "HEI", levelCode = "STD", null, HttpStatus.INTERNAL_SERVER_ERROR)
 

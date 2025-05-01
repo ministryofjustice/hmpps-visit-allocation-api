@@ -63,6 +63,20 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
     )
   }
 
+  fun createLogBatchProcess(dpsPrisoner: PrisonerDetails): ChangeLog {
+    LOG.info("Logging sync to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogBatchProcess complete")
+    return ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.BATCH_PROCESS,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
+  }
+
   fun findAllChangeLogsForPrisoner(prisonerId: String): List<ChangeLog> {
     LOG.info("ChangeLogService - findAllChangeLogsForPrisoner called with prisonerId - $prisonerId")
     val prisonerChangeLogs = changeLogRepository.findAllByPrisonerId(prisonerId)
