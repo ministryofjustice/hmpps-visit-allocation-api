@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -53,7 +54,7 @@ class ProcessPrisonerService(
       val savedPrisoner = prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
 
       // Return the inserted change log, which can be used by caller to raise event for prisoner processing.
-      return savedPrisoner.changeLogs.firstOrNull()
+      return savedPrisoner.changeLogs.firstOrNull { it.changeType == ChangeLogType.BATCH_PROCESS && it.changeTimestamp.toLocalDate() == LocalDate.now() }
     } catch (e: Exception) {
       // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
       // Instead, it should go onto the DLQ.
