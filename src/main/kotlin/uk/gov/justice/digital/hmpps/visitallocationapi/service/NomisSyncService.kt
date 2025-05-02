@@ -169,6 +169,9 @@ class NomisSyncService(
       pvoBalance = previousPvoBalance,
       changeToPvoBalance = currentEntry.privilegedVisitOrderBalance - previousPvoBalance,
       changeLogType = currentEntry.changeType,
+      userId = currentEntry.userId,
+      changeLogSource = currentEntry.changeSource,
+      changeTimestamp = currentEntry.changeTimestamp,
       comment = currentEntry.comment,
     )
   }
