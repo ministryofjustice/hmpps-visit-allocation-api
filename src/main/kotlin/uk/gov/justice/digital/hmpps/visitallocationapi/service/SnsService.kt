@@ -45,7 +45,7 @@ class SnsService(
         version = EVENT_PRISON_VISIT_VERSION,
         description = EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED_DESC,
         occurredAt = changeLog.changeTimestamp.toOffsetDateFormat(),
-        prisonerId = changeLog.prisonerId,
+        personReference = PersonReference(identifiers = listOf(PersonIdentifier("NOMIS", changeLog.prisonerId))),
         additionalInformation = AdditionalInformation(
           prisonerId = changeLog.prisonerId,
           adjustmentId = changeLog.id.toString(),
@@ -86,16 +86,23 @@ class SnsService(
   }
 }
 
+internal data class HMPPSDomainEvent(
+  val eventType: String,
+  val version: Int,
+  val detailUrl: String? = null,
+  val description: String,
+  val occurredAt: String,
+  val personReference: PersonReference,
+  val additionalInformation: AdditionalInformation,
+)
+
 internal data class AdditionalInformation(
   val prisonerId: String,
   val adjustmentId: String,
 )
 
-internal data class HMPPSDomainEvent(
-  val eventType: String,
-  val version: Int,
-  val description: String,
-  val occurredAt: String,
-  val prisonerId: String,
-  val additionalInformation: AdditionalInformation,
+internal data class PersonReference(
+  val identifiers: List<PersonIdentifier>,
 )
+
+internal data class PersonIdentifier(val type: String, val value: String)
