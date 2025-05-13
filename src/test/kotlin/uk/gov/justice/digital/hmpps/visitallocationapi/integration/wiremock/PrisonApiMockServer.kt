@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.ServicePrisonDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.MockUtils.Companion.getJsonString
 
@@ -32,6 +33,50 @@ class PrisonApiMockServer : WireMockServer(8096) {
             responseBuilder
               .withStatus(HttpStatus.OK.value())
               .withBody(getJsonString(visitBalances))
+          },
+        ),
+    )
+  }
+
+  fun stubGetPrisonEnabledForDps(prisonId: String, enabled: Boolean, httpStatus: HttpStatus? = null) {
+    val responseBuilder = aResponse()
+      .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+
+    stubFor(
+      get("/api/service-prisons/VISIT_ALLOCATION/prison/$prisonId")
+        .willReturn(
+          if (enabled) {
+            responseBuilder.withStatus(HttpStatus.NO_CONTENT.value())
+          } else {
+            if (httpStatus != null) {
+              responseBuilder.withStatus(httpStatus.value())
+            } else {
+              responseBuilder.withStatus(HttpStatus.NOT_FOUND.value())
+            }
+          },
+        ),
+    )
+  }
+
+  fun stubGetAllServicePrisonsEnabledForDps(prisons: List<ServicePrisonDto>?, httpStatus: HttpStatus? = null) {
+    val responseBuilder = aResponse()
+      .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+
+    stubFor(
+      get("/api/service-prisons/VISIT_ALLOCATION")
+        .willReturn(
+          if (prisons == null) {
+            if (httpStatus != null) {
+              responseBuilder
+                .withStatus(httpStatus.value())
+            } else {
+              responseBuilder
+                .withStatus(HttpStatus.NOT_FOUND.value())
+            }
+          } else {
+            responseBuilder
+              .withStatus(HttpStatus.OK.value())
+              .withBody(getJsonString(prisons))
           },
         ),
     )

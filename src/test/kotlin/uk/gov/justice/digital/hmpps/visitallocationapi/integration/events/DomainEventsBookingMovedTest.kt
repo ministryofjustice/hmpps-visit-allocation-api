@@ -54,6 +54,8 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedFromPrisonerId, createVisitBalancesDto(0, 0, LocalDate.now().minusDays(1), LocalDate.now().minusDays(1)))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedToPrisonerId, createVisitBalancesDto(2, 1, LocalDate.now().minusDays(1), LocalDate.now().minusDays(1)))
 
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
+
     // When
     awsSnsClient.publish(publishRequest).get()
 
@@ -88,6 +90,8 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
 
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedFromPrisonerId, createVisitBalancesDto(0, 0, LocalDate.now().minusDays(1), LocalDate.now().minusDays(1)))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedToPrisonerId, createVisitBalancesDto(2, 1, LocalDate.now().minusDays(1), LocalDate.now().minusDays(1)))
+
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -137,6 +141,8 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedFromPrisonerId, null, HttpStatus.NOT_FOUND)
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedToPrisonerId, createVisitBalancesDto(2, 1))
 
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
+
     // When
     awsSnsClient.publish(publishRequest).get()
 
@@ -175,6 +181,8 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
 
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedFromPrisonerId, null, HttpStatus.NOT_FOUND)
     prisonApiMockServer.stubGetVisitBalances(prisonerId = movedToPrisonerId, createVisitBalancesDto(2, 1))
+
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()

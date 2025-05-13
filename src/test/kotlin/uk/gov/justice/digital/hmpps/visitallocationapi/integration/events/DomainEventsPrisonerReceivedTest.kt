@@ -44,6 +44,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -78,6 +79,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     // And
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, null, HttpStatus.INTERNAL_SERVER_ERROR)
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -130,6 +132,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
