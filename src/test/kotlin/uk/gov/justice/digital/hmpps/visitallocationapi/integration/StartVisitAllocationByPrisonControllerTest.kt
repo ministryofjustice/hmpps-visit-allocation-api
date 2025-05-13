@@ -74,6 +74,19 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
     verify(visitOrderAllocationPrisonJobRepository, times(0)).save(any())
   }
 
+  @Test
+  fun `when allocation job started but 500 response from prison-api, then no sqs messages are sent`() {
+    // Given
+
+    // When
+    prisonApiMockServer.stubGetAllServicePrisonsEnabledForDps(null, HttpStatus.INTERNAL_SERVER_ERROR)
+    val responseSpec = startVisitAllocationByPrisonJob(webTestClient, startVisitAllocationJobRoleHttpHeaders)
+
+    // Then
+    responseSpec.expectStatus().is5xxServerError
+    verify(sqsService, times(0)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
+  }
+
   fun startVisitAllocationByPrisonJob(
     webTestClient: WebTestClient,
     authHttpHeaders: (HttpHeaders) -> Unit,
