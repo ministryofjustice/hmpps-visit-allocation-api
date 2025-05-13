@@ -18,7 +18,7 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
 
   fun createPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
     LOG.info("PrisonerDetailsService - createPrisonerDetails called with prisonerId - $prisonerId and newLastAllocatedDate - $newLastPvoAllocatedDate")
-    return prisonerDetailsRepository.save(
+    return prisonerDetailsRepository.saveAndFlush(
       PrisonerDetails(
         prisonerId = prisonerId,
         lastVoAllocatedDate = newLastAllocatedDate,

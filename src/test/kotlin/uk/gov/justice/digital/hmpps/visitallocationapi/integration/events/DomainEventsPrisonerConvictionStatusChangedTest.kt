@@ -44,6 +44,7 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -79,6 +80,7 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(0, 0))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -137,6 +139,7 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "OUT"))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -164,6 +167,7 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -181,5 +185,35 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     val prisonerDetails = prisonerDetailsRepository.findById(prisonerId).get()
     assertThat(prisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now())
     assertThat(prisonerDetails.lastPvoAllocatedDate).isNull()
+  }
+
+  @Test
+  fun `when domain event prisoner conviction status changed is found but 500 response from prison-api get service prison, then message fails`() {
+    // Given
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
+      createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId = prisonerId, convictedStatus = "Convicted"),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false, HttpStatus.INTERNAL_SERVER_ERROR)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
   }
 }

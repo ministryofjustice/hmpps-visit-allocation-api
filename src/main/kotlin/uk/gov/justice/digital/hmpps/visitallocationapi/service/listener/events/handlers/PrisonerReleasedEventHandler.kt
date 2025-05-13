@@ -34,7 +34,7 @@ class PrisonerReleasedEventHandler(
 
   private fun isDpsPrison(info: PrisonerReleasedInfo): Boolean {
     val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
-    return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
+    return prisonService.getPrisonEnabledForDpsByCode(prisoner.prisonId)
   }
 
   private fun processNomis(info: PrisonerReleasedInfo) {

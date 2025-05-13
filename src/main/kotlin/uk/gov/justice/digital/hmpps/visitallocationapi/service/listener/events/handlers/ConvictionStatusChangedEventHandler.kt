@@ -37,7 +37,7 @@ class ConvictionStatusChangedEventHandler(
 
   private fun isDpsPrison(info: PrisonerConvictionStatusChangedInfo): Boolean {
     val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
-    return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
+    return prisonService.getPrisonEnabledForDpsByCode(prisoner.prisonId)
   }
 
   private fun processNomis(info: PrisonerConvictionStatusChangedInfo) {
