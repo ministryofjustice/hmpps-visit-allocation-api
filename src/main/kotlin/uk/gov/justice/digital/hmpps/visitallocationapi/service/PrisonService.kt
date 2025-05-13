@@ -5,20 +5,19 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPrison
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJobSqsService
 import java.time.LocalDateTime
 
 @Transactional
 @Service
 class PrisonService(
-  private val visitOrderPrisonRepository: VisitOrderPrisonRepository,
+  private val prisonApiClient: PrisonApiClient,
   private val visitOrderAllocationJobRepository: VisitOrderAllocationJobRepository,
   private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
   private val visitAllocationEventJobSqsService: VisitAllocationEventJobSqsService,
@@ -27,16 +26,16 @@ class PrisonService(
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getPrisonByCode(prisonCode: String): VisitOrderPrison? = visitOrderPrisonRepository.findByPrisonCode(prisonCode)
+  fun getPrisonEnabledForDpsByCode(prisonCode: String): Boolean = prisonApiClient.getPrisonEnabledForDps(prisonCode)
 
   fun triggerVisitAllocationForActivePrisons(): VisitAllocationEventJobDto {
     log.info("Trigger allocation by prison started")
-    val activePrisons = visitOrderPrisonRepository.findByActive(true)
+    val activePrisons = prisonApiClient.getAllServicePrisonsEnabledForDps() ?: emptyList()
     val allocationJobReference = auditOrderAllocationJob(totalActivePrisons = activePrisons.size).reference
     log.info("Total active prisons for visit allocation job = ${activePrisons.size}")
 
     activePrisons.forEach {
-      val prisonCode = it.prisonCode
+      val prisonCode = it.prisonId
       auditOrderAllocationPrisonJob(allocationJobReference, prisonCode)
       sendSqsMessageForPrison(allocationJobReference, prisonCode)
     }

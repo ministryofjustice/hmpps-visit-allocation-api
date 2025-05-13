@@ -34,7 +34,7 @@ class PrisonerMergedEventHandler(
 
   private fun isDpsPrison(info: PrisonerMergedInfo): Boolean {
     val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
-    return prisonService.getPrisonByCode(prisoner.prisonId)?.active == true
+    return prisonService.getPrisonEnabledForDpsByCode(prisoner.prisonId)
   }
 
   private fun processDps(info: PrisonerMergedInfo) {

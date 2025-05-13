@@ -21,14 +21,12 @@ class PrisonerBookingMovedEventHandler(
     val additionalInfo = objectMapper.readValue(domainEvent.additionalInformation, PrisonerBookingMovedInfo::class.java)
 
     val movedFromPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedFromNomsNumber)
-    val movedFromPrisonerPrison = prisonService.getPrisonByCode(movedFromPrisoner.prisonId)
-    if (movedFromPrisonerPrison == null || !movedFromPrisonerPrison.active) {
+    if (!prisonService.getPrisonEnabledForDpsByCode(movedFromPrisoner.prisonId)) {
       processNomis(movedFromPrisoner.prisonerId)
     }
 
     val movedToPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)
-    val movedToPrisonerPrison = prisonService.getPrisonByCode(movedToPrisoner.prisonId)
-    if (movedToPrisonerPrison == null || !movedToPrisonerPrison.active) {
+    if (!prisonService.getPrisonEnabledForDpsByCode(movedToPrisoner.prisonId)) {
       processNomis(movedToPrisoner.prisonerId)
     }
   }

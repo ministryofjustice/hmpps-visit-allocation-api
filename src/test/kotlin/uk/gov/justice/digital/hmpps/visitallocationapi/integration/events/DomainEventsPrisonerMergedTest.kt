@@ -44,6 +44,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -69,6 +70,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Given
     val prisonerId = "AA123456"
     val removedPrisonerId = "BB123456"
+    val prisonId = "MDI"
 
     val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
     prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
@@ -84,6 +86,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(0, 0))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -98,6 +101,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Given
     val prisonerId = "AA123456"
     val removedPrisonerId = "BB123456"
+    val prisonId = "MDI"
 
     val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
     prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
@@ -113,6 +117,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, inOutStatus = "IN"))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -138,6 +143,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // And
     prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
     prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
 
     // When
     awsSnsClient.publish(publishRequest).get()
@@ -158,5 +164,36 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(prisonerDetails[0].prisonerId).isEqualTo(prisonerId)
     assertThat(prisonerDetails[0].lastVoAllocatedDate).isEqualTo(LocalDate.now())
     assertThat(prisonerDetails[0].lastPvoAllocatedDate).isNull()
+  }
+
+  @Test
+  fun `when domain event prisoner merged is found but 500 response from prison-api get service prison, then message fails`() {
+    // Given
+    val prisonerId = "AA123456"
+    val removedPrisonerId = "BB123456"
+    val prisonId = "HEI"
+
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
+      createPrisonerMergedAdditionalInformationJson(prisonerId = prisonerId, removedPrisonerId = removedPrisonerId),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_MERGED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false, HttpStatus.INTERNAL_SERVER_ERROR)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
   }
 }

@@ -34,7 +34,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepos
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
@@ -117,9 +116,6 @@ abstract class EventsIntegrationTestBase {
   lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
 
   @MockitoSpyBean
-  lateinit var visitOrderPrisonRepositorySpy: VisitOrderPrisonRepository
-
-  @MockitoSpyBean
   lateinit var visitAllocationByPrisonJobListenerSpy: VisitAllocationByPrisonJobListener
 
   @MockitoSpyBean
@@ -160,7 +156,6 @@ abstract class EventsIntegrationTestBase {
     visitOrderRepository.deleteAll()
     negativeVisitOrderRepository.deleteAll()
     prisonerDetailsRepository.deleteAll()
-    visitOrderPrisonRepositorySpy.deleteAll()
   }
 
   @AfterEach
@@ -169,7 +164,6 @@ abstract class EventsIntegrationTestBase {
     visitOrderRepository.deleteAll()
     negativeVisitOrderRepository.deleteAll()
     prisonerDetailsRepository.deleteAll()
-    visitOrderPrisonRepositorySpy.deleteAll()
   }
 
   fun purgeQueue(client: SqsAsyncClient, url: String) {

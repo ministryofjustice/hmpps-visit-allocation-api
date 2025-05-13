@@ -9,27 +9,20 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderPrison
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderPrisonRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import java.time.LocalDateTime
 
 @Transactional
 @Component
 class EntityHelper(
-  val visitOrderPrisonRepository: VisitOrderPrisonRepository,
   val visitOrderRepository: VisitOrderRepository,
   val negativeVisitOrderRepository: NegativeVisitOrderRepository,
   val changeLogRepository: ChangeLogRepository,
   private val prisonerDetailsRepository: PrisonerDetailsRepository,
 ) {
-
-  fun savePrison(visitOrderPrison: VisitOrderPrison) {
-    visitOrderPrisonRepository.saveAndFlush(visitOrderPrison)
-  }
 
   fun createPrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails = prisonerDetailsRepository.saveAndFlush(prisoner)
 
@@ -75,9 +68,6 @@ class EntityHelper(
   }
 
   fun deleteAll() {
-    visitOrderPrisonRepository.deleteAll()
-    visitOrderPrisonRepository.flush()
-
     visitOrderRepository.deleteAll()
     visitOrderRepository.flush()
 
