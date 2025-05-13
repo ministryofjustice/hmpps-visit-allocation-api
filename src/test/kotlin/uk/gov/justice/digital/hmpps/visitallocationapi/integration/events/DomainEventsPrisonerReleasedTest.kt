@@ -151,4 +151,34 @@ class DomainEventsPrisonerReleasedTest : EventsIntegrationTestBase() {
     assertThat(prisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now())
     assertThat(prisonerDetails.lastPvoAllocatedDate).isNull()
   }
+
+  @Test
+  fun `when domain event prisoner released is found but 500 response from prison-api get service prison, then message fails`() {
+    // Given
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value,
+      createPrisonerReleasedAdditionalInformationJson(prisonerId, prisonId, PrisonerReleasedReasonType.RELEASED),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RELEASED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(0, 0))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false, HttpStatus.INTERNAL_SERVER_ERROR)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+  }
 }
