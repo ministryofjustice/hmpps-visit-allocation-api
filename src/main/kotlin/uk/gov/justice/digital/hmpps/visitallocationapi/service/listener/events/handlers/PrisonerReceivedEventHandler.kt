@@ -33,7 +33,7 @@ class PrisonerReceivedEventHandler(
   private fun isDpsPrison(info: PrisonerReceivedInfo): Boolean = prisonService.getPrisonEnabledForDpsByCode(info.prisonCode)
 
   private fun processDps(info: PrisonerReceivedInfo) {
-    TODO("processDps not yet implemented")
+    // TODO Implement.
   }
 
   private fun processNomis(info: PrisonerReceivedInfo) {

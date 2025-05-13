@@ -38,7 +38,7 @@ class PrisonerMergedEventHandler(
   }
 
   private fun processDps(info: PrisonerMergedInfo) {
-    TODO("processDps not yet implemented")
+    // TODO Implement.
   }
 
   private fun processNomis(info: PrisonerMergedInfo) {
