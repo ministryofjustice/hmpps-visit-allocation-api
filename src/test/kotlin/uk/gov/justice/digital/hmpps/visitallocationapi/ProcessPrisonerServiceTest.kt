@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi
 
+import com.microsoft.applicationinsights.TelemetryClient
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -41,6 +42,9 @@ class ProcessPrisonerServiceTest {
   @Mock
   private lateinit var changeLogService: ChangeLogService
 
+  @Mock
+  private lateinit var telemetryClient: TelemetryClient
+
   private lateinit var processPrisonerService: ProcessPrisonerService
 
   @BeforeEach
@@ -51,6 +55,7 @@ class ProcessPrisonerServiceTest {
       prisonerDetailsService,
       prisonerRetryService,
       changeLogService,
+      telemetryClient,
       26,
     )
   }
@@ -86,7 +91,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -127,7 +132,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -167,7 +172,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -197,7 +202,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -238,7 +243,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN

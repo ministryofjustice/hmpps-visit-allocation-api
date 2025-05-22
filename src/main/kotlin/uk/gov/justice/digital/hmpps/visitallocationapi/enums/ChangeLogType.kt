@@ -6,4 +6,5 @@ enum class ChangeLogType {
   SYNC,
   PRISONER_REMOVED,
   BATCH_PROCESS,
+  ALLOCATION_USED_BY_VISIT,
 }

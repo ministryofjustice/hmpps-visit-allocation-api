@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
+import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -9,11 +10,13 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import java.time.LocalDate
@@ -26,14 +29,62 @@ class ProcessPrisonerService(
   private val prisonerDetailsService: PrisonerDetailsService,
   private val prisonerRetryService: PrisonerRetryService,
   private val changeLogService: ChangeLogService,
+  private val telemetryClient: TelemetryClient,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  @Transactional
+  fun processPrisonerVisitOrderUsage(visit: VisitDto) {
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
+
+    // Find the oldest PVO to use. If none exists, find the oldest VO to use.
+    val selected: VisitOrder? = dpsPrisonerDetails.visitOrders
+      .asSequence()
+      .filter { it.status == VisitOrderStatus.AVAILABLE }
+      .filter { it.type == VisitOrderType.PVO }
+      .minByOrNull { it.createdTimestamp }
+      ?: dpsPrisonerDetails.visitOrders
+        .asSequence()
+        .filter { it.status == VisitOrderStatus.AVAILABLE }
+        .filter { it.type == VisitOrderType.VO }
+        .minByOrNull { it.createdTimestamp }
+
+    if (selected != null) {
+      selected.status = VisitOrderStatus.USED
+      selected.visitReference = visit.reference
+    } else {
+      // If none are found, generate a negative VO and save to prisoners negativeVisitOrders list.
+      val negativeVo = NegativeVisitOrder(
+        status = NegativeVisitOrderStatus.USED,
+        type = VisitOrderType.VO,
+        prisonerId = dpsPrisonerDetails.prisonerId,
+        prisoner = dpsPrisonerDetails,
+        visitReference = visit.reference,
+      )
+      dpsPrisonerDetails.negativeVisitOrders.add(negativeVo)
+    }
+
+    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference))
+
+    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+
+    telemetryClient.trackEvent(
+      "allocation-api-vo-consumed-by-visit",
+      mapOf(
+        "visitReference" to visit.reference,
+        "prisonerId" to visit.prisonerId,
+        "voType" to (selected?.type?.name ?: "vo"),
+      ),
+      null,
+    )
+  }
+
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun processPrisoner(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): ChangeLog? {
+  fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): ChangeLog? {
     LOG.info("Entered ProcessPrisonerService - processPrisoner for prisoner - $prisonerId")
 
     try {
