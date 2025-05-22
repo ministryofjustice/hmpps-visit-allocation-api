@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -39,6 +40,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepo
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
@@ -130,6 +132,9 @@ abstract class EventsIntegrationTestBase {
   lateinit var nomisSyncService: NomisSyncService
 
   @MockitoSpyBean
+  lateinit var processPrisonerService: ProcessPrisonerService
+
+  @MockitoSpyBean
   lateinit var changeLogService: ChangeLogService
 
   @MockitoSpyBean
@@ -205,6 +210,14 @@ abstract class EventsIntegrationTestBase {
     return createAdditionalInformationJson(jsonValues)
   }
 
+  fun createVisitBookedAdditionalInformationJson(visitReference: String): String {
+    val jsonValues = HashMap<String, String>()
+
+    jsonValues["reference"] = visitReference
+
+    return createAdditionalInformationJson(jsonValues)
+  }
+
   fun createPrisonerReleasedAdditionalInformationJson(prisonerId: String, prisonId: String, reason: PrisonerReleasedReasonType): String {
     val jsonValues = HashMap<String, String>()
 
@@ -225,9 +238,11 @@ abstract class EventsIntegrationTestBase {
     return createAdditionalInformationJson(jsonValues)
   }
 
-  protected fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)
+  protected fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI", convictedStatus: String? = "Convicted"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId, convictedStatus = convictedStatus)
 
   protected fun createVisitBalancesDto(remainingVo: Int, remainingPvo: Int, latestIepAdjustDate: LocalDate? = null, latestPrivIepAdjustDate: LocalDate? = null): VisitBalancesDto = VisitBalancesDto(remainingVo, remainingPvo, latestIepAdjustDate, latestPrivIepAdjustDate)
+
+  protected fun createVisitDto(visitReference: String, prisonerId: String, prisonId: String): VisitDto = VisitDto(visitReference, prisonerId, prisonId)
 
   private fun createAdditionalInformationJson(jsonValues: Map<String, Any>): String {
     val builder = StringBuilder()

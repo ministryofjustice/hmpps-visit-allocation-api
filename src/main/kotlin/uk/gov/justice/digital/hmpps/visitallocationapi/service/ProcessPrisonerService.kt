@@ -37,7 +37,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional
-  fun processPrisonerVisitOrderUsage(visit: VisitDto) {
+  fun processPrisonerVisitOrderUsage(visit: VisitDto): ChangeLog? {
     val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
@@ -81,6 +81,8 @@ class ProcessPrisonerService(
       ),
       null,
     )
+
+    return changeLogService.findFirstByPrisonerIdAndChangeTypeOrderByCreatedTimestampDesc(visit.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -105,7 +107,7 @@ class ProcessPrisonerService(
       val savedPrisoner = prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
 
       // Return the inserted change log, which can be used by caller to raise event for prisoner processing.
-      return savedPrisoner.changeLogs.firstOrNull { it.changeType == ChangeLogType.BATCH_PROCESS && it.changeTimestamp.toLocalDate() == LocalDate.now() }
+      return changeLogService.findFirstByPrisonerIdAndChangeTypeOrderByCreatedTimestampDesc(savedPrisoner.prisonerId, ChangeLogType.BATCH_PROCESS)
     } catch (e: Exception) {
       // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
       // Instead, it should go onto the DLQ.

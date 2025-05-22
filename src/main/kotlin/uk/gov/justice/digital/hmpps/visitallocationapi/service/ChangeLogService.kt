@@ -100,4 +100,6 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
 
     return prisonerChangeLogs
   }
+
+  fun findFirstByPrisonerIdAndChangeTypeOrderByCreatedTimestampDesc(prisonerId: String, changeLogType: ChangeLogType): ChangeLog? = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, changeLogType)
 }

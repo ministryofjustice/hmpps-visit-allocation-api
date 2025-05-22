@@ -18,7 +18,7 @@ class VisitSchedulerMockServer : WireMockServer(8097) {
       .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 
     stubFor(
-      get("visits/$visitReference")
+      get("/visits/$visitReference")
         .willReturn(
           if (visit == null) {
             if (httpStatus != null) {

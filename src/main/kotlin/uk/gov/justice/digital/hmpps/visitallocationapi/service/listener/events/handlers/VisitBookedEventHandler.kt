@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.VisitBookedInfo
 
@@ -18,6 +19,7 @@ class VisitBookedEventHandler(
   private val visitSchedulerClient: VisitSchedulerClient,
   private val prisonerSearchClient: PrisonerSearchClient,
   private val processPrisonerService: ProcessPrisonerService,
+  private val snsService: SnsService,
 ) : DomainEventHandler {
 
   companion object {
@@ -36,7 +38,10 @@ class VisitBookedEventHandler(
       LOG.info("Prison ${visit.prisonCode} is enabled for DPS, processing event")
       val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
       if (prisoner.convictedStatus == CONVICTED) {
-        processPrisonerService.processPrisonerVisitOrderUsage(visit)
+        val changeLog = processPrisonerService.processPrisonerVisitOrderUsage(visit)
+        if (changeLog != null) {
+          snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+        }
       } else {
         LOG.info("Prisoner ${visit.prisonerId} is on Remand, no processing needed")
       }
