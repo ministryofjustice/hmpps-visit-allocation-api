@@ -27,6 +27,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.Hmpp
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.VisitSchedulerMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -57,6 +58,7 @@ import java.time.LocalDate
   PrisonerSearchMockExtension::class,
   IncentivesMockExtension::class,
   PrisonApiMockExtension::class,
+  VisitSchedulerMockExtension::class,
 )
 abstract class EventsIntegrationTestBase {
   companion object {
