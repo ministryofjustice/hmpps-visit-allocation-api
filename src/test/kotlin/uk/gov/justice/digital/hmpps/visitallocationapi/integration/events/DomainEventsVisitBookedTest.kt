@@ -69,9 +69,9 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     // When
     awsSnsClient.publish(publishRequest).get()
 
-    // Then
-    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
+    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderUsage(any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationUsedByVisit(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
@@ -126,9 +126,9 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     // When
     awsSnsClient.publish(publishRequest).get()
 
-    // Then
-    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
+    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderUsage(any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationUsedByVisit(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
@@ -182,9 +182,9 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     // When
     awsSnsClient.publish(publishRequest).get()
 
-    // Then
-    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
+    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderUsage(any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationUsedByVisit(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
@@ -306,8 +306,6 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     val visitReference = "ab-cd-ef-gh"
     val prisonId = "HEI"
     val prisonerId = "AA123456"
-
-    val visit = createVisitDto(visitReference, prisonerId, prisonId)
 
     val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
     dpsPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, dpsPrisoner))
