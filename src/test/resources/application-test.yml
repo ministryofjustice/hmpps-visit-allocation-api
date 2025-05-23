@@ -21,15 +21,19 @@ hmpps-auth:
 
 prisoner:
   search:
-    url: http://localhost:8094
+    url: "http://localhost:8094"
 
 incentives:
   api:
-    url: http://localhost:8095
+    url: "http://localhost:8095"
 
 prison:
   api:
     url: "http://localhost:8096"
+
+visit-scheduler:
+  api:
+    url: "http://localhost:8097"
 
 hmpps:
   sqs:

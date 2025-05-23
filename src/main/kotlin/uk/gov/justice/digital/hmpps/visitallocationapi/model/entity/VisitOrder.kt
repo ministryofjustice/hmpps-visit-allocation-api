@@ -36,6 +36,9 @@ data class VisitOrder(
   @Column(nullable = false)
   var expiryDate: LocalDate? = null,
 
+  @Column(nullable = true)
+  var visitReference: String? = null,
+
   @Column(name = "prisoner_id", nullable = false)
   val prisonerId: String,
 

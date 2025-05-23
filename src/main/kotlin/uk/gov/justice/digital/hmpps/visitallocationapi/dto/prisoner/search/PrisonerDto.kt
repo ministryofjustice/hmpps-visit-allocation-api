@@ -16,4 +16,7 @@ data class PrisonerDto(
 
   @Schema(description = "Last prison ID of the prisoner", example = "IN")
   val lastPrisonId: String,
+
+  @Schema(description = "Convicted Status", example = "Convicted", allowableValues = ["Convicted", "Remand"])
+  val convictedStatus: String? = null,
 )

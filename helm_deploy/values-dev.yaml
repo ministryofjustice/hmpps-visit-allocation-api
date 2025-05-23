@@ -13,6 +13,7 @@ generic-service:
     PRISONER_SEARCH_URL: "https://prisoner-search-dev.prison.service.justice.gov.uk"
     INCENTIVES_API_URL: "https://incentives-api-dev.hmpps.service.justice.gov.uk"
     PRISON_API_URL: "https://prison-api-dev.prison.service.justice.gov.uk"
+    VISIT-SCHEDULER_API_URL: "https://visit-scheduler-dev.prison.service.justice.gov.uk"
     SQS_DOMAIN_EVENT_PROCESSING_ENABLED: true
     FEATURE_EVENTS_SNS_ENABLED: true
 
