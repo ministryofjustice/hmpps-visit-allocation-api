@@ -1,0 +1,6 @@
+BEGIN;
+
+ALTER TABLE change_log
+    ALTER COLUMN change_type TYPE VARCHAR(50);
+
+COMMIT;

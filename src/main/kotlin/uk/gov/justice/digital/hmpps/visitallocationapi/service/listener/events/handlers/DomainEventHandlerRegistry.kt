@@ -7,6 +7,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType.PRI
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType.PRISONER_RECEIVED_EVENT_TYPE
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType.PRISONER_RELEASED_EVENT_TYPE
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType.VISIT_BOOKED_EVENT_TYPE
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType.VISIT_CANCELLED_EVENT_TYPE
 
 @Component
 class DomainEventHandlerRegistry(
@@ -16,6 +17,7 @@ class DomainEventHandlerRegistry(
   prisonerMergedHandler: PrisonerMergedEventHandler,
   prisonerBookingMovedHandler: PrisonerBookingMovedEventHandler,
   visitBookedEventHandler: VisitBookedEventHandler,
+  visitCancelledEventHandler: VisitCancelledEventHandler,
 ) {
   private val handlers: Map<String, DomainEventHandler> = mapOf(
     CONVICTION_STATUS_UPDATED_EVENT_TYPE.value to convictionStatusChangedHandler,
@@ -24,6 +26,7 @@ class DomainEventHandlerRegistry(
     PRISONER_MERGED_EVENT_TYPE.value to prisonerMergedHandler,
     PRISONER_BOOKING_MOVED_EVENT_TYPE.value to prisonerBookingMovedHandler,
     VISIT_BOOKED_EVENT_TYPE.value to visitBookedEventHandler,
+    VISIT_CANCELLED_EVENT_TYPE.value to visitCancelledEventHandler,
   )
 
   fun getHandler(eventType: String): DomainEventHandler? = handlers[eventType]

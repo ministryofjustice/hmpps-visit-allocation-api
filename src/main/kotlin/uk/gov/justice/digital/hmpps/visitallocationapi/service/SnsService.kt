@@ -29,7 +29,7 @@ class SnsService(
     const val EVENT_ZONE_ID = "Europe/London"
     const val EVENT_PRISON_VISIT_VERSION = 1
     const val EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED = "prison-visit-allocation.adjustment.created"
-    const val EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED_DESC = "Prisoner balance adjusted via nightly allocation-api batch job"
+    const val EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED_DESC = "Prisoner balance adjusted by hmpps-visit-allocation-api"
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 

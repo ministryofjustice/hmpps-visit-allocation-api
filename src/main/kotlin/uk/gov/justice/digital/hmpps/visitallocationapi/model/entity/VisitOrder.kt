@@ -31,7 +31,7 @@ data class VisitOrder(
   var status: VisitOrderStatus,
 
   @Column(nullable = false)
-  val createdTimestamp: LocalDateTime = LocalDateTime.now(),
+  var createdTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
   var expiryDate: LocalDate? = null,

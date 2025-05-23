@@ -21,6 +21,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDeta
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.temporal.TemporalAdjusters
 
 @Service
 class ProcessPrisonerService(
@@ -83,6 +85,49 @@ class ProcessPrisonerService(
     )
 
     return changeLogService.findFirstByPrisonerIdAndChangeTypeOrderByCreatedTimestampDesc(visit.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
+  }
+
+  @Transactional
+  fun processPrisonerVisitOrderRefund(visit: VisitDto): ChangeLog? {
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
+
+    // Find the VO used by the visit.
+    val voUsedForVisit: VisitOrder? = dpsPrisonerDetails.visitOrders.firstOrNull { it.visitReference == visit.reference }
+
+    if (voUsedForVisit != null) {
+      voUsedForVisit.status = VisitOrderStatus.AVAILABLE
+      voUsedForVisit.visitReference = null
+
+      // If it's a PVO, we also set the created date to the 1st of the month, to avoid instant expiry scenarios.
+      if (voUsedForVisit.type == VisitOrderType.PVO) {
+        voUsedForVisit.createdTimestamp = LocalDateTime.now().with(TemporalAdjusters.firstDayOfMonth()).with(LocalTime.MIN)
+      }
+    } else {
+      // If none are found, find the negative VO used for the visit, and remove it, as it was never used.
+      val negativeVoUsedForVisit: NegativeVisitOrder? = dpsPrisonerDetails.negativeVisitOrders.firstOrNull { it.visitReference == visit.reference }
+      if (negativeVoUsedForVisit != null) {
+        dpsPrisonerDetails.negativeVisitOrders.remove(negativeVoUsedForVisit)
+      } else {
+        LOG.error("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on either visit_order or negative_visit_order balances")
+        throw IllegalStateException("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on either visit_order or negative_visit_order balances")
+      }
+    }
+
+    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference))
+
+    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+
+    telemetryClient.trackEvent(
+      "allocation-api-vo-refunded-by-visit-cancelled",
+      mapOf(
+        "visitReference" to visit.reference,
+        "prisonerId" to visit.prisonerId,
+      ),
+      null,
+    )
+
+    return changeLogService.findFirstByPrisonerIdAndChangeTypeOrderByCreatedTimestampDesc(visit.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
