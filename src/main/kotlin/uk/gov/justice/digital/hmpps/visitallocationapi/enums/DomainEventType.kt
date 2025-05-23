@@ -8,4 +8,5 @@ enum class DomainEventType(val value: String) {
   PRISONER_MERGED_EVENT_TYPE("prison-offender-events.prisoner.merged"),
   PRISONER_BOOKING_MOVED_EVENT_TYPE("prison-offender-events.prisoner.booking.moved"),
   VISIT_BOOKED_EVENT_TYPE("prison-visit.booked"),
+  VISIT_CANCELLED_EVENT_TYPE("prison-visit.cancelled"),
 }
