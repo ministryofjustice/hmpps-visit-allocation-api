@@ -12,6 +12,10 @@ spec:
     spec:
       template:
         spec:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: allocate-visit-orders-job
               image: ghcr.io/ministryofjustice/hmpps-devops-tools
@@ -19,4 +23,11 @@ spec:
                 - /bin/sh
                 - -c
                 - curl -XPOST http://hmpps-visit-allocation-api/visits/allocation/job/start
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                seccompProfile:
+                  type: RuntimeDefault
           restartPolicy: Never
