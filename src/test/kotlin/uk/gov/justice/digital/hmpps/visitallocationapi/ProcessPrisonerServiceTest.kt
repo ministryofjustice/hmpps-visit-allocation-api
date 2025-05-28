@@ -297,6 +297,45 @@ class ProcessPrisonerServiceTest {
     verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
   }
 
+  // Prisoner VO Refund By Visit Cancelled \\
+
+  /**
+   * Scenario 1: An event comes in to refund a VO as the visit has been cancelled.
+   */
+  @Test
+  fun `Prisoner VO refund - Given a prisoner with a balance of 2 PVO and 1 PVO, when processPrisonerVisitOrderRefund is called, PVO is refunded`() {
+    // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
+    val visitReference = "ab-cd-ef-gh"
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    dpsPrisoner.visitOrders = mutableListOf(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisonerId = dpsPrisoner.prisonerId, prisoner = dpsPrisoner))
+
+    val changeLog = ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "allocated to $visitReference",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
+
+    // WHEN
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)).thenReturn(changeLog)
+
+    // Begin test
+    processPrisonerService.processPrisonerVisitOrderRefund(visit)
+
+    // THEN
+    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
+    verify(changeLogService).createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)
+    verify(telemetryClient).trackEvent(eq("allocation-api-vo-refunded-by-visit-cancelled"), anyMap(), eq(null))
+    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+  }
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)
 
   private fun createVisitDto(reference: String, prisonerId: String, prisonCode: String): VisitDto = VisitDto(reference, prisonerId, prisonCode)
