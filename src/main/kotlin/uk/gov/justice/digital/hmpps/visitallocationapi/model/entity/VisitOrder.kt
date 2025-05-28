@@ -31,10 +31,13 @@ data class VisitOrder(
   var status: VisitOrderStatus,
 
   @Column(nullable = false)
-  val createdTimestamp: LocalDateTime = LocalDateTime.now(),
+  var createdTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
   var expiryDate: LocalDate? = null,
+
+  @Column(nullable = true)
+  var visitReference: String? = null,
 
   @Column(name = "prisoner_id", nullable = false)
   val prisonerId: String,
