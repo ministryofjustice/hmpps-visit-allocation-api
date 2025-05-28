@@ -37,7 +37,7 @@ class PrisonerRetryService(
     log.info("handle prisoner - $prisonerId on retry queue")
     val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
     val allIncentiveLevels = getIncentiveLevelsForPrison(prisonId = prisoner.prisonId)
-    val changeLog = processPrisonerService.processPrisoner(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
+    val changeLog = processPrisonerService.processPrisonerAllocation(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
     if (changeLog != null) {
       snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
     }

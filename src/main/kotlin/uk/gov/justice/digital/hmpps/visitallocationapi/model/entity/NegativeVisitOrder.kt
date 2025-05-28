@@ -36,6 +36,9 @@ data class NegativeVisitOrder(
   @Column(nullable = false)
   var repaidDate: LocalDate? = null,
 
+  @Column(nullable = true)
+  var visitReference: String? = null,
+
   @Column(name = "prisoner_id", nullable = false)
   val prisonerId: String,
 

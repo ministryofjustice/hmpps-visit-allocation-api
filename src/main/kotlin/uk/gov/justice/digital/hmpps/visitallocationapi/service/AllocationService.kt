@@ -32,7 +32,7 @@ class AllocationService(
     var totalConvictedPrisonersFailedOrSkipped = 0
 
     for (prisoner in allPrisoners) {
-      val changeLog = processPrisonerService.processPrisoner(
+      val changeLog = processPrisonerService.processPrisonerAllocation(
         prisonerId = prisoner.prisonerId,
         jobReference = jobReference,
         allPrisonIncentiveAmounts = allIncentiveLevels,
