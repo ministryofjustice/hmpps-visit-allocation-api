@@ -127,7 +127,7 @@ class ProcessPrisonerService(
       null,
     )
 
-    return changeLogService.findFirstByPrisonerIdAndChangeTypeOrderByCreatedTimestampDesc(visit.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+    return changeLogService.getChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)

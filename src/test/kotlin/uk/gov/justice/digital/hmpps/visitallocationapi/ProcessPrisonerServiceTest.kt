@@ -334,7 +334,7 @@ class ProcessPrisonerServiceTest {
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)
     verify(telemetryClient).trackEvent(eq("allocation-api-vo-refunded-by-visit-cancelled"), anyMap(), eq(null))
-    verify(changeLogService).findFirstByPrisonerIdAndChangeTypeOrderByCreatedTimestampDesc(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)
 
