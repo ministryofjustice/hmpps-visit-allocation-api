@@ -21,7 +21,7 @@ incentives:
 
 prison:
   api:
-    url: "https://visit-scheduler-dev.prison.service.justice.gov.uk"
+    url: "https://prison-api-dev.prison.service.justice.gov.uk"
 
 visit-scheduler:
   api:
