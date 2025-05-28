@@ -294,7 +294,7 @@ class ProcessPrisonerServiceTest {
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationUsedByVisit(dpsPrisoner, visitReference)
     verify(telemetryClient).trackEvent(eq("allocation-api-vo-consumed-by-visit"), anyMap(), eq(null))
-    verify(changeLogService).findFirstByPrisonerIdAndChangeTypeOrderByCreatedTimestampDesc(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
+    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
   }
 
   // Prisoner VO Refund By Visit Cancelled \\
