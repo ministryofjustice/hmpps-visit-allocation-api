@@ -64,13 +64,41 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
   }
 
   fun createLogBatchProcess(dpsPrisoner: PrisonerDetails): ChangeLog {
-    LOG.info("Logging sync to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogBatchProcess complete")
+    LOG.info("Logging sync to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogBatchProcess")
     return ChangeLog(
       prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.BATCH_PROCESS,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",
       comment = "changed via nightly batch process",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
+  }
+
+  fun createLogAllocationUsedByVisit(dpsPrisoner: PrisonerDetails, visitReference: String): ChangeLog {
+    LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogAllocationUsedByVisit")
+    return ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.ALLOCATION_USED_BY_VISIT,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "allocated to $visitReference",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
+  }
+
+  fun createLogAllocationRefundedByVisitCancelled(dpsPrisoner: PrisonerDetails, visitReference: String): ChangeLog {
+    LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogAllocationRefundedByVisitCancelled")
+    return ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "allocated refunded as $visitReference cancelled",
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
@@ -86,4 +114,6 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
 
     return prisonerChangeLogs
   }
+
+  fun getChangeLogForPrisonerByType(prisonerId: String, changeLogType: ChangeLogType): ChangeLog? = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, changeLogType)
 }

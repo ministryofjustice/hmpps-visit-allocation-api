@@ -1,22 +1,29 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi
 
+import com.microsoft.applicationinsights.TelemetryClient
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
+import org.mockito.Mockito.anyMap
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
@@ -41,6 +48,9 @@ class ProcessPrisonerServiceTest {
   @Mock
   private lateinit var changeLogService: ChangeLogService
 
+  @Mock
+  private lateinit var telemetryClient: TelemetryClient
+
   private lateinit var processPrisonerService: ProcessPrisonerService
 
   @BeforeEach
@@ -51,6 +61,7 @@ class ProcessPrisonerServiceTest {
       prisonerDetailsService,
       prisonerRetryService,
       changeLogService,
+      telemetryClient,
       26,
     )
   }
@@ -86,7 +97,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -127,7 +138,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -167,7 +178,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -197,7 +208,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -238,7 +249,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisoner(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -246,5 +257,86 @@ class ProcessPrisonerServiceTest {
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
+  // Prisoner VO Usage By Visit \\
+
+  /**
+   * Scenario 1: An event comes in to consume a VO and map to a visit.
+   */
+  @Test
+  fun `Prisoner VO consumption - Given a prisoner with a balance of 2 PVO and 1 PVO, when processPrisonerVisitOrderUsage is called, then PVO is used`() {
+    // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
+    val visitReference = "ab-cd-ef-gh"
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    dpsPrisoner.visitOrders = mutableListOf(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, prisonerId = dpsPrisoner.prisonerId, prisoner = dpsPrisoner))
+
+    val changeLog = ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.ALLOCATION_USED_BY_VISIT,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "allocated to $visitReference",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
+
+    // WHEN
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(changeLogService.createLogAllocationUsedByVisit(dpsPrisoner, visitReference)).thenReturn(changeLog)
+
+    // Begin test
+    processPrisonerService.processPrisonerVisitOrderUsage(visit)
+
+    // THEN
+    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
+    verify(changeLogService).createLogAllocationUsedByVisit(dpsPrisoner, visitReference)
+    verify(telemetryClient).trackEvent(eq("allocation-api-vo-consumed-by-visit"), anyMap(), eq(null))
+    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
+  }
+
+  // Prisoner VO Refund By Visit Cancelled \\
+
+  /**
+   * Scenario 1: An event comes in to refund a VO as the visit has been cancelled.
+   */
+  @Test
+  fun `Prisoner VO refund - Given a prisoner with a balance of 2 PVO and 1 PVO, when processPrisonerVisitOrderRefund is called, PVO is refunded`() {
+    // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
+    val visitReference = "ab-cd-ef-gh"
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    dpsPrisoner.visitOrders = mutableListOf(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisonerId = dpsPrisoner.prisonerId, prisoner = dpsPrisoner))
+
+    val changeLog = ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "allocated to $visitReference",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
+
+    // WHEN
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)).thenReturn(changeLog)
+
+    // Begin test
+    processPrisonerService.processPrisonerVisitOrderRefund(visit)
+
+    // THEN
+    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
+    verify(changeLogService).createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)
+    verify(telemetryClient).trackEvent(eq("allocation-api-vo-refunded-by-visit-cancelled"), anyMap(), eq(null))
+    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+  }
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)
+
+  private fun createVisitDto(reference: String, prisonerId: String, prisonCode: String): VisitDto = VisitDto(reference, prisonerId, prisonCode)
 }

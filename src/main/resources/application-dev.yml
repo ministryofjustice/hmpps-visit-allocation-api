@@ -23,6 +23,10 @@ prison:
   api:
     url: "https://prison-api-dev.prison.service.justice.gov.uk"
 
+visit-scheduler:
+  api:
+    url: "https://visit-scheduler-dev.prison.service.justice.gov.uk"
+
 hmpps:
   sqs:
     enabled: true
