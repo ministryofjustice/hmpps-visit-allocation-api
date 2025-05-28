@@ -27,7 +27,6 @@ import kotlin.math.abs
 @Transactional
 @Service
 class NomisSyncService(
-  private val balanceService: BalanceService,
   private val prisonerDetailsService: PrisonerDetailsService,
   private val telemetryService: TelemetryClientService,
   private val changeLogService: ChangeLogService,
@@ -44,12 +43,12 @@ class NomisSyncService(
 
     validateSyncRequest(syncDto)
 
-    var prisonerBalance = balanceService.getPrisonerBalance(syncDto.prisonerId)
-    val dpsPrisoner: PrisonerDetails
-    if (prisonerBalance != null) {
+    var dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)
+    val prisonerBalance: PrisonerBalanceDto
+    if (dpsPrisoner != null) {
       // Only do a balance comparison if prisoner exists.
-      compareBalanceBeforeSync(syncDto, prisonerBalance)
-      dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)!!
+      compareBalanceBeforeSync(syncDto, dpsPrisoner.getBalance())
+      prisonerBalance = dpsPrisoner.getBalance()
     } else {
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
       dpsPrisoner = prisonerDetailsService.createPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
@@ -108,15 +107,15 @@ class NomisSyncService(
       }
     }
 
-    var prisonerDpsBalance = balanceService.getPrisonerBalance(prisonerId)
-    val dpsPrisoner: PrisonerDetails
-    if (prisonerDpsBalance == null) {
+    var dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)
+    val prisonerDpsBalance: PrisonerBalanceDto
+    if (dpsPrisoner == null) {
       val lastVoAllocatedDate = prisonerNomisBalance.latestIepAdjustDate ?: LocalDate.now()
       // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
       dpsPrisoner = prisonerDetailsService.createPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
       prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
     } else {
-      dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)!!
+      prisonerDpsBalance = dpsPrisoner.getBalance()
     }
 
     val voBalanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance)
