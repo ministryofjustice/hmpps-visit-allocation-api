@@ -19,7 +19,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
   implementation("io.opentelemetry:opentelemetry-extension-kotlin")
 
-  runtimeOnly("org.postgresql:postgresql:42.7.5")
+  runtimeOnly("org.postgresql:postgresql:42.7.6")
   runtimeOnly("org.flywaydb:flyway-core")
   runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
