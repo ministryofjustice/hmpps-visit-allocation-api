@@ -19,89 +19,89 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepos
 class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
+    const val CHANGE_LOG_SYSTEM_USER_ID = "SYSTEM"
   }
 
   fun createLogMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): ChangeLog {
     LOG.info("Logging migration to change_log table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
-    return ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
-      changeType = ChangeLogType.MIGRATION,
-      changeSource = ChangeLogSource.SYSTEM,
-      userId = "SYSTEM",
+
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.MIGRATION,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
       comment = "migrated prisoner from nomis to dps",
-      prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 
   fun createLogSyncAdjustmentChange(syncDto: VisitAllocationPrisonerSyncDto, dpsPrisoner: PrisonerDetails): ChangeLog {
     LOG.info("Logging sync to change_log table for prisoner ${syncDto.prisonerId}, sync - $syncDto")
-    return ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
-      changeType = ChangeLogType.SYNC,
-      changeSource = ChangeLogSource.SYSTEM,
-      userId = "SYSTEM",
+
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.SYNC,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
       comment = "synced prisoner with adjustment code ${syncDto.adjustmentReasonCode.name}",
-      prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 
   fun createLogSyncEventChange(dpsPrisoner: PrisonerDetails, domainEventType: DomainEventType): ChangeLog {
     LOG.info("Logging sync to change_log table for prisoner ${dpsPrisoner.prisonerId}, event - ${domainEventType.value}")
-    return ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
-      changeType = ChangeLogType.SYNC,
-      changeSource = ChangeLogSource.SYSTEM,
-      userId = "SYSTEM",
+
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.SYNC,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
       comment = "synced prisoner with domain event ${domainEventType.value}",
-      prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 
   fun createLogBatchProcess(dpsPrisoner: PrisonerDetails): ChangeLog {
     LOG.info("Logging sync to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogBatchProcess")
-    return ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
-      changeType = ChangeLogType.BATCH_PROCESS,
-      changeSource = ChangeLogSource.SYSTEM,
-      userId = "SYSTEM",
+
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.BATCH_PROCESS,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
       comment = "changed via nightly batch process",
-      prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 
   fun createLogAllocationUsedByVisit(dpsPrisoner: PrisonerDetails, visitReference: String): ChangeLog {
     LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogAllocationUsedByVisit")
-    return ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
-      changeType = ChangeLogType.ALLOCATION_USED_BY_VISIT,
-      changeSource = ChangeLogSource.SYSTEM,
-      userId = "SYSTEM",
+
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.ALLOCATION_USED_BY_VISIT,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
       comment = "allocated to $visitReference",
-      prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 
   fun createLogAllocationRefundedByVisitCancelled(dpsPrisoner: PrisonerDetails, visitReference: String): ChangeLog {
     LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogAllocationRefundedByVisitCancelled")
-    return ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
-      changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
-      changeSource = ChangeLogSource.SYSTEM,
-      userId = "SYSTEM",
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
       comment = "allocated refunded as $visitReference cancelled",
-      prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
+  }
+
+  fun createLogAllocationForPrisonerMerge(dpsPrisoner: PrisonerDetails, newPrisonerId: String, removedPrisonerId: String): ChangeLog {
+    LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogAllocationForPrisonerMerge")
+
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
+      comment = "allocation added as a result of prisoner $removedPrisonerId being merged into $newPrisonerId",
     )
   }
 
@@ -116,4 +116,21 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
   }
 
   fun getChangeLogForPrisonerByType(prisonerId: String, changeLogType: ChangeLogType): ChangeLog? = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, changeLogType)
+
+  private fun createChangeLog(
+    dpsPrisoner: PrisonerDetails,
+    changeLogType: ChangeLogType,
+    changeLogSource: ChangeLogSource,
+    userId: String,
+    comment: String,
+  ) = ChangeLog(
+    prisonerId = dpsPrisoner.prisonerId,
+    changeType = changeLogType,
+    changeSource = changeLogSource,
+    userId = userId,
+    comment = comment,
+    prisoner = dpsPrisoner,
+    visitOrderBalance = dpsPrisoner.getVoBalance(),
+    privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+  )
 }

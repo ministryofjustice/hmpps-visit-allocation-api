@@ -6,6 +6,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerMergedInfo
 
@@ -15,6 +16,7 @@ class PrisonerMergedEventHandler(
   private val prisonService: PrisonService,
   private val prisonerSearchClient: PrisonerSearchClient,
   private val nomisSyncService: NomisSyncService,
+  private val processPrisonerService: ProcessPrisonerService,
 ) : DomainEventHandler {
 
   private val processor = StandardDomainEventHandler(
@@ -38,7 +40,7 @@ class PrisonerMergedEventHandler(
   }
 
   private fun processDps(info: PrisonerMergedInfo) {
-    // TODO Implement.
+    processPrisonerService.processPrisonerMerge(info.prisonerId, info.removedPrisonerId)
   }
 
   private fun processNomis(info: PrisonerMergedInfo) {

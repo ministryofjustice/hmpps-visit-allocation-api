@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
-import com.microsoft.applicationinsights.TelemetryClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -13,6 +12,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonInce
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
@@ -31,8 +31,9 @@ class ProcessPrisonerService(
   private val prisonerDetailsService: PrisonerDetailsService,
   private val prisonerRetryService: PrisonerRetryService,
   private val changeLogService: ChangeLogService,
-  private val telemetryClient: TelemetryClient,
+  private val telemetryClientService: TelemetryClientService,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
+
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -74,14 +75,13 @@ class ProcessPrisonerService(
 
     prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
 
-    telemetryClient.trackEvent(
-      "allocation-api-vo-consumed-by-visit",
+    telemetryClientService.trackEvent(
+      TelemetryEventType.VO_CONSUMED_BY_VISIT,
       mapOf(
         "visitReference" to visit.reference,
         "prisonerId" to visit.prisonerId,
         "voType" to (selected?.type?.name ?: "vo"),
       ),
-      null,
     )
 
     return changeLogService.getChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
@@ -118,16 +118,73 @@ class ProcessPrisonerService(
 
     prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
 
-    telemetryClient.trackEvent(
-      "allocation-api-vo-refunded-by-visit-cancelled",
+    telemetryClientService.trackEvent(
+      TelemetryEventType.VO_REFUNDED_AFTER_VISIT_CANCELLATION,
       mapOf(
         "visitReference" to visit.reference,
         "prisonerId" to visit.prisonerId,
       ),
-      null,
     )
 
     return changeLogService.getChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+  }
+
+  @Transactional
+  fun processPrisonerMerge(newPrisonerId: String, removedPrisonerId: String): ChangeLog? {
+    LOG.info("processPrisonerMerge with newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
+    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(newPrisonerId, LocalDate.now().minusDays(14), null)
+    val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId)
+    var visitOrdersToBeCreated = 0
+    var privilegedVisitOrdersToBeCreated = 0
+    var changeLog: ChangeLog? = null
+
+    removedPrisonerDetails?.let {
+      // create VOs - if the number of VOs on the new prisoner is less than the removed prisoner
+      if (newPrisonerDetails.getVoBalance() < removedPrisonerDetails.getVoBalance()) {
+        visitOrdersToBeCreated = removedPrisonerDetails.getVoBalance() - newPrisonerDetails.getVoBalance()
+        LOG.info("Creating $visitOrdersToBeCreated new VOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
+        repeat(visitOrdersToBeCreated) {
+          val lastVoAllocatedDate = newPrisonerDetails.lastVoAllocatedDate
+          createVisitOrder(newPrisonerDetails, VisitOrderType.VO, createdTimestamp = lastVoAllocatedDate.atStartOfDay())
+        }
+      }
+
+      // create PVOs - if the number of VOs on the new prisoner is less than the removed prisoner
+      if (newPrisonerDetails.getPvoBalance() < removedPrisonerDetails.getPvoBalance()) {
+        privilegedVisitOrdersToBeCreated = removedPrisonerDetails.getPvoBalance() - newPrisonerDetails.getPvoBalance()
+        LOG.info("Creating $privilegedVisitOrdersToBeCreated new PVOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
+        repeat(privilegedVisitOrdersToBeCreated) {
+          val createdTimestamp = newPrisonerDetails.lastPvoAllocatedDate?.atStartOfDay() ?: LocalDateTime.now()
+          createVisitOrder(newPrisonerDetails, VisitOrderType.PVO, createdTimestamp = createdTimestamp)
+        }
+      }
+    }
+
+    if (visitOrdersToBeCreated > 0 || privilegedVisitOrdersToBeCreated > 0) {
+      // add a changelog entry if new VO / PVOs have been added
+      changeLog = changeLogService.createLogAllocationForPrisonerMerge(
+        dpsPrisoner = newPrisonerDetails,
+        newPrisonerId = newPrisonerId,
+        removedPrisonerId = removedPrisonerId,
+      )
+      newPrisonerDetails.changeLogs.add(changeLog)
+
+      prisonerDetailsService.updatePrisonerDetails(newPrisonerDetails)
+      telemetryClientService.trackEvent(
+        TelemetryEventType.VO_ADDED_POST_MERGE,
+        mapOf(
+          "newPrisonerId" to newPrisonerId,
+          "removedPrisonerId" to removedPrisonerId,
+          "voAddedPostMerge" to visitOrdersToBeCreated.toString(),
+          "pvoAddedPostMerge" to privilegedVisitOrdersToBeCreated.toString(),
+        ),
+      )
+    } else {
+      LOG.info("No VOs / PVOs were added post merge of newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId\"")
+    }
+
+    return changeLog
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -254,11 +311,15 @@ class ProcessPrisonerService(
     }
   }
 
-  private fun createVisitOrder(prisoner: PrisonerDetails, type: VisitOrderType): VisitOrder = VisitOrder(
+  private fun createVisitOrder(
+    prisoner: PrisonerDetails,
+    type: VisitOrderType,
+    createdTimestamp: LocalDateTime = LocalDateTime.now(),
+  ): VisitOrder = VisitOrder(
     prisonerId = prisoner.prisonerId,
     type = type,
     status = VisitOrderStatus.AVAILABLE,
-    createdTimestamp = LocalDateTime.now(),
+    createdTimestamp = createdTimestamp,
     expiryDate = null,
     prisoner = prisoner,
   )
