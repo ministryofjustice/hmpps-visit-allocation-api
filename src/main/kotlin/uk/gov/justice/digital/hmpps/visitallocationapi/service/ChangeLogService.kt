@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocation
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
@@ -105,6 +106,17 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
     )
   }
 
+  fun createLogPrisonerBalanceReset(dpsPrisoner: PrisonerDetails, reason: PrisonerReceivedReasonType): ChangeLog {
+    LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogPrisonerBalanceReset")
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.PRISONER_BALANCE_RESET,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
+      comment = "prisoner balance reset for reason ${reason.name}",
+    )
+  }
+
   fun findAllChangeLogsForPrisoner(prisonerId: String): List<ChangeLog> {
     LOG.info("ChangeLogService - findAllChangeLogsForPrisoner called with prisonerId - $prisonerId")
     val prisonerChangeLogs = changeLogRepository.findAllByPrisonerId(prisonerId)
@@ -115,7 +127,7 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
     return prisonerChangeLogs
   }
 
-  fun getChangeLogForPrisonerByType(prisonerId: String, changeLogType: ChangeLogType): ChangeLog? = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, changeLogType)
+  fun findChangeLogForPrisonerByType(prisonerId: String, changeLogType: ChangeLogType): ChangeLog? = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, changeLogType)
 
   private fun createChangeLog(
     dpsPrisoner: PrisonerDetails,

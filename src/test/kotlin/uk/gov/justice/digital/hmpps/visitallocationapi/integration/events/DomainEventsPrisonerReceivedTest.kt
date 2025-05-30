@@ -11,6 +11,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -25,7 +26,7 @@ import java.time.LocalDate
 class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
   @Test
-  fun `when domain event prisoner received is found, then prisoner balance is synced`() {
+  fun `when domain event prisoner received is found, then prisoner balance is synced for nomis prison`() {
     // Given
     val prisonerId = "AA123456"
     val prisonId = "HEI"
@@ -37,7 +38,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
-      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.TRANSFERRED),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 
@@ -58,6 +59,47 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(5)
+  }
+
+  @Test
+  fun `when domain event prisoner received is found with supported reset reason, then prisoner balance is reset for dps prison`() {
+    // Given
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, prisoner))
+    prisonerDetailsRepository.save(prisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerReceivedResetBalance(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogPrisonerBalanceReset(any(), any()) }
+    await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(0)
+
+    val changeLogs = changeLogRepository.findAll()
+    assertThat(changeLogs.size).isEqualTo(1)
+    assertThat(changeLogs.first().changeType).isEqualTo(ChangeLogType.PRISONER_BALANCE_RESET)
   }
 
   @Test
