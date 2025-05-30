@@ -9,5 +9,5 @@ data class PrisonerConvictionStatusChangedInfo(
   val prisonerId: String,
 
   @NotBlank
-  val convictedStatus: String,
+  val convictedStatus: String? = null,
 )
