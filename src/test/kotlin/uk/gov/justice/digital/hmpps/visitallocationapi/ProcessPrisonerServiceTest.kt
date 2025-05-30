@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi
 
-import com.microsoft.applicationinsights.TelemetryClient
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -18,6 +17,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIn
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
@@ -28,6 +28,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import java.time.LocalDate
 
 @ExtendWith(MockitoExtension::class)
@@ -49,7 +50,7 @@ class ProcessPrisonerServiceTest {
   private lateinit var changeLogService: ChangeLogService
 
   @Mock
-  private lateinit var telemetryClient: TelemetryClient
+  private lateinit var telemetryClientService: TelemetryClientService
 
   private lateinit var processPrisonerService: ProcessPrisonerService
 
@@ -61,7 +62,7 @@ class ProcessPrisonerServiceTest {
       prisonerDetailsService,
       prisonerRetryService,
       changeLogService,
-      telemetryClient,
+      telemetryClientService,
       26,
     )
   }
@@ -293,7 +294,7 @@ class ProcessPrisonerServiceTest {
     // THEN
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationUsedByVisit(dpsPrisoner, visitReference)
-    verify(telemetryClient).trackEvent(eq("allocation-api-vo-consumed-by-visit"), anyMap(), eq(null))
+    verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_CONSUMED_BY_VISIT), anyMap())
     verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
   }
 
@@ -333,7 +334,7 @@ class ProcessPrisonerServiceTest {
     // THEN
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)
-    verify(telemetryClient).trackEvent(eq("allocation-api-vo-refunded-by-visit-cancelled"), anyMap(), eq(null))
+    verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_REFUNDED_AFTER_VISIT_CANCELLATION), anyMap())
     verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)
