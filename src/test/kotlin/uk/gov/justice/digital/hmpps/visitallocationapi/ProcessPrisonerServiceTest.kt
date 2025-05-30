@@ -295,7 +295,7 @@ class ProcessPrisonerServiceTest {
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationUsedByVisit(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_CONSUMED_BY_VISIT), anyMap())
-    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
+    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
   }
 
   // Prisoner VO Refund By Visit Cancelled \\
@@ -335,7 +335,7 @@ class ProcessPrisonerServiceTest {
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_REFUNDED_AFTER_VISIT_CANCELLATION), anyMap())
-    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)
 
