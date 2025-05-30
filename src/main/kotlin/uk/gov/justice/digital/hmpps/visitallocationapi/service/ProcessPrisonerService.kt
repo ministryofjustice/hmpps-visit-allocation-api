@@ -109,8 +109,8 @@ class ProcessPrisonerService(
       if (negativeVoUsedForVisit != null) {
         dpsPrisonerDetails.negativeVisitOrders.remove(negativeVoUsedForVisit)
       } else {
-        LOG.error("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on either visit_order or negative_visit_order balances")
-        throw IllegalStateException("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on either visit_order or negative_visit_order balances")
+        LOG.warn("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on visit allocation api. Creating VO.")
+        dpsPrisonerDetails.visitOrders.add(createVisitOrder(dpsPrisonerDetails, VisitOrderType.VO))
       }
     }
 

@@ -235,7 +235,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
   }
 
   @Test
-  fun `when domain event visit cancelled is found, no vo associated with visit can be found, then throw exception`() {
+  fun `when domain event visit cancelled is found, no vo associated with visit can be found, then new vo is created for prisoner`() {
     // Given
     val visitReference = "ab-cd-ef-gh"
     val prisonId = "HEI"
@@ -259,9 +259,20 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // When
     awsSnsClient.publish(publishRequest).get()
 
-    // Then
+    // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
+    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
+    await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
-    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(1)
+
+    val changLog = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)!!
+    assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
   }
 
   @Test
