@@ -252,6 +252,14 @@ class ProcessPrisonerService(
 
     prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
 
+    telemetryClientService.trackEvent(
+      TelemetryEventType.VO_PRISONER_BALANCE_RESET,
+      mapOf(
+        "prisonerId" to prisonerId,
+        "reason" to reason.name,
+      ),
+    )
+
     return changeLogService.findChangeLogForPrisonerByType(prisonerId, ChangeLogType.PRISONER_BALANCE_RESET)
   }
 
