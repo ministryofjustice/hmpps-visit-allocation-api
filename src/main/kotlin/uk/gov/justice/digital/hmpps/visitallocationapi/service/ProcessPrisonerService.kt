@@ -133,7 +133,6 @@ class ProcessPrisonerService(
   fun processPrisonerMerge(newPrisonerId: String, removedPrisonerId: String): ChangeLog? {
     var visitOrdersToBeCreated = 0
     var privilegedVisitOrdersToBeCreated = 0
-    var changeLog: ChangeLog? = null
 
     LOG.info("processPrisonerMerge with newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
     val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId) ?: prisonerDetailsService.createPrisonerDetails(newPrisonerId, LocalDate.now().minusDays(14), null)
@@ -162,9 +161,9 @@ class ProcessPrisonerService(
       }
     }
 
-    if (visitOrdersToBeCreated > 0 || privilegedVisitOrdersToBeCreated > 0) {
+    return if (visitOrdersToBeCreated > 0 || privilegedVisitOrdersToBeCreated > 0) {
       // add a changelog entry if new VO / PVOs have been added
-      changeLog = changeLogService.createLogAllocationForPrisonerMerge(
+      val changeLog = changeLogService.createLogAllocationForPrisonerMerge(
         dpsPrisoner = newPrisonerDetails,
         newPrisonerId = newPrisonerId,
         removedPrisonerId = removedPrisonerId,
@@ -181,11 +180,11 @@ class ProcessPrisonerService(
           "pvoAddedPostMerge" to privilegedVisitOrdersToBeCreated.toString(),
         ),
       )
+      changeLogService.getChangeLogForPrisonerByType(newPrisonerId, ChangeLogType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE)
     } else {
       LOG.info("No VOs / PVOs were added post merge of prisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
+      null
     }
-
-    return changeLog
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
