@@ -108,15 +108,12 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
 
   fun createLogPrisonerBalanceReset(dpsPrisoner: PrisonerDetails, reason: PrisonerReceivedReasonType): ChangeLog {
     LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogPrisonerBalanceReset")
-    return ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
-      changeType = ChangeLogType.PRISONER_BALANCE_RESET,
-      changeSource = ChangeLogSource.SYSTEM,
-      userId = "SYSTEM",
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.PRISONER_BALANCE_RESET,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
       comment = "prisoner balance reset for reason ${reason.name}",
-      prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
     )
   }
 
