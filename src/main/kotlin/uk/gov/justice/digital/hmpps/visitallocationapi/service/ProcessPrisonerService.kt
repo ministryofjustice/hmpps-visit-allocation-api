@@ -183,7 +183,7 @@ class ProcessPrisonerService(
           "pvoAddedPostMerge" to privilegedVisitOrdersToBeCreated.toString(),
         ),
       )
-      changeLogService.getChangeLogForPrisonerByType(newPrisonerId, ChangeLogType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE)
+      changeLogService.findChangeLogForPrisonerByType(newPrisonerId, ChangeLogType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE)
     } else {
       LOG.info("No VOs / PVOs were added post merge of prisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
       null
