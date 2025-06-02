@@ -8,6 +8,7 @@ import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
@@ -197,8 +198,8 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     awsSnsClient.publish(publishRequest).get()
 
     // Then
-    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationForPrisonerMerge(any(), any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
@@ -207,6 +208,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // prisoner should end up wth 5 VOs and 8 PVOs
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(5)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(8)
+    verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
   }
 
   @Test
@@ -241,8 +243,8 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     awsSnsClient.publish(publishRequest).get()
 
     // Then
-    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
@@ -251,6 +253,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(2)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(3)
     verify(changeLogService, times(0)).createLogAllocationForPrisonerMerge(any(), any(), any())
+    verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
   }
 
   @Test
@@ -282,8 +285,8 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     awsSnsClient.publish(publishRequest).get()
 
     // Then
-    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationForPrisonerMerge(any(), any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
@@ -292,6 +295,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // prisoner should end up wth 3 VOs and 5 PVOs
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(3)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(5)
+    verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
   }
 
   @Test
@@ -317,8 +321,8 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     awsSnsClient.publish(publishRequest).get()
 
     // Then
-    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
@@ -327,6 +331,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(0)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(0)
     verify(changeLogService, times(0)).createLogAllocationForPrisonerMerge(any(), any(), any())
+    verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
   }
 
   @Test
