@@ -139,10 +139,10 @@ class ProcessPrisonerService(
 
     val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetails(removedPrisonerId)
 
-    removedPrisonerDetails?.let {
-      // create VOs - if the number of VOs on the new prisoner is less than the removed prisoner
-      if (newPrisonerDetails.getVoBalance() < removedPrisonerDetails.getVoBalance()) {
-        visitOrdersToBeCreated = removedPrisonerDetails.getVoBalance() - newPrisonerDetails.getVoBalance()
+    if (removedPrisonerDetails != null) {
+      // create VOs - if the VO balance of the new prisoner is less than the removed prisoner's VO balance
+      visitOrdersToBeCreated = removedPrisonerDetails.getVoBalance() - newPrisonerDetails.getVoBalance()
+      if (visitOrdersToBeCreated > 0) {
         LOG.info("Creating $visitOrdersToBeCreated new VOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
         repeat(visitOrdersToBeCreated) {
           val lastVoAllocatedDate = newPrisonerDetails.lastVoAllocatedDate
@@ -150,15 +150,17 @@ class ProcessPrisonerService(
         }
       }
 
-      // create PVOs - if the number of VOs on the new prisoner is less than the removed prisoner
-      if (newPrisonerDetails.getPvoBalance() < removedPrisonerDetails.getPvoBalance()) {
-        privilegedVisitOrdersToBeCreated = removedPrisonerDetails.getPvoBalance() - newPrisonerDetails.getPvoBalance()
+      // create PVOs - if the PVO balance of the new prisoner is less than the removed prisoner's PVO balance
+      privilegedVisitOrdersToBeCreated = removedPrisonerDetails.getPvoBalance() - newPrisonerDetails.getPvoBalance()
+      if (privilegedVisitOrdersToBeCreated > 0) {
         LOG.info("Creating $privilegedVisitOrdersToBeCreated new PVOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
         repeat(privilegedVisitOrdersToBeCreated) {
           val createdTimestamp = newPrisonerDetails.lastPvoAllocatedDate?.atStartOfDay() ?: LocalDateTime.now()
           newPrisonerDetails.visitOrders.add(createVisitOrder(newPrisonerDetails, VisitOrderType.PVO, createdTimestamp = createdTimestamp))
         }
       }
+    } else {
+      LOG.info("Prisoner ID - $removedPrisonerId, removed as part of the merge does not exist on VO Allocation DB, no processing needed.")
     }
 
     return if (visitOrdersToBeCreated > 0 || privilegedVisitOrdersToBeCreated > 0) {
