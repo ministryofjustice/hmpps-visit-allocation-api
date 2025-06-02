@@ -21,6 +21,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -295,7 +296,7 @@ class ProcessPrisonerServiceTest {
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationUsedByVisit(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_CONSUMED_BY_VISIT), anyMap())
-    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
+    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
   }
 
   // Prisoner VO Refund By Visit Cancelled \\
@@ -335,8 +336,48 @@ class ProcessPrisonerServiceTest {
     verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_REFUNDED_AFTER_VISIT_CANCELLATION), anyMap())
-    verify(changeLogService).getChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
+
+  // Prisoner Reset balance \\
+
+  /**
+   * Scenario 1: An event comes in to reset prisoner balance (prisoner-received event), prisoner balance is reset.
+   */
+  @Test
+  fun `Prisoner balance reset - Given a prisoner with a balance of 2 PVO and 1 PVO, when processPrisonerReceivedResetBalance is called, balance is reset`() {
+    // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
+    val visitReference = "ab-cd-ef-gh"
+    val prisonerId = "AA123456"
+
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    dpsPrisoner.visitOrders = mutableListOf(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisonerId = dpsPrisoner.prisonerId, prisoner = dpsPrisoner))
+
+    val changeLog = ChangeLog(
+      prisonerId = dpsPrisoner.prisonerId,
+      changeType = ChangeLogType.PRISONER_BALANCE_RESET,
+      changeSource = ChangeLogSource.SYSTEM,
+      userId = "SYSTEM",
+      comment = "prisoner balance reset for reason NEW_ADMISSION",
+      prisoner = dpsPrisoner,
+      visitOrderBalance = dpsPrisoner.getVoBalance(),
+      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    )
+
+    // WHEN
+    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(changeLogService.createLogPrisonerBalanceReset(dpsPrisoner, PrisonerReceivedReasonType.NEW_ADMISSION)).thenReturn(changeLog)
+
+    // Begin test
+    processPrisonerService.processPrisonerReceivedResetBalance(prisonerId, PrisonerReceivedReasonType.NEW_ADMISSION)
+
+    // THEN
+    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
+    verify(changeLogService).createLogPrisonerBalanceReset(dpsPrisoner, PrisonerReceivedReasonType.NEW_ADMISSION)
+    verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_PRISONER_BALANCE_RESET), anyMap())
+    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.PRISONER_BALANCE_RESET)
+  }
+
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)
 
   private fun createVisitDto(reference: String, prisonerId: String, prisonCode: String): VisitDto = VisitDto(reference, prisonerId, prisonCode)

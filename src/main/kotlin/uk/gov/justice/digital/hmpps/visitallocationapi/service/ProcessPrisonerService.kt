@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderS
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
@@ -84,7 +85,7 @@ class ProcessPrisonerService(
       ),
     )
 
-    return changeLogService.getChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
+    return changeLogService.findChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
   }
 
   @Transactional
@@ -126,7 +127,7 @@ class ProcessPrisonerService(
       ),
     )
 
-    return changeLogService.getChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+    return changeLogService.findChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
 
   @Transactional
@@ -182,11 +183,45 @@ class ProcessPrisonerService(
           "pvoAddedPostMerge" to privilegedVisitOrdersToBeCreated.toString(),
         ),
       )
-      changeLogService.getChangeLogForPrisonerByType(newPrisonerId, ChangeLogType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE)
+      changeLogService.findChangeLogForPrisonerByType(newPrisonerId, ChangeLogType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE)
     } else {
       LOG.info("No VOs / PVOs were added post merge of prisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
       null
     }
+  }
+
+  @Transactional
+  fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): ChangeLog? {
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+
+    dpsPrisonerDetails.visitOrders
+      .filter { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
+      .forEach {
+        it.status = VisitOrderStatus.EXPIRED
+        it.expiryDate = LocalDate.now()
+      }
+
+    dpsPrisonerDetails.negativeVisitOrders
+      .filter { it.status == NegativeVisitOrderStatus.USED }
+      .forEach {
+        it.status = NegativeVisitOrderStatus.REPAID
+        it.repaidDate = LocalDate.now()
+      }
+
+    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogPrisonerBalanceReset(dpsPrisonerDetails, reason))
+
+    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+
+    telemetryClientService.trackEvent(
+      TelemetryEventType.VO_PRISONER_BALANCE_RESET,
+      mapOf(
+        "prisonerId" to prisonerId,
+        "reason" to reason.name,
+      ),
+    )
+
+    return changeLogService.findChangeLogForPrisonerByType(prisonerId, ChangeLogType.PRISONER_BALANCE_RESET)
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -211,7 +246,7 @@ class ProcessPrisonerService(
       val savedPrisoner = prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
 
       // Return the inserted change log, which can be used by caller to raise event for prisoner processing.
-      return changeLogService.getChangeLogForPrisonerByType(savedPrisoner.prisonerId, ChangeLogType.BATCH_PROCESS)
+      return changeLogService.findChangeLogForPrisonerByType(savedPrisoner.prisonerId, ChangeLogType.BATCH_PROCESS)
     } catch (e: Exception) {
       // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
       // Instead, it should go onto the DLQ.
