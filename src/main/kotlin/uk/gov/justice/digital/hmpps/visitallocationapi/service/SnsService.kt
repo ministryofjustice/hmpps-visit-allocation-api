@@ -6,11 +6,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import software.amazon.awssdk.services.sns.model.MessageAttributeValue
-import software.amazon.awssdk.services.sns.model.PublishRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.PublishEventException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
+import uk.gov.justice.hmpps.sqs.publish
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -34,7 +33,6 @@ class SnsService(
   }
 
   private val domainEventsTopic by lazy { hmppsQueueService.findByTopicId(TOPIC_ID) ?: throw RuntimeException("Topic with name $TOPIC_ID doesn't exist") }
-  private val domainEventsTopicClient by lazy { domainEventsTopic.snsClient }
 
   fun LocalDateTime.toOffsetDateFormat(): String = atZone(ZoneId.of(EVENT_ZONE_ID)).toOffsetDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
@@ -62,16 +60,10 @@ class SnsService(
     LOG.debug("Entered : publishToDomainEventsTopic {}", payloadEvent)
 
     try {
-      val messageAttributes = mutableMapOf(
-        "eventType" to MessageAttributeValue.builder().dataType("String").stringValue(payloadEvent.eventType).build(),
+      val result = domainEventsTopic.publish(
+        payloadEvent.eventType,
+        objectMapper.writeValueAsString(payloadEvent),
       )
-
-      val publishRequest = PublishRequest.builder().topicArn(domainEventsTopic.arn)
-        .message(objectMapper.writeValueAsString(payloadEvent))
-        .messageAttributes(messageAttributes)
-        .build()
-
-      val result = domainEventsTopicClient.publish(publishRequest).join()
 
       telemetryClient.trackEvent(
         "${payloadEvent.eventType}-domain-event",
