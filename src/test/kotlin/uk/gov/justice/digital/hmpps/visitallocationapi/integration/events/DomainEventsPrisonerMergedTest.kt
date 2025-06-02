@@ -8,6 +8,7 @@ import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
@@ -22,7 +23,6 @@ import java.time.LocalDate
 
 @DisplayName("Test for Domain Event Prisoner Merged")
 class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
-
   @Test
   fun `when domain event prisoner merged is found, then prisoner balance is synced`() {
     // Given
@@ -164,6 +164,174 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(prisonerDetails[0].prisonerId).isEqualTo(prisonerId)
     assertThat(prisonerDetails[0].lastVoAllocatedDate).isEqualTo(LocalDate.now())
     assertThat(prisonerDetails[0].lastPvoAllocatedDate).isNull()
+  }
+
+  @Test
+  fun `when prisoner is in DPS prison post merge if removed prisoner has more VOs the difference is added to new prisoner`() {
+    // Given
+    val prisonerId = "AA123456"
+    val removedPrisonerId = "BB123456"
+    val prisonId = "HEI"
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
+      createPrisonerMergedAdditionalInformationJson(prisonerId = prisonerId, removedPrisonerId = removedPrisonerId),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_MERGED_EVENT_TYPE.value, domainEvent)
+
+    // prisoner is in a DPS enabled prison
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+
+    // new prisoner has 2 VOs and 3 PVOs, removed prisoner has 5 VOs and 8 PVOs
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null)
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 3, prisoner))
+    prisonerDetailsRepository.save(prisoner)
+
+    val removedPrisoner = PrisonerDetails(prisonerId = removedPrisonerId, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null)
+    removedPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 5, removedPrisoner))
+    removedPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 8, removedPrisoner))
+    prisonerDetailsRepository.save(removedPrisoner)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogAllocationForPrisonerMerge(any(), any(), any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val availableVisitOrdersForPrisoner = visitOrderRepository.findAll().filter { it.status == VisitOrderStatus.AVAILABLE && it.prisonerId == prisonerId }
+    // prisoner should end up wth 5 VOs and 8 PVOs
+    assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(5)
+    assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(8)
+    verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+  }
+
+  @Test
+  fun `when prisoner is in DPS prison post merge if removed prisoner has same or less VOs no VOs are added to new prisoner`() {
+    // Given
+    val prisonerId = "AA123456"
+    val removedPrisonerId = "BB123456"
+    val prisonId = "HEI"
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
+      createPrisonerMergedAdditionalInformationJson(prisonerId = prisonerId, removedPrisonerId = removedPrisonerId),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_MERGED_EVENT_TYPE.value, domainEvent)
+
+    // prisoner is in a DPS enabled prison
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+
+    // new prisoner has 2 VOs and 3 PVOs, removed prisoner has 1 VOs and 3 PVOs
+    val prisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null)
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 3, prisoner))
+    prisonerDetailsRepository.save(prisoner)
+
+    val removedPrisoner = PrisonerDetails(prisonerId = removedPrisonerId, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null)
+    removedPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 1, removedPrisoner))
+    removedPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 3, removedPrisoner))
+    prisonerDetailsRepository.save(removedPrisoner)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val availableVisitOrdersForPrisoner = visitOrderRepository.findAll().filter { it.status == VisitOrderStatus.AVAILABLE && it.prisonerId == prisonerId }
+    // prisoner should end up wth same VOs and PVOs as earlier
+    assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(2)
+    assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(3)
+    verify(changeLogService, times(0)).createLogAllocationForPrisonerMerge(any(), any(), any())
+    verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+  }
+
+  @Test
+  fun `when prisoner is in DPS prison post merge but does not exist on allocation DB a new prisoner is created and VOs allocated same as removed prisoner`() {
+    // Given
+    val prisonerId = "AA123456"
+    val removedPrisonerId = "BB123456"
+    val prisonId = "HEI"
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
+      createPrisonerMergedAdditionalInformationJson(prisonerId = prisonerId, removedPrisonerId = removedPrisonerId),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_MERGED_EVENT_TYPE.value, domainEvent)
+
+    // prisoner is in a DPS enabled prison
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+
+    // new prisoner does not exist on the DB
+
+    // removed prisoner exists on the DB with 3 VOs and 5 PVOs
+    val removedPrisoner = PrisonerDetails(prisonerId = removedPrisonerId, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null)
+    removedPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 3, removedPrisoner))
+    removedPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 5, removedPrisoner))
+    prisonerDetailsRepository.save(removedPrisoner)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogAllocationForPrisonerMerge(any(), any(), any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val availableVisitOrdersForPrisoner = visitOrderRepository.findAll().filter { it.status == VisitOrderStatus.AVAILABLE && it.prisonerId == prisonerId }
+    // prisoner should end up wth 3 VOs and 5 PVOs
+    assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(3)
+    assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(5)
+    verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+  }
+
+  @Test
+  fun `when prisoner is in DPS prison post merge but both prisoners do not exist on allocation DB a new prisoner is created but no VOs are allocated`() {
+    // Given
+    val prisonerId = "AA123456"
+    val removedPrisonerId = "BB123456"
+    val prisonId = "HEI"
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_MERGED_EVENT_TYPE.value,
+      createPrisonerMergedAdditionalInformationJson(prisonerId = prisonerId, removedPrisonerId = removedPrisonerId),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_MERGED_EVENT_TYPE.value, domainEvent)
+
+    // prisoner is in a DPS enabled prison
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+
+    // new prisoner and removed prisoner both do not exist on the DB
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val availableVisitOrdersForPrisoner = visitOrderRepository.findAll().filter { it.status == VisitOrderStatus.AVAILABLE && it.prisonerId == prisonerId }
+    // prisoner created but no VOs allocated
+    assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(0)
+    assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(0)
+    verify(changeLogService, times(0)).createLogAllocationForPrisonerMerge(any(), any(), any())
+    verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
   }
 
   @Test
