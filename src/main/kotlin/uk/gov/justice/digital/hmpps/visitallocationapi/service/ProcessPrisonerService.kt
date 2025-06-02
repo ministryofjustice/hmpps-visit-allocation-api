@@ -131,13 +131,14 @@ class ProcessPrisonerService(
 
   @Transactional
   fun processPrisonerMerge(newPrisonerId: String, removedPrisonerId: String): ChangeLog? {
-    LOG.info("processPrisonerMerge with newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
-    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId)
-      ?: prisonerDetailsService.createPrisonerDetails(newPrisonerId, LocalDate.now().minusDays(14), null)
-    val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId)
     var visitOrdersToBeCreated = 0
     var privilegedVisitOrdersToBeCreated = 0
     var changeLog: ChangeLog? = null
+
+    LOG.info("processPrisonerMerge with newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
+    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId) ?: prisonerDetailsService.createPrisonerDetails(newPrisonerId, LocalDate.now().minusDays(14), null)
+
+    val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetails(removedPrisonerId)
 
     removedPrisonerDetails?.let {
       // create VOs - if the number of VOs on the new prisoner is less than the removed prisoner
@@ -146,7 +147,7 @@ class ProcessPrisonerService(
         LOG.info("Creating $visitOrdersToBeCreated new VOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
         repeat(visitOrdersToBeCreated) {
           val lastVoAllocatedDate = newPrisonerDetails.lastVoAllocatedDate
-          createVisitOrder(newPrisonerDetails, VisitOrderType.VO, createdTimestamp = lastVoAllocatedDate.atStartOfDay())
+          newPrisonerDetails.visitOrders.add(createVisitOrder(newPrisonerDetails, VisitOrderType.VO, createdTimestamp = lastVoAllocatedDate.atStartOfDay()))
         }
       }
 
@@ -156,7 +157,7 @@ class ProcessPrisonerService(
         LOG.info("Creating $privilegedVisitOrdersToBeCreated new PVOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
         repeat(privilegedVisitOrdersToBeCreated) {
           val createdTimestamp = newPrisonerDetails.lastPvoAllocatedDate?.atStartOfDay() ?: LocalDateTime.now()
-          createVisitOrder(newPrisonerDetails, VisitOrderType.PVO, createdTimestamp = createdTimestamp)
+          newPrisonerDetails.visitOrders.add(createVisitOrder(newPrisonerDetails, VisitOrderType.PVO, createdTimestamp = createdTimestamp))
         }
       }
     }
@@ -174,14 +175,14 @@ class ProcessPrisonerService(
       telemetryClientService.trackEvent(
         TelemetryEventType.VO_ADDED_POST_MERGE,
         mapOf(
-          "newPrisonerId" to newPrisonerId,
+          "prisonerId" to newPrisonerId,
           "removedPrisonerId" to removedPrisonerId,
           "voAddedPostMerge" to visitOrdersToBeCreated.toString(),
           "pvoAddedPostMerge" to privilegedVisitOrdersToBeCreated.toString(),
         ),
       )
     } else {
-      LOG.info("No VOs / PVOs were added post merge of newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId\"")
+      LOG.info("No VOs / PVOs were added post merge of prisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
     }
 
     return changeLog
