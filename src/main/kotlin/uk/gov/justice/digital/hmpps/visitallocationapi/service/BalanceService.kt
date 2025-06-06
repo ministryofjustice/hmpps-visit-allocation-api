@@ -12,7 +12,7 @@ class BalanceService(private val prisonerDetailsService: PrisonerDetailsService)
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Transactional(readOnly = true)
+  @Transactional
   fun getPrisonerBalance(prisonerId: String): PrisonerBalanceDto? {
     LOG.info("Entered BalanceService - getPrisonerBalance for prisoner $prisonerId")
 

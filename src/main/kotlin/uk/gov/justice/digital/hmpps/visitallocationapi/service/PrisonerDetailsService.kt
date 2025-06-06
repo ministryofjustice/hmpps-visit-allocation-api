@@ -29,7 +29,7 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
 
   fun getPrisonerDetails(prisonerId: String): PrisonerDetails? {
     LOG.info("PrisonerDetailsService - getPrisonerDetails called with prisonerId - $prisonerId")
-    return prisonerDetailsRepository.findById(prisonerId).getOrNull()
+    return prisonerDetailsRepository.findByIdForUpdate(prisonerId).getOrNull()
   }
 
   fun updatePrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails {
