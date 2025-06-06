@@ -3,8 +3,6 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerConvictionStatusChangedInfo
@@ -14,7 +12,6 @@ class ConvictionStatusChangedEventHandler(
   objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
   private val prisonerSearchClient: PrisonerSearchClient,
-  private val nomisSyncService: NomisSyncService,
 ) : DomainEventHandler {
 
   private val processor = StandardDomainEventHandler(
@@ -23,7 +20,7 @@ class ConvictionStatusChangedEventHandler(
     shouldProcess = ::shouldProcess,
     isDpsPrison = ::isDpsPrison,
     processDps = { /* no-op */ },
-    processNomis = ::processNomis,
+    processNomis = { /* no-op */ },
   )
 
   override fun handle(domainEvent: DomainEvent) {
@@ -38,9 +35,5 @@ class ConvictionStatusChangedEventHandler(
   private fun isDpsPrison(info: PrisonerConvictionStatusChangedInfo): Boolean {
     val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
     return prisonService.getPrisonEnabledForDpsByCode(prisoner.prisonId)
-  }
-
-  private fun processNomis(info: PrisonerConvictionStatusChangedInfo) {
-    nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId, DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE)
   }
 }

@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderS
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReleasedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.LocalStackContainer.setLocalStackProperties
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.EntityHelper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
@@ -214,16 +213,6 @@ abstract class EventsIntegrationTestBase {
     val jsonValues = HashMap<String, String>()
 
     jsonValues["reference"] = visitReference
-
-    return createAdditionalInformationJson(jsonValues)
-  }
-
-  fun createPrisonerReleasedAdditionalInformationJson(prisonerId: String, prisonId: String, reason: PrisonerReleasedReasonType): String {
-    val jsonValues = HashMap<String, String>()
-
-    jsonValues["nomsNumber"] = prisonerId
-    jsonValues["prisonId"] = prisonId
-    jsonValues["reason"] = reason.name
 
     return createAdditionalInformationJson(jsonValues)
   }
