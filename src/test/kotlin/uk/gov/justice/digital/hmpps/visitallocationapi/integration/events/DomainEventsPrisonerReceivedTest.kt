@@ -103,6 +103,35 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
   }
 
   @Test
+  fun `when domain event prisoner received is found with new prisoner, then prisoner balance is added to dps`() {
+    // Given
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val prisonerDetails = prisonerDetailsRepository.findAll()
+    assertThat(prisonerDetails.size).isEqualTo(1)
+  }
+
+  @Test
   fun `when domain event prisoner received is found, but an error is returned from prison API the message is sent to DLQ`() {
     // Given
     val prisonerId = "AA123456"

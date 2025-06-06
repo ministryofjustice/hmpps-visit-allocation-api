@@ -9,12 +9,15 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerRecei
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType.POST_MERGE_ADMISSION
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType.READMISSION
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType.READMISSION_SWITCH_BOOKING
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerReceivedInfo
+import java.time.LocalDate
 
 @Service
 class PrisonerReceivedEventHandler(
@@ -23,6 +26,8 @@ class PrisonerReceivedEventHandler(
   private val nomisSyncService: NomisSyncService,
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
+  private val prisonerDetailsService: PrisonerDetailsService,
+  private val changeLogService: ChangeLogService,
 ) : DomainEventHandler {
 
   companion object {
@@ -55,14 +60,19 @@ class PrisonerReceivedEventHandler(
   }
 
   private fun processDps(info: PrisonerReceivedInfo) {
-    if (shouldWipePrisonerBalance(info.reason)) {
-      LOG.info("Prisoner ${info.prisonerId} received for reason ${info.reason}, wiping balance")
-      val changeLog = processPrisonerService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
-      if (changeLog != null) {
-        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
-      }
+    if (prisonerDetailsService.getPrisonerDetails(info.prisonerId) == null) {
+      LOG.info("New Prisoner ${info.prisonerId} received, adding to DB")
+      prisonerDetailsService.createPrisonerDetails(info.prisonerId, LocalDate.now().minusDays(14), null)
     } else {
-      LOG.info("Prisoner ${info.prisonerId} received for reason ${info.reason}, not wiping balance")
+      if (shouldWipePrisonerBalance(info.reason)) {
+        LOG.info("Existing prisoner ${info.prisonerId} received for reason ${info.reason}, wiping balance")
+        val changeLog = processPrisonerService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
+        if (changeLog != null) {
+          snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+        }
+      } else {
+        LOG.info("Existing prisoner ${info.prisonerId} received for reason ${info.reason}, not wiping balance")
+      }
     }
   }
 
