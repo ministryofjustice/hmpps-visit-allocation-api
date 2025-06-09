@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi
 
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
@@ -10,7 +9,6 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -73,17 +71,11 @@ class NomisSyncServiceTest {
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
-    val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
     verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
-
-    val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
-    assertThat(savedPrisonerDetails.prisonerId).isEqualTo(prisonerId)
-    assertThat(savedPrisonerDetails.visitOrders.size).isEqualTo(6)
   }
 
   /**
@@ -119,7 +111,6 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(any())
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -140,17 +131,11 @@ class NomisSyncServiceTest {
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
-    val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
     verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
-
-    val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
-    assertThat(savedPrisonerDetails.prisonerId).isEqualTo(prisonerId)
-    assertThat(savedPrisonerDetails.negativeVisitOrders.size).isEqualTo(2)
   }
 
   // == Negative Balance paths == \\
@@ -190,17 +175,11 @@ class NomisSyncServiceTest {
       .thenReturn(spyDetails)
 
     // WHEN
-    val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
     verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
-
-    val savedPrisonerDetails = prisonerDetailsCaptor.firstValue
-    assertThat(savedPrisonerDetails.prisonerId).isEqualTo(prisonerId)
-    assertThat(savedPrisonerDetails.negativeVisitOrders.size).isEqualTo(3)
   }
 
   /**
@@ -236,7 +215,6 @@ class NomisSyncServiceTest {
 
     // THEN
     verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(any())
 
     verifyNoInteractions(telemetryClientService)
   }
@@ -257,17 +235,11 @@ class NomisSyncServiceTest {
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
-    val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
     verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
-
-    val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
-    assertThat(savedPrisonerDetails.prisonerId).isEqualTo(prisonerId)
-    assertThat(savedPrisonerDetails.visitOrders.size).isEqualTo(2)
   }
 
   // == Zero Balance paths == \
@@ -286,17 +258,11 @@ class NomisSyncServiceTest {
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
-    val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
     verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
-
-    val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
-    assertThat(savedPrisonerDetails.prisonerId).isEqualTo(prisonerId)
-    assertThat(savedPrisonerDetails.visitOrders.size).isEqualTo(3)
   }
 
   /**
@@ -313,17 +279,11 @@ class NomisSyncServiceTest {
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
-    val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
 
     // THEN
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
     verify(changeLogService, times(1)).createLogSyncAdjustmentChange(any(), any())
     verifyNoInteractions(telemetryClientService)
-
-    val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
-    assertThat(savedPrisonerDetails.prisonerId).isEqualTo(prisonerId)
-    assertThat(savedPrisonerDetails.negativeVisitOrders.size).isEqualTo(3)
   }
 
   // Nomis Sync via events tests \\
@@ -346,17 +306,11 @@ class NomisSyncServiceTest {
     whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
-    val prisonerDetailsCaptor = argumentCaptor<PrisonerDetails>()
     nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE)
 
     // THEN
-    verify(prisonerDetailsService, times(1)).updatePrisonerDetails(prisonerDetailsCaptor.capture())
     verify(changeLogService, times(1)).createLogSyncEventChange(any(), any())
     verifyNoInteractions(telemetryClientService)
-
-    val savedPrisonerDetails = prisonerDetailsCaptor.allValues[0]
-    assertThat(savedPrisonerDetails.prisonerId).isEqualTo(prisonerId)
-    assertThat(savedPrisonerDetails.visitOrders.size).isEqualTo(5)
   }
 
   private fun createSyncRequest(

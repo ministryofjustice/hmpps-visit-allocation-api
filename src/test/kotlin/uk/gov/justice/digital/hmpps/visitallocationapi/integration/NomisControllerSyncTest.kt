@@ -31,7 +31,7 @@ class NomisControllerSyncTest : IntegrationTestBase() {
   }
 
   @Test
-  fun `two requests, any order, results in correct balance at the end`() {
+  fun `two requests, any order, existing prisoner, results in correct balance at the end`() {
     // Given
     val prisoner = PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now().minusDays(14), null)
     prisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 10, prisoner))
@@ -67,6 +67,38 @@ class NomisControllerSyncTest : IntegrationTestBase() {
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(8)
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE && it.type == VisitOrderType.VO }.size).isEqualTo(7)
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE && it.type == VisitOrderType.PVO }.size).isEqualTo(1)
+  }
+
+  @Test
+  fun `two requests, any order, new prisoner, results in correct balance at the end`() {
+    // Given
+    val firstSyncRequest = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 10,
+      changeToVoBalance = -2,
+      oldPvoBalance = 5,
+      changeToPvoBalance = -3,
+    )
+
+    val secondSyncRequest = createSyncRequest(
+      prisonerId = PRISONER_ID,
+      oldVoBalance = 8,
+      changeToVoBalance = -1,
+      oldPvoBalance = 2,
+      changeToPvoBalance = -1,
+    )
+
+    // When
+    val secondResponse = callVisitAllocationSyncEndpoint(webTestClient, secondSyncRequest, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+    val firstResponse = callVisitAllocationSyncEndpoint(webTestClient, firstSyncRequest, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+
+    // Then
+    secondResponse.expectStatus().isOk
+    firstResponse.expectStatus().isOk
+
+    val visitOrders = negativeVisitOrderRepository.findAll()
+
+    assertThat(visitOrders.filter { it.status == NegativeVisitOrderStatus.USED }.size).isEqualTo(7)
   }
 
   /**
