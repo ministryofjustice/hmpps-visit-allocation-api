@@ -130,7 +130,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional
-  fun processPrisonerMerge(newPrisonerId: String, removedPrisonerId: String): ChangeLog? {
+  fun processPrisonerMerge(newPrisonerId: String, removedPrisonerId: String): UUID? {
     var visitOrdersToBeCreated = 0
     var privilegedVisitOrdersToBeCreated = 0
 
@@ -182,7 +182,7 @@ class ProcessPrisonerService(
           "pvoAddedPostMerge" to privilegedVisitOrdersToBeCreated.toString(),
         ),
       )
-      changeLogService.findChangeLogForPrisonerByType(newPrisonerId, ChangeLogType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE)
+      changeLog.reference
     } else {
       LOG.info("No VOs / PVOs were added post merge of prisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
       null

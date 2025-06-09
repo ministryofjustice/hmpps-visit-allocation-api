@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
@@ -20,11 +21,13 @@ class PrisonerMergedEventHandler(
   private val nomisSyncService: NomisSyncService,
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
+  private val changeLogService: ChangeLogService,
 ) : DomainEventHandler {
 
   companion object {
     private val LOG = LoggerFactory.getLogger(this::class.java)
   }
+
   private val processor = StandardDomainEventHandler(
     objectMapper = objectMapper,
     clazz = PrisonerMergedInfo::class.java,
@@ -47,9 +50,12 @@ class PrisonerMergedEventHandler(
 
   private fun processDps(info: PrisonerMergedInfo) {
     LOG.info("Handling DPS prison merge event - $info")
-    val changeLog = processPrisonerService.processPrisonerMerge(info.prisonerId, info.removedPrisonerId)
-    if (changeLog != null) {
-      snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+    val changeLogReference = processPrisonerService.processPrisonerMerge(info.prisonerId, info.removedPrisonerId)
+    if (changeLogReference != null) {
+      val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)
+      if (changeLog != null) {
+        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+      }
     } else {
       LOG.info("No change log generated for merge event - $info")
     }
