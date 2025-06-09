@@ -130,6 +130,8 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
 
   fun findChangeLogForPrisonerByType(prisonerId: String, changeLogType: ChangeLogType): ChangeLog? = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, changeLogType)
 
+  fun findChangeLogForPrisonerByReference(prisonerId: String, reference: UUID): ChangeLog? = changeLogRepository.findFirstByPrisonerIdAndReference(prisonerId, reference)
+
   private fun createChangeLog(
     dpsPrisoner: PrisonerDetails,
     changeLogType: ChangeLogType,

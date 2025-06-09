@@ -24,6 +24,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.TemporalAdjusters
+import java.util.*
 
 @Service
 class ProcessPrisonerService(
@@ -41,7 +42,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional
-  fun processPrisonerVisitOrderUsage(visit: VisitDto): ChangeLog? {
+  fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID {
     val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
@@ -72,9 +73,8 @@ class ProcessPrisonerService(
       dpsPrisonerDetails.negativeVisitOrders.add(negativeVo)
     }
 
-    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference))
-
-    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+    val changeLog = changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
+    dpsPrisonerDetails.changeLogs.add(changeLog)
 
     telemetryClientService.trackEvent(
       TelemetryEventType.VO_CONSUMED_BY_VISIT,
@@ -85,7 +85,7 @@ class ProcessPrisonerService(
       ),
     )
 
-    return changeLogService.findChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
+    return changeLog.reference
   }
 
   @Transactional
