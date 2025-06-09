@@ -376,10 +376,8 @@ class ProcessPrisonerServiceTest {
     processPrisonerService.processPrisonerReceivedResetBalance(prisonerId, PrisonerReceivedReasonType.NEW_ADMISSION)
 
     // THEN
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogPrisonerBalanceReset(dpsPrisoner, PrisonerReceivedReasonType.NEW_ADMISSION)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_PRISONER_BALANCE_RESET), anyMap())
-    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.PRISONER_BALANCE_RESET)
   }
 
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)

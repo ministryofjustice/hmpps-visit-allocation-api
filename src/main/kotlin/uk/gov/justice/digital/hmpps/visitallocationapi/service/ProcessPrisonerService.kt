@@ -189,7 +189,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional
-  fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): ChangeLog? {
+  fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): UUID {
     val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
@@ -207,9 +207,8 @@ class ProcessPrisonerService(
         it.repaidDate = LocalDate.now()
       }
 
-    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogPrisonerBalanceReset(dpsPrisonerDetails, reason))
-
-    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+    val changeLog = changeLogService.createLogPrisonerBalanceReset(dpsPrisonerDetails, reason)
+    dpsPrisonerDetails.changeLogs.add(changeLog)
 
     telemetryClientService.trackEvent(
       TelemetryEventType.VO_PRISONER_BALANCE_RESET,
@@ -219,7 +218,7 @@ class ProcessPrisonerService(
       ),
     )
 
-    return changeLogService.findChangeLogForPrisonerByType(prisonerId, ChangeLogType.PRISONER_BALANCE_RESET)
+    return changeLog.reference
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
