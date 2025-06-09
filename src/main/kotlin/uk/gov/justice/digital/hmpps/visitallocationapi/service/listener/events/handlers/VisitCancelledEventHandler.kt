@@ -5,6 +5,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
@@ -18,6 +19,7 @@ class VisitCancelledEventHandler(
   private val visitSchedulerClient: VisitSchedulerClient,
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
+  private val changeLogService: ChangeLogService,
 ) : DomainEventHandler {
 
   companion object {
@@ -34,7 +36,8 @@ class VisitCancelledEventHandler(
     if (prisonService.getPrisonEnabledForDpsByCode(visit.prisonCode)) {
       LOG.info("Prison ${visit.prisonCode} is enabled for DPS, processing event")
 
-      val changeLog = processPrisonerService.processPrisonerVisitOrderRefund(visit)
+      val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit)
+      val changeLog = changeLogService.findChangeLogForPrisonerByReference(visit.prisonerId, changeLogReference)
       if (changeLog != null) {
         snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
       }

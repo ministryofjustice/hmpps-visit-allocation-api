@@ -89,7 +89,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional
-  fun processPrisonerVisitOrderRefund(visit: VisitDto): ChangeLog? {
+  fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID {
     val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
@@ -115,9 +115,8 @@ class ProcessPrisonerService(
       }
     }
 
-    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference))
-
-    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+    val changeLog = changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference)
+    dpsPrisonerDetails.changeLogs.add(changeLog)
 
     telemetryClientService.trackEvent(
       TelemetryEventType.VO_REFUNDED_AFTER_VISIT_CANCELLATION,
@@ -127,7 +126,7 @@ class ProcessPrisonerService(
       ),
     )
 
-    return changeLogService.findChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+    return changeLog.reference
   }
 
   @Transactional

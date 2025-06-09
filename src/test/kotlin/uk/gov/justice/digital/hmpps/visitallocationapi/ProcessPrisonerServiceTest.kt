@@ -338,10 +338,8 @@ class ProcessPrisonerServiceTest {
     processPrisonerService.processPrisonerVisitOrderRefund(visit)
 
     // THEN
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_REFUNDED_AFTER_VISIT_CANCELLATION), anyMap())
-    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
 
   // Prisoner Reset balance \\
