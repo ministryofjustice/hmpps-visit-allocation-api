@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDeta
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.*
 
 @DisplayName("Test for Domain Event Visit Booked")
 class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
@@ -51,6 +52,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -108,6 +110,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -164,6 +167,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -223,6 +227,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -272,6 +277,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -321,6 +327,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -367,6 +374,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)

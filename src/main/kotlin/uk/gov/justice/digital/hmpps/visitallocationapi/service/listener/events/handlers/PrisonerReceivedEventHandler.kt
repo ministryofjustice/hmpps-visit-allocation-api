@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerRecei
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType.POST_MERGE_ADMISSION
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType.READMISSION
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType.READMISSION_SWITCH_BOOKING
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
@@ -23,6 +24,7 @@ class PrisonerReceivedEventHandler(
   private val nomisSyncService: NomisSyncService,
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
+  private val changeLogService: ChangeLogService,
 ) : DomainEventHandler {
 
   companion object {
@@ -57,7 +59,8 @@ class PrisonerReceivedEventHandler(
   private fun processDps(info: PrisonerReceivedInfo) {
     if (shouldWipePrisonerBalance(info.reason)) {
       LOG.info("Prisoner ${info.prisonerId} received for reason ${info.reason}, wiping balance")
-      val changeLog = processPrisonerService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
+      val changeLogReference = processPrisonerService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
+      val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)
       if (changeLog != null) {
         snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
       }

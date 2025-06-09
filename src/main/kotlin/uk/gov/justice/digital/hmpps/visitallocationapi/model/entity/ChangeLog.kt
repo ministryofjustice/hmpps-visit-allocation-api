@@ -13,6 +13,7 @@ import jakarta.persistence.Table
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import java.time.LocalDateTime
+import java.util.UUID
 
 @Entity
 @Table(name = "change_log")
@@ -50,4 +51,7 @@ data class ChangeLog(
   @ManyToOne
   @JoinColumn(name = "prisoner_id", referencedColumnName = "prisonerId", insertable = false, updatable = false)
   val prisoner: PrisonerDetails,
+
+  @Column(nullable = false)
+  val reference: UUID,
 )

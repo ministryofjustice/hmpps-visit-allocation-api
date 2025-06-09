@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryServ
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import java.time.LocalDate
+import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class ProcessPrisonerServiceTest {
@@ -89,6 +90,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -104,7 +106,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   /**
@@ -130,6 +131,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -145,7 +147,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   /**
@@ -170,6 +171,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -185,7 +187,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   /**
@@ -215,7 +216,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   /**
@@ -241,6 +241,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -256,7 +257,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   // Prisoner VO Usage By Visit \\
@@ -283,6 +283,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -293,10 +294,8 @@ class ProcessPrisonerServiceTest {
     processPrisonerService.processPrisonerVisitOrderUsage(visit)
 
     // THEN
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationUsedByVisit(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_CONSUMED_BY_VISIT), anyMap())
-    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
   }
 
   // Prisoner VO Refund By Visit Cancelled \\
@@ -323,6 +322,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -333,10 +333,8 @@ class ProcessPrisonerServiceTest {
     processPrisonerService.processPrisonerVisitOrderRefund(visit)
 
     // THEN
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_REFUNDED_AFTER_VISIT_CANCELLATION), anyMap())
-    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
   }
 
   // Prisoner Reset balance \\
@@ -362,6 +360,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -372,10 +371,8 @@ class ProcessPrisonerServiceTest {
     processPrisonerService.processPrisonerReceivedResetBalance(prisonerId, PrisonerReceivedReasonType.NEW_ADMISSION)
 
     // THEN
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
     verify(changeLogService).createLogPrisonerBalanceReset(dpsPrisoner, PrisonerReceivedReasonType.NEW_ADMISSION)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_PRISONER_BALANCE_RESET), anyMap())
-    verify(changeLogService).findChangeLogForPrisonerByType(dpsPrisoner.prisonerId, ChangeLogType.PRISONER_BALANCE_RESET)
   }
 
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)

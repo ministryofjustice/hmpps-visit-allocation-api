@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callGe
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import java.time.LocalDate
+import java.util.*
 
 @DisplayName("NomisController get prisoner adjustment tests - $VO_GET_PRISONER_ADJUSTMENT")
 class NomisControllerGetAdjustmentTest : IntegrationTestBase() {
@@ -38,6 +39,7 @@ class NomisControllerGetAdjustmentTest : IntegrationTestBase() {
         visitOrderBalance = 5,
         privilegedVisitOrderBalance = 2,
         prisoner = prisoner,
+        reference = UUID.randomUUID(),
       ),
     )
 
@@ -51,6 +53,7 @@ class NomisControllerGetAdjustmentTest : IntegrationTestBase() {
         visitOrderBalance = 7,
         privilegedVisitOrderBalance = 3,
         prisoner = prisoner,
+        reference = UUID.randomUUID(),
       ),
     ).id
 
@@ -81,6 +84,7 @@ class NomisControllerGetAdjustmentTest : IntegrationTestBase() {
         visitOrderBalance = 7,
         privilegedVisitOrderBalance = 3,
         prisoner = prisoner,
+        reference = UUID.randomUUID(),
       ),
     ).id
 

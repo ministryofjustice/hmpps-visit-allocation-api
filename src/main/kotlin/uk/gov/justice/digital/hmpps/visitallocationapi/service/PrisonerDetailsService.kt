@@ -34,11 +34,6 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
     return prisonerDetailsRepository.findByIdWithLock(prisonerId).getOrNull()
   }
 
-  fun updatePrisonerDetails(prisoner: PrisonerDetails): PrisonerDetails {
-    LOG.info("PrisonerDetailsService - updatePrisonerDetails called with new prisoner details - $prisoner")
-    return prisonerDetailsRepository.saveAndFlush(prisoner)
-  }
-
   fun removePrisonerDetails(prisonerId: String) {
     LOG.info("PrisonerDetailsService - removePrisonerDetails called with prisonerId - $prisonerId")
     val prisoner = prisonerDetailsRepository.findById(prisonerId)

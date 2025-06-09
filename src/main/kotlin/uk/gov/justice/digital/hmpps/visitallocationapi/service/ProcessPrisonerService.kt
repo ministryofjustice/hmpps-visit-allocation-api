@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -24,6 +23,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.TemporalAdjusters
+import java.util.*
 
 @Service
 class ProcessPrisonerService(
@@ -41,7 +41,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional
-  fun processPrisonerVisitOrderUsage(visit: VisitDto): ChangeLog? {
+  fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID {
     val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
@@ -72,9 +72,8 @@ class ProcessPrisonerService(
       dpsPrisonerDetails.negativeVisitOrders.add(negativeVo)
     }
 
-    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference))
-
-    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+    val changeLog = changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
+    dpsPrisonerDetails.changeLogs.add(changeLog)
 
     telemetryClientService.trackEvent(
       TelemetryEventType.VO_CONSUMED_BY_VISIT,
@@ -85,11 +84,11 @@ class ProcessPrisonerService(
       ),
     )
 
-    return changeLogService.findChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_USED_BY_VISIT)
+    return changeLog.reference
   }
 
   @Transactional
-  fun processPrisonerVisitOrderRefund(visit: VisitDto): ChangeLog? {
+  fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID {
     val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
@@ -115,9 +114,8 @@ class ProcessPrisonerService(
       }
     }
 
-    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference))
-
-    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+    val changeLog = changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference)
+    dpsPrisonerDetails.changeLogs.add(changeLog)
 
     telemetryClientService.trackEvent(
       TelemetryEventType.VO_REFUNDED_AFTER_VISIT_CANCELLATION,
@@ -127,11 +125,11 @@ class ProcessPrisonerService(
       ),
     )
 
-    return changeLogService.findChangeLogForPrisonerByType(visit.prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)
+    return changeLog.reference
   }
 
   @Transactional
-  fun processPrisonerMerge(newPrisonerId: String, removedPrisonerId: String): ChangeLog? {
+  fun processPrisonerMerge(newPrisonerId: String, removedPrisonerId: String): UUID? {
     var visitOrdersToBeCreated = 0
     var privilegedVisitOrdersToBeCreated = 0
 
@@ -173,7 +171,6 @@ class ProcessPrisonerService(
       )
       newPrisonerDetails.changeLogs.add(changeLog)
 
-      prisonerDetailsService.updatePrisonerDetails(newPrisonerDetails)
       telemetryClientService.trackEvent(
         TelemetryEventType.VO_ADDED_POST_MERGE,
         mapOf(
@@ -183,7 +180,7 @@ class ProcessPrisonerService(
           "pvoAddedPostMerge" to privilegedVisitOrdersToBeCreated.toString(),
         ),
       )
-      changeLogService.findChangeLogForPrisonerByType(newPrisonerId, ChangeLogType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE)
+      changeLog.reference
     } else {
       LOG.info("No VOs / PVOs were added post merge of prisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
       null
@@ -191,7 +188,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional
-  fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): ChangeLog? {
+  fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): UUID {
     val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
@@ -209,9 +206,8 @@ class ProcessPrisonerService(
         it.repaidDate = LocalDate.now()
       }
 
-    dpsPrisonerDetails.changeLogs.add(changeLogService.createLogPrisonerBalanceReset(dpsPrisonerDetails, reason))
-
-    prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
+    val changeLog = changeLogService.createLogPrisonerBalanceReset(dpsPrisonerDetails, reason)
+    dpsPrisonerDetails.changeLogs.add(changeLog)
 
     telemetryClientService.trackEvent(
       TelemetryEventType.VO_PRISONER_BALANCE_RESET,
@@ -221,11 +217,11 @@ class ProcessPrisonerService(
       ),
     )
 
-    return changeLogService.findChangeLogForPrisonerByType(prisonerId, ChangeLogType.PRISONER_BALANCE_RESET)
+    return changeLog.reference
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): ChangeLog? {
+  fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): UUID? {
     LOG.info("Entered ProcessPrisonerService - processPrisoner for prisoner - $prisonerId")
 
     try {
@@ -239,14 +235,15 @@ class ProcessPrisonerService(
       processPrisonerAccumulation(dpsPrisonerDetails)
       processPrisonerExpiration(dpsPrisonerDetails)
 
-      if (hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
-        dpsPrisonerDetails.changeLogs.add(changeLogService.createLogBatchProcess(dpsPrisonerDetails))
+      val changeLog: ChangeLog? = if (hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
+        changeLogService.createLogBatchProcess(dpsPrisonerDetails).also {
+          dpsPrisonerDetails.changeLogs.add(it)
+        }
+      } else {
+        null
       }
 
-      val savedPrisoner = prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
-
-      // Return the inserted change log, which can be used by caller to raise event for prisoner processing.
-      return changeLogService.findChangeLogForPrisonerByType(savedPrisoner.prisonerId, ChangeLogType.BATCH_PROCESS)
+      return changeLog?.reference
     } catch (e: Exception) {
       // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
       // Instead, it should go onto the DLQ.

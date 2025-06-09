@@ -28,6 +28,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.TemporalAdjusters
+import java.util.*
 
 @DisplayName("Test for Domain Event Visit Cancelled")
 class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
@@ -64,6 +65,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -131,6 +133,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -198,6 +201,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -307,6 +311,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -361,6 +366,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
@@ -415,6 +421,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
         privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
       ),
     )
     prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
