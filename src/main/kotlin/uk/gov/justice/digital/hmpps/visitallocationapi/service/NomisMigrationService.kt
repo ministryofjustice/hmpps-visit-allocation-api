@@ -47,7 +47,6 @@ class NomisMigrationService(
 
     dpsPrisoner.changeLogs.add(changeLogService.createLogMigrationChange(migrationDto, dpsPrisoner))
 
-    prisonerDetailsService.updatePrisonerDetails(dpsPrisoner)
     LOG.info("Finished NomisMigrationService - migratePrisoner ${migrationDto.prisonerId} successfully")
   }
 

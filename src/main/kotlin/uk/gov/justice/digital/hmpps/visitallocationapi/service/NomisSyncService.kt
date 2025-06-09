@@ -82,8 +82,6 @@ class NomisSyncService(
     }
 
     dpsPrisoner.changeLogs.add(changeLogService.createLogSyncAdjustmentChange(syncDto, dpsPrisoner))
-
-    prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
   }
 
   fun syncPrisonerBalanceFromEventChange(prisonerId: String, domainEventType: DomainEventType) {
@@ -100,8 +98,6 @@ class NomisSyncService(
         LOG.warn("Prisoner $prisonerId found in DPS allocation service. Resetting balance")
 
         resetDpsPrisonerBalance(dpsPrisoner, domainEventType)
-
-        prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
 
         return
       }
@@ -138,8 +134,6 @@ class NomisSyncService(
       LOG.info("Balance has changed as a result of sync for prisoner $prisonerId, for domain event ${domainEventType.value}")
       dpsPrisoner.changeLogs.add(changeLogService.createLogSyncEventChange(dpsPrisoner, domainEventType))
     }
-
-    prisonerDetailsService.updatePrisonerDetails(prisoner = dpsPrisoner)
   }
 
   fun syncPrisonerRemoved(prisonerId: String) {
