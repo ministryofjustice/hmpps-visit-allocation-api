@@ -106,7 +106,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   /**
@@ -148,7 +147,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   /**
@@ -189,7 +187,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   /**
@@ -219,7 +216,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   /**
@@ -261,7 +257,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-    verify(prisonerDetailsService).updatePrisonerDetails(dpsPrisoner)
   }
 
   // Prisoner VO Usage By Visit \\

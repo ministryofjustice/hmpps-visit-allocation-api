@@ -10,7 +10,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -222,7 +221,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): ChangeLog? {
+  fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): UUID? {
     LOG.info("Entered ProcessPrisonerService - processPrisoner for prisoner - $prisonerId")
 
     try {
@@ -236,14 +235,15 @@ class ProcessPrisonerService(
       processPrisonerAccumulation(dpsPrisonerDetails)
       processPrisonerExpiration(dpsPrisonerDetails)
 
-      if (hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
-        dpsPrisonerDetails.changeLogs.add(changeLogService.createLogBatchProcess(dpsPrisonerDetails))
+      val changeLog: ChangeLog? = if (hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
+        changeLogService.createLogBatchProcess(dpsPrisonerDetails).also {
+          dpsPrisonerDetails.changeLogs.add(it)
+        }
+      } else {
+        null
       }
 
-      val savedPrisoner = prisonerDetailsService.updatePrisonerDetails(dpsPrisonerDetails)
-
-      // Return the inserted change log, which can be used by caller to raise event for prisoner processing.
-      return changeLogService.findChangeLogForPrisonerByType(savedPrisoner.prisonerId, ChangeLogType.BATCH_PROCESS)
+      return changeLog?.reference
     } catch (e: Exception) {
       // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
       // Instead, it should go onto the DLQ.

@@ -17,6 +17,7 @@ class AllocationService(
   private val prisonService: PrisonService,
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
+  private val changeLogService: ChangeLogService,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -32,15 +33,19 @@ class AllocationService(
     var totalConvictedPrisonersFailedOrSkipped = 0
 
     for (prisoner in allPrisoners) {
-      val changeLog = processPrisonerService.processPrisonerAllocation(
+      val changeLogReference = processPrisonerService.processPrisonerAllocation(
         prisonerId = prisoner.prisonerId,
         jobReference = jobReference,
         allPrisonIncentiveAmounts = allIncentiveLevels,
       )
-
-      if (changeLog != null) {
-        totalConvictedPrisonersProcessed++
-        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+      if (changeLogReference != null) {
+        val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisoner.prisonerId, changeLogReference)
+        if (changeLog != null) {
+          totalConvictedPrisonersProcessed++
+          snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+        } else {
+          totalConvictedPrisonersFailedOrSkipped++
+        }
       } else {
         totalConvictedPrisonersFailedOrSkipped++
       }

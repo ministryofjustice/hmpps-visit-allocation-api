@@ -18,6 +18,7 @@ class PrisonerRetryService(
   @Lazy
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
+  private val changeLogService: ChangeLogService,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -37,9 +38,12 @@ class PrisonerRetryService(
     log.info("handle prisoner - $prisonerId on retry queue")
     val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
     val allIncentiveLevels = getIncentiveLevelsForPrison(prisonId = prisoner.prisonId)
-    val changeLog = processPrisonerService.processPrisonerAllocation(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
-    if (changeLog != null) {
-      snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+    val changeLogReference = processPrisonerService.processPrisonerAllocation(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
+    if (changeLogReference != null) {
+      val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisonerId, changeLogReference)
+      if (changeLog != null) {
+        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+      }
     }
   }
 
