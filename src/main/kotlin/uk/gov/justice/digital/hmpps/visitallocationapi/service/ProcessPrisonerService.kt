@@ -172,7 +172,6 @@ class ProcessPrisonerService(
       )
       newPrisonerDetails.changeLogs.add(changeLog)
 
-      prisonerDetailsService.updatePrisonerDetails(newPrisonerDetails)
       telemetryClientService.trackEvent(
         TelemetryEventType.VO_ADDED_POST_MERGE,
         mapOf(
