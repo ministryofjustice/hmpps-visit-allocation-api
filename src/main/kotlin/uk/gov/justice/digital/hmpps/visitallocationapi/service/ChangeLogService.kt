@@ -14,6 +14,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundExcepti
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
+import java.util.*
 
 @Transactional
 @Service
@@ -144,5 +145,6 @@ class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
     prisoner = dpsPrisoner,
     visitOrderBalance = dpsPrisoner.getVoBalance(),
     privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+    reference = UUID.randomUUID(),
   )
 }

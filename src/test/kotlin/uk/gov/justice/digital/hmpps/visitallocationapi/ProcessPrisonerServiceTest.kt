@@ -31,6 +31,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryServ
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import java.time.LocalDate
+import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class ProcessPrisonerServiceTest {
@@ -89,6 +90,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -130,6 +132,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -170,6 +173,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -241,6 +245,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -283,6 +288,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -323,6 +329,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
@@ -362,6 +369,7 @@ class ProcessPrisonerServiceTest {
       prisoner = dpsPrisoner,
       visitOrderBalance = dpsPrisoner.getVoBalance(),
       privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      reference = UUID.randomUUID(),
     )
 
     // WHEN
