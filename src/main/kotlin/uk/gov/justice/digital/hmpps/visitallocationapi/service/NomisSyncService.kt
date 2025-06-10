@@ -55,6 +55,8 @@ class NomisSyncService(
       prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
     }
 
+    LOG.info("Current loaded prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
+
     // If VO balance has changed, sync it
     if (syncDto.oldVoBalance != null) {
       processSync(
@@ -82,6 +84,8 @@ class NomisSyncService(
     }
 
     dpsPrisoner.changeLogs.add(changeLogService.createLogSyncAdjustmentChange(syncDto, dpsPrisoner))
+
+    LOG.info("Saving prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
   }
 
   fun syncPrisonerBalanceFromEventChange(prisonerId: String, domainEventType: DomainEventType) {
