@@ -52,7 +52,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { prisonVisitsAllocationPrisonerRetryQueueSqsClient.countMessagesOnQueue(prisonVisitsAllocationPrisonerRetryQueueUrl).get() } matches { it == 0 }
     await untilAsserted { verify(visitAllocationPrisonerRetryQueueListenerSpy, times(1)).processMessage(visitAllocationPrisonerRetryJob) }
-    await untilAsserted { verify(prisonerDetailsRepository, times(1)).save(any()) }
+    await untilAsserted { verify(prisonerDetailsRepository, times(1)).saveAndFlush(any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
     val visitOrders = visitOrderRepository.findAll()
