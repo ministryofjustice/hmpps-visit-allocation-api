@@ -8,6 +8,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDeta
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import java.time.LocalDate
 import kotlin.jvm.optionals.getOrNull
+import kotlin.math.absoluteValue
 
 @Transactional
 @Service
@@ -16,8 +17,13 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  @Transactional
   fun createPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
-    LOG.info("PrisonerDetailsService - createPrisonerDetails called with prisonerId - $prisonerId, newLastAllocatedDate - $newLastAllocatedDate and newLastPvoAllocatedDate - $newLastPvoAllocatedDate")
+    val lockKey = prisonerId.hashCode().toLong().absoluteValue
+    prisonerDetailsRepository.acquireAdvisoryLockForInsert(lockKey)
+
+    LOG.info("PrisonerDetailsService - createPrisonerDetails (with advisory lock) called for prisonerId - $prisonerId")
+
     return prisonerDetailsRepository.saveAndFlush(
       PrisonerDetails(
         prisonerId = prisonerId,
