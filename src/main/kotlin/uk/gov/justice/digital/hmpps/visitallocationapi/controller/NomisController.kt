@@ -18,8 +18,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocation
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerAdjustmentResponseDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisMigrationService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 const val VO_NOMIS = "/visits/allocation/prisoner"
@@ -31,8 +30,7 @@ const val VO_GET_PRISONER_ADJUSTMENT = "$VO_NOMIS/{prisonerId}/adjustments/{adju
 
 @RestController
 class NomisController(
-  val nomisMigrationService: NomisMigrationService,
-  val nomisSyncService: NomisSyncService,
+  val nomisService: NomisService,
 ) {
   @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
   @PostMapping(VO_PRISONER_MIGRATION)
@@ -57,7 +55,7 @@ class NomisController(
     ],
   )
   fun migratePrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerMigrationDto: VisitAllocationPrisonerMigrationDto): ResponseEntity<Void> {
-    nomisMigrationService.migratePrisoner(visitAllocationPrisonerMigrationDto)
+    nomisService.processMigrationRequest(visitAllocationPrisonerMigrationDto)
     return ResponseEntity.status(HttpStatus.OK).build()
   }
 
@@ -84,7 +82,7 @@ class NomisController(
     ],
   )
   fun syncPrisonerVisitOrders(@RequestBody @Valid visitAllocationPrisonerSyncDto: VisitAllocationPrisonerSyncDto): ResponseEntity<Void> {
-    nomisSyncService.syncPrisonerAdjustmentChanges(visitAllocationPrisonerSyncDto)
+    nomisService.processSyncRequest(visitAllocationPrisonerSyncDto)
     return ResponseEntity.status(HttpStatus.OK).build()
   }
 
@@ -122,5 +120,5 @@ class NomisController(
     @Schema(description = "adjustmentId", example = "1234", required = true)
     @PathVariable
     adjustmentId: String,
-  ): VisitAllocationPrisonerAdjustmentResponseDto = nomisSyncService.getChangeLogForNomis(VisitAllocationPrisonerAdjustmentRequestDto(prisonerId, adjustmentId.toLong()))
+  ): VisitAllocationPrisonerAdjustmentResponseDto = nomisService.getChangeLogForNomis(VisitAllocationPrisonerAdjustmentRequestDto(prisonerId, adjustmentId.toLong()))
 }

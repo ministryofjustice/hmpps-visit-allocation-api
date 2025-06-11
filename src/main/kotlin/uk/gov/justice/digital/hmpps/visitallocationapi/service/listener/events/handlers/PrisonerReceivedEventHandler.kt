@@ -12,10 +12,12 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerRecei
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerReceivedInfo
+import java.time.LocalDate
 
 @Service
 class PrisonerReceivedEventHandler(
@@ -25,6 +27,7 @@ class PrisonerReceivedEventHandler(
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
+  private val prisonerDetailsService: PrisonerDetailsService,
 ) : DomainEventHandler {
 
   companion object {
@@ -59,6 +62,11 @@ class PrisonerReceivedEventHandler(
   private fun processDps(info: PrisonerReceivedInfo) {
     if (shouldWipePrisonerBalance(info.reason)) {
       LOG.info("Prisoner ${info.prisonerId} received for reason ${info.reason}, wiping balance")
+      val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(info.prisonerId)
+      if (dpsPrisonerDetails == null) {
+        prisonerDetailsService.createPrisonerDetails(info.prisonerId, LocalDate.now().minusDays(14), null)
+      }
+
       val changeLogReference = processPrisonerService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)
       if (changeLog != null) {
@@ -70,6 +78,11 @@ class PrisonerReceivedEventHandler(
   }
 
   private fun processNomis(info: PrisonerReceivedInfo) {
+    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(info.prisonerId)
+    if (dpsPrisoner == null) {
+      prisonerDetailsService.createPrisonerDetails(info.prisonerId, LocalDate.now().minusDays(14), null)
+    }
+
     nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId, DomainEventType.PRISONER_RECEIVED_EVENT_TYPE)
   }
 

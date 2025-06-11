@@ -162,7 +162,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     val prisonerDetails = prisonerDetailsRepository.findAll()
     assertThat(prisonerDetails.size).isEqualTo(1)
     assertThat(prisonerDetails[0].prisonerId).isEqualTo(prisonerId)
-    assertThat(prisonerDetails[0].lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetails[0].lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(14))
     assertThat(prisonerDetails[0].lastPvoAllocatedDate).isNull()
   }
 
