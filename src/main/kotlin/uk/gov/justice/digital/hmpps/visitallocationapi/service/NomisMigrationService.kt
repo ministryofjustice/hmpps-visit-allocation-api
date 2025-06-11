@@ -15,6 +15,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.math.abs
 
+@Transactional
 @Service
 class NomisMigrationService(
   private val changeLogService: ChangeLogService,
@@ -25,7 +26,6 @@ class NomisMigrationService(
     const val NULL_LAST_ALLOCATION_DATE_OFFSET = 28L
   }
 
-  @Transactional
   fun migratePrisoner(migrationDto: VisitAllocationPrisonerMigrationDto) {
     LOG.info("Entered NomisMigrationService - migratePrisoner with migration dto {}", migrationDto)
 

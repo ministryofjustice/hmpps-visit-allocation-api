@@ -6,8 +6,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerAdjustmentRequestDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerAdjustmentResponseDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
@@ -17,7 +15,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
-import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -37,23 +34,12 @@ class NomisSyncService(
   }
 
   fun syncPrisonerAdjustmentChanges(syncDto: VisitAllocationPrisonerSyncDto) {
-    // In NOMIS, when a change is made via the adjustments_table, it will trigger a call
-    // to this endpoint, allowing DPS to sync the prisoner vo & pvo balances with NOMIS.
     LOG.info("Entered NomisSyncService - syncPrisoner with sync dto {}", syncDto)
 
     validateSyncRequest(syncDto)
 
-    var dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)
-    val prisonerBalance: PrisonerBalanceDto
-    if (dpsPrisoner != null) {
-      // Only do a balance comparison if prisoner exists.
-      compareBalanceBeforeSync(syncDto, dpsPrisoner.getBalance())
-      prisonerBalance = dpsPrisoner.getBalance()
-    } else {
-      // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      dpsPrisoner = prisonerDetailsService.createPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
-      prisonerBalance = PrisonerBalanceDto(prisonerId = syncDto.prisonerId, voBalance = 0, pvoBalance = 0)
-    }
+    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)!!
+    compareBalanceBeforeSync(syncDto, dpsPrisoner.getBalance())
 
     LOG.info("Current loaded prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
 
@@ -61,7 +47,7 @@ class NomisSyncService(
     if (syncDto.oldVoBalance != null) {
       processSync(
         prisoner = dpsPrisoner,
-        prisonerDpsBalance = prisonerBalance.voBalance,
+        prisonerDpsBalance = dpsPrisoner.getVoBalance(),
         balanceChange = syncDto.changeToVoBalance!!,
         visitOrderType = VisitOrderType.VO,
       )
@@ -71,7 +57,7 @@ class NomisSyncService(
     if (syncDto.oldPvoBalance != null) {
       processSync(
         prisoner = dpsPrisoner,
-        prisonerDpsBalance = prisonerBalance.pvoBalance,
+        prisonerDpsBalance = dpsPrisoner.getPvoBalance(),
         balanceChange = syncDto.changeToPvoBalance!!,
         visitOrderType = VisitOrderType.PVO,
       )
@@ -143,34 +129,6 @@ class NomisSyncService(
   fun syncPrisonerRemoved(prisonerId: String) {
     LOG.info("Entered NomisSyncService - syncPrisonerRemoved for prisoner {}", prisonerId)
     prisonerDetailsService.removePrisonerDetails(prisonerId)
-  }
-
-  fun getChangeLogForNomis(requestDto: VisitAllocationPrisonerAdjustmentRequestDto): VisitAllocationPrisonerAdjustmentResponseDto {
-    val prisonerChangeLogs = changeLogService.findAllChangeLogsForPrisoner(requestDto.prisonerId).sortedBy { it.id }
-
-    val currentIndex = prisonerChangeLogs.indexOfFirst { it.id == requestDto.changeLogId }
-    if (currentIndex == -1) {
-      throw NotFoundException("Change log with ID ${requestDto.changeLogId} not found for prisoner ${requestDto.prisonerId}")
-    }
-
-    val currentEntry = prisonerChangeLogs[currentIndex]
-    val previousEntry = if (currentIndex > 0) prisonerChangeLogs[currentIndex - 1] else null
-
-    val previousVoBalance = previousEntry?.visitOrderBalance ?: 0
-    val previousPvoBalance = previousEntry?.privilegedVisitOrderBalance ?: 0
-
-    return VisitAllocationPrisonerAdjustmentResponseDto(
-      prisonerId = requestDto.prisonerId,
-      voBalance = previousVoBalance,
-      changeToVoBalance = currentEntry.visitOrderBalance - previousVoBalance,
-      pvoBalance = previousPvoBalance,
-      changeToPvoBalance = currentEntry.privilegedVisitOrderBalance - previousPvoBalance,
-      changeLogType = currentEntry.changeType,
-      userId = currentEntry.userId,
-      changeLogSource = currentEntry.changeSource,
-      changeTimestamp = currentEntry.changeTimestamp,
-      comment = currentEntry.comment,
-    )
   }
 
   private fun processSync(prisoner: PrisonerDetails, prisonerDpsBalance: Int, balanceChange: Int, visitOrderType: VisitOrderType) {
