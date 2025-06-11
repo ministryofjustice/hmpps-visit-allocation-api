@@ -53,6 +53,11 @@ class PrisonerMergedEventHandler(
 
   private fun processDps(info: PrisonerMergedInfo) {
     LOG.info("Handling DPS prison merge event - $info")
+    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(info.prisonerId)
+    if (newPrisonerDetails == null) {
+      prisonerDetailsService.createPrisonerDetails(info.prisonerId, LocalDate.now().minusDays(14), null)
+    }
+
     val changeLogReference = processPrisonerService.processPrisonerMerge(info.prisonerId, info.removedPrisonerId)
     if (changeLogReference != null) {
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)

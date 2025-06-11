@@ -62,6 +62,11 @@ class PrisonerReceivedEventHandler(
   private fun processDps(info: PrisonerReceivedInfo) {
     if (shouldWipePrisonerBalance(info.reason)) {
       LOG.info("Prisoner ${info.prisonerId} received for reason ${info.reason}, wiping balance")
+      val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(info.prisonerId)
+      if (dpsPrisonerDetails == null) {
+        prisonerDetailsService.createPrisonerDetails(info.prisonerId, LocalDate.now().minusDays(14), null)
+      }
+
       val changeLogReference = processPrisonerService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)
       if (changeLog != null) {

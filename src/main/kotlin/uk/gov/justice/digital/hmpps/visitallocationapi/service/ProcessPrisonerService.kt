@@ -42,8 +42,7 @@ class ProcessPrisonerService(
 
   @Transactional
   fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID {
-    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
-      ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)!!
 
     // Find the oldest PVO to use. If none exists, find the oldest VO to use.
     val selected: VisitOrder? = dpsPrisonerDetails.visitOrders
@@ -89,8 +88,7 @@ class ProcessPrisonerService(
 
   @Transactional
   fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID {
-    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
-      ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)!!
 
     // Find the VO used by the visit.
     val voUsedForVisit: VisitOrder? = dpsPrisonerDetails.visitOrders.firstOrNull { it.visitReference == visit.reference }
@@ -134,8 +132,7 @@ class ProcessPrisonerService(
     var privilegedVisitOrdersToBeCreated = 0
 
     LOG.info("processPrisonerMerge with newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
-    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId) ?: prisonerDetailsService.createPrisonerDetails(newPrisonerId, LocalDate.now().minusDays(14), null)
-
+    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId)!!
     val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetails(removedPrisonerId)
 
     if (removedPrisonerDetails != null) {
@@ -189,8 +186,7 @@ class ProcessPrisonerService(
 
   @Transactional
   fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): UUID {
-    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
-      ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)!!
 
     dpsPrisonerDetails.visitOrders
       .filter { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
