@@ -93,29 +93,20 @@ class NomisSyncService(
       }
     }
 
-    var dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)
-    val prisonerDpsBalance: PrisonerBalanceDto
-    if (dpsPrisoner == null) {
-      val lastVoAllocatedDate = prisonerNomisBalance.latestIepAdjustDate ?: LocalDate.now()
-      // If they're new, onboard them by saving their details in the prisoner_details table and init their balance.
-      dpsPrisoner = prisonerDetailsService.createPrisonerDetails(prisonerId, lastVoAllocatedDate, prisonerNomisBalance.latestPrivIepAdjustDate)
-      prisonerDpsBalance = PrisonerBalanceDto(prisonerId, 0, 0)
-    } else {
-      prisonerDpsBalance = dpsPrisoner.getBalance()
-    }
+    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)!!
 
-    val voBalanceChange = (prisonerNomisBalance.remainingVo - prisonerDpsBalance.voBalance)
+    val voBalanceChange = (prisonerNomisBalance.remainingVo - dpsPrisoner.getVoBalance())
     processSync(
       prisoner = dpsPrisoner,
-      prisonerDpsBalance = prisonerDpsBalance.voBalance,
+      prisonerDpsBalance = dpsPrisoner.getVoBalance(),
       balanceChange = voBalanceChange,
       visitOrderType = VisitOrderType.VO,
     )
 
-    val pvoBalanceChange = (prisonerNomisBalance.remainingPvo - prisonerDpsBalance.pvoBalance)
+    val pvoBalanceChange = (prisonerNomisBalance.remainingPvo - dpsPrisoner.getPvoBalance())
     processSync(
       prisoner = dpsPrisoner,
-      prisonerDpsBalance = prisonerDpsBalance.pvoBalance,
+      prisonerDpsBalance = dpsPrisoner.getPvoBalance(),
       balanceChange = pvoBalanceChange,
       visitOrderType = VisitOrderType.PVO,
     )

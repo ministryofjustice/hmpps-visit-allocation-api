@@ -190,7 +190,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(5)
 
     val prisonerDetails = prisonerDetailsRepository.findById(prisonerId).get()
-    assertThat(prisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(14))
     assertThat(prisonerDetails.lastPvoAllocatedDate).isNull()
   }
 

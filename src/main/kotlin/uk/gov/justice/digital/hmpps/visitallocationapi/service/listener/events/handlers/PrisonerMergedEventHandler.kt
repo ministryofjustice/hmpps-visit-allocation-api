@@ -8,10 +8,12 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerMergedInfo
+import java.time.LocalDate
 
 @Service
 class PrisonerMergedEventHandler(
@@ -22,6 +24,7 @@ class PrisonerMergedEventHandler(
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
+  private val prisonerDetailsService: PrisonerDetailsService,
 ) : DomainEventHandler {
 
   companion object {
@@ -62,6 +65,11 @@ class PrisonerMergedEventHandler(
   }
 
   private fun processNomis(info: PrisonerMergedInfo) {
+    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(info.prisonerId)
+    if (dpsPrisoner == null) {
+      prisonerDetailsService.createPrisonerDetails(info.prisonerId, LocalDate.now().minusDays(14), null)
+    }
+
     nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId, DomainEventType.PRISONER_MERGED_EVENT_TYPE)
     nomisSyncService.syncPrisonerRemoved(info.removedPrisonerId)
   }
