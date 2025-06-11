@@ -17,7 +17,6 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Transactional
   fun createPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
     val lockKey = prisonerId.hashCode().toLong().absoluteValue
     prisonerDetailsRepository.acquireAdvisoryLockForInsert(lockKey)
