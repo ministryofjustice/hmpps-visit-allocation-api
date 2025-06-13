@@ -247,6 +247,18 @@ class NomisSyncService(
   }
 
   private fun compareBalanceBeforeSync(syncDto: VisitAllocationPrisonerSyncDto, prisonerBalance: PrisonerBalanceDto) {
+    if ((syncDto.oldVoBalance == 0 && syncDto.changeToVoBalance == 0) || (syncDto.oldPvoBalance == 0 && syncDto.changeToPvoBalance == 0)) {
+      LOG.warn("Received an empty sync message for either VO / PVO sync (old balance + change to balance both = 0), for prisoner ${syncDto.prisonerId}")
+      val telemetryBalanceProperties = mapOf(
+        "prisonerId" to syncDto.prisonerId,
+        "oldSyncVoBalance" to syncDto.oldVoBalance.toString(),
+        "oldSyncPvoBalance" to syncDto.oldPvoBalance.toString(),
+      )
+
+      telemetryService.trackEvent(TelemetryEventType.EMPTY_SYNC_REQUEST, telemetryBalanceProperties)
+      return
+    }
+
     if (syncDto.oldVoBalance != null) {
       if (prisonerBalance.voBalance != syncDto.oldVoBalance) {
         LOG.error("Discovered discrepancy between NOMIS and DPS VO balances. Logging error to application insights for prisoner ${syncDto.prisonerId}")
