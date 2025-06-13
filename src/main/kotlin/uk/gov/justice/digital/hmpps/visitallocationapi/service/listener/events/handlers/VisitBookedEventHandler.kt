@@ -49,9 +49,11 @@ class VisitBookedEventHandler(
         }
 
         val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit)
-        val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisoner.prisonerId, changeLogReference)
-        if (changeLog != null) {
-          snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+        if (changeLogReference != null) {
+          val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisoner.prisonerId, changeLogReference)
+          if (changeLog != null) {
+            snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+          }
         }
       } else {
         LOG.info("Prisoner ${visit.prisonerId} is on Remand, no processing needed")

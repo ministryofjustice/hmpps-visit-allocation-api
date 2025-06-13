@@ -11,6 +11,7 @@ class DomainEventListenerService(private val handlerRegistry: DomainEventHandler
   companion object {
     private val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
+
   fun handleMessage(domainEvent: DomainEvent) {
     val handler = handlerRegistry.getHandler(domainEvent.eventType)
 
