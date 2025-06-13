@@ -249,7 +249,7 @@ class NomisSyncService(
   private fun compareBalanceBeforeSync(syncDto: VisitAllocationPrisonerSyncDto, prisonerBalance: PrisonerBalanceDto) {
 
     if ((syncDto.oldVoBalance == 0 && syncDto.changeToVoBalance == 0) || (syncDto.oldPvoBalance == 0 && syncDto.changeToPvoBalance == 0)) {
-      LOG.error("Received an empty sync message for either VO / PVO sync (old balance + change to balance both = 0), for prisoner ${syncDto.prisonerId}")
+      LOG.warn("Received an empty sync message for either VO / PVO sync (old balance + change to balance both = 0), for prisoner ${syncDto.prisonerId}")
       val telemetryBalanceProperties = mapOf(
         "prisonerId" to syncDto.prisonerId,
         "oldSyncVoBalance" to syncDto.oldVoBalance.toString(),
