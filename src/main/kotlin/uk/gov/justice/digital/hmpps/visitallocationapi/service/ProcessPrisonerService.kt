@@ -41,8 +41,14 @@ class ProcessPrisonerService(
   }
 
   @Transactional
-  fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID {
+  fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID? {
     val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)!!
+
+    // Due to our SQS queues being "At least once delivery", this specific event needs to return early if this visit has already been mapped.
+    if (visitAlreadyMapped(dpsPrisonerDetails, visit)) {
+      LOG.info("Duplicate request to map a visit booking (${visit.reference}) to a visit order for prisoner ${dpsPrisonerDetails.prisonerId}. Exiting early.")
+      return null
+    }
 
     // Find the oldest PVO to use. If none exists, find the oldest VO to use.
     val selected: VisitOrder? = dpsPrisonerDetails.visitOrders
@@ -85,6 +91,8 @@ class ProcessPrisonerService(
 
     return changeLog.reference
   }
+
+  private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }
 
   @Transactional
   fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID {

@@ -153,7 +153,10 @@ class NomisSyncService(
       } else {
         val negativeVosToCreate = abs(prisonerDpsBalance + balanceChange)
         LOG.info("Balance decreased and is negative for prisoner ${prisoner.prisonerId}, expiring all $visitOrderType and creating $negativeVosToCreate $visitOrderType")
-        prisoner.visitOrders.filter { it.type == visitOrderType }.forEach { visitOrder -> visitOrder.status = VisitOrderStatus.EXPIRED }
+        prisoner.visitOrders.filter { it.type == visitOrderType }.forEach { visitOrder ->
+          visitOrder.status = VisitOrderStatus.EXPIRED
+          visitOrder.expiryDate = LocalDate.now()
+        }
         prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(prisoner, visitOrderType, negativeVosToCreate))
       }
     }

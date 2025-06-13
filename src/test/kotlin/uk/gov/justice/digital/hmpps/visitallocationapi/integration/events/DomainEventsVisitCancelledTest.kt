@@ -57,7 +57,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     dpsPrisoner.changeLogs.add(
       ChangeLog(
         changeTimestamp = LocalDateTime.now().minusSeconds(1),
-        changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+        changeType = ChangeLogType.BATCH_PROCESS,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         prisonerId = dpsPrisoner.prisonerId,
@@ -97,7 +97,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.first { it.type == VisitOrderType.PVO }.createdTimestamp).isEqualTo(LocalDateTime.now().with(TemporalAdjusters.firstDayOfMonth()).with(LocalTime.MIN))
     assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(0)
 
-    val changLog = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)!!
+    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
   }
 
@@ -125,7 +125,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     dpsPrisoner.changeLogs.add(
       ChangeLog(
         changeTimestamp = LocalDateTime.now().minusSeconds(1),
-        changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+        changeType = ChangeLogType.BATCH_PROCESS,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         prisonerId = dpsPrisoner.prisonerId,
@@ -165,7 +165,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.first { it.type == VisitOrderType.VO }.createdTimestamp.toLocalDate()).isEqualTo(LocalDate.now().minusDays(1))
     assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(0)
 
-    val changLog = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)!!
+    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
   }
 
@@ -193,7 +193,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     dpsPrisoner.changeLogs.add(
       ChangeLog(
         changeTimestamp = LocalDateTime.now().minusSeconds(1),
-        changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+        changeType = ChangeLogType.BATCH_PROCESS,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         prisonerId = dpsPrisoner.prisonerId,
@@ -234,7 +234,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.size).isEqualTo(0)
 
-    val changLog = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)!!
+    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
   }
 
@@ -275,7 +275,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(1)
 
-    val changLog = changeLogRepository.findFirstByPrisonerIdAndChangeTypeOrderByChangeTimestampDesc(prisonerId, ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED)!!
+    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
   }
 
@@ -303,7 +303,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     dpsPrisoner.changeLogs.add(
       ChangeLog(
         changeTimestamp = LocalDateTime.now().minusSeconds(1),
-        changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+        changeType = ChangeLogType.BATCH_PROCESS,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         prisonerId = dpsPrisoner.prisonerId,
