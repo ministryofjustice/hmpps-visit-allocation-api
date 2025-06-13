@@ -360,7 +360,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderUsage(any()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationUsedByVisit(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
