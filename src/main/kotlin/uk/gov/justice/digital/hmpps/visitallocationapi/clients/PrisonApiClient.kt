@@ -45,7 +45,7 @@ class PrisonApiClient(
     LOG.debug("Entered prison-api client - getPrisonEnabledForDps for prison $prisonId")
 
     return webClient.get()
-      .uri("/api/service-prisons/$SERVICE_NAME/prison/$prisonId")
+      .uri("/api/agency-switches/$SERVICE_NAME/agency/$prisonId")
       .exchangeToMono { response ->
         when (response.statusCode()) {
           NO_CONTENT -> {
@@ -64,7 +64,7 @@ class PrisonApiClient(
 
   fun getAllServicePrisonsEnabledForDps(): List<ServicePrisonDto> {
     LOG.debug("Entered prison-api client - getAllServicePrisonsEnabledForDps")
-    val uri = "/api/service-prisons/$SERVICE_NAME"
+    val uri = "/api/agency-switches/$SERVICE_NAME"
 
     return webClient.get()
       .uri(uri)

@@ -43,7 +43,7 @@ class PrisonApiMockServer : WireMockServer(8096) {
       .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 
     stubFor(
-      get("/api/service-prisons/VISIT_ALLOCATION/prison/$prisonId")
+      get("/api/agency-switches/VISIT_ALLOCATION/agency/$prisonId")
         .willReturn(
           if (enabled) {
             responseBuilder.withStatus(HttpStatus.NO_CONTENT.value())
@@ -63,7 +63,7 @@ class PrisonApiMockServer : WireMockServer(8096) {
       .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 
     stubFor(
-      get("/api/service-prisons/VISIT_ALLOCATION")
+      get("/api/agency-switches/VISIT_ALLOCATION")
         .willReturn(
           if (prisons == null) {
             if (httpStatus != null) {
