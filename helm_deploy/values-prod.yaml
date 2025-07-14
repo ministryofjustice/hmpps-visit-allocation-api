@@ -5,6 +5,20 @@ generic-service:
   ingress:
     host: hmpps-visit-allocation-api.prison.service.justice.gov.uk
 
+  postgresDatabaseRestore:
+    enabled: true
+    namespace_secrets:
+      visit-allocation-rds:
+        DB_NAME: "database_name"
+        DB_USER: "database_username"
+        DB_PASS: "database_password"
+        DB_HOST: "rds_instance_address"
+      visit-allocation-rds-output-preprod:
+        DB_NAME_PREPROD: "database_name"
+        DB_USER_PREPROD: "database_username"
+        DB_PASS_PREPROD: "database_password"
+        DB_HOST_PREPROD: "rds_instance_address"
+
   env:
     HMPPS_AUTH_URL: "https://sign-in.hmpps.service.justice.gov.uk/auth"
     PRISONER_SEARCH_URL: "https://prisoner-search.prison.service.justice.gov.uk"
@@ -25,17 +39,3 @@ generic-prometheus-alerts:
     - "book-a-prison-visit-prod-hmpps_prison_visits_allocation_processing_job_dlq"
   sqsAlertsOldestThreshold: 1
   sqsAlertsTotalMessagesThreshold: 1
-
-  postgresDatabaseRestore:
-    enabled: true
-    namespace_secrets:
-      visit-allocation-rds:
-        DB_NAME: "database_name"
-        DB_USER: "database_username"
-        DB_PASS: "database_password"
-        DB_HOST: "rds_instance_address"
-      visit-allocation-rds-output-preprod:
-        DB_NAME_PREPROD: "database_name"
-        DB_USER_PREPROD: "database_username"
-        DB_PASS_PREPROD: "database_password"
-        DB_HOST_PREPROD: "rds_instance_address"
