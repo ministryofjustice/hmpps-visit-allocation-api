@@ -137,4 +137,4 @@ adjustment ID which NOMIS can then use to call via the NomisController "getPriso
 
 ### SQS Retries
 We've enabled an automated cron job via the generic-service helm chart, which runs every 15minutes and reprocesses any message which enters 
-the DLQ. To configure this further, see the helm_deploy/values.yaml.
+the DLQ. To configure this further, see the helm_deploy/values.yaml. On dev and staging environments the retry cron only runs during operational hours (7am–8:50pm).
