@@ -22,7 +22,15 @@ spec:
               args:
                 - /bin/sh
                 - -c
-                - curl -XPOST http://hmpps-visit-allocation-api/visits/allocation/job/start
+                - |
+                  response=$(curl --fail -s -o /dev/null -w "%{http_code}" -XPOST http://hmpps-visit-allocation-api/visits/allocation/job/start)
+                  if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
+                    echo "Job succeeded with HTTP $response"
+                    exit 0
+                  else
+                    echo "Job failed with HTTP $response"
+                    exit 1
+                  fi
               securityContext:
                 allowPrivilegeEscalation: false
                 capabilities:
