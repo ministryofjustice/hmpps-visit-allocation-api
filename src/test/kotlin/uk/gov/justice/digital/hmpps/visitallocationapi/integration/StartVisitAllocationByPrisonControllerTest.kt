@@ -37,8 +37,8 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
   @Test
   fun `when allocation job started then sqs messages are sent for each active prison`() {
     // Given
-    val prison1Active = ServicePrisonDto(prisonId = prisonCode1, prison = "A prison")
-    val prison2Active = ServicePrisonDto(prisonId = prisonCode2, prison = "A prison")
+    val prison1Active = ServicePrisonDto(agencyId = prisonCode1, name = "A prison")
+    val prison2Active = ServicePrisonDto(agencyId = prisonCode2, name = "A prison")
 
     // When
     prisonApiMockServer.stubGetAllServicePrisonsEnabledForDps(listOf(prison1Active, prison2Active))
@@ -50,8 +50,8 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
     val visitAllocationEventJobDto = getVisitAllocationEventJobDto(result)
     Assertions.assertThat(visitAllocationEventJobDto.totalActivePrisons).isEqualTo(2)
     verify(sqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
-    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(visitAllocationEventJobDto.allocationJobReference, prison1Active.prisonId)
-    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(visitAllocationEventJobDto.allocationJobReference, prison2Active.prisonId)
+    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(visitAllocationEventJobDto.allocationJobReference, prison1Active.agencyId)
+    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(visitAllocationEventJobDto.allocationJobReference, prison2Active.agencyId)
     verify(visitOrderAllocationJobRepository, times(1)).save(any())
     verify(visitOrderAllocationPrisonJobRepository, times(2)).save(any())
   }

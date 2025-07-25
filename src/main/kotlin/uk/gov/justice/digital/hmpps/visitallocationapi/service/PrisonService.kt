@@ -30,12 +30,12 @@ class PrisonService(
 
   fun triggerVisitAllocationForActivePrisons(): VisitAllocationEventJobDto {
     log.info("Trigger allocation by prison started")
-    val activePrisons = prisonApiClient.getAllServicePrisonsEnabledForDps() ?: emptyList()
+    val activePrisons = prisonApiClient.getAllServicePrisonsEnabledForDps()
     val allocationJobReference = auditOrderAllocationJob(totalActivePrisons = activePrisons.size).reference
     log.info("Total active prisons for visit allocation job = ${activePrisons.size}")
 
     activePrisons.forEach {
-      val prisonCode = it.prisonId
+      val prisonCode = it.agencyId
       auditOrderAllocationPrisonJob(allocationJobReference, prisonCode)
       sendSqsMessageForPrison(allocationJobReference, prisonCode)
     }

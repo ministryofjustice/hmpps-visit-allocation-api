@@ -50,8 +50,8 @@ class PrisonServiceTest {
 
     // then - 2 SQS messages should be sent to the allocation queue
     verify(visitAllocationEventJobSqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
-    verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.prisonId)
-    verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison2.prisonId)
+    verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.agencyId)
+    verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison2.agencyId)
   }
 
   @Test
@@ -84,14 +84,14 @@ class PrisonServiceTest {
     whenever(visitOrderAllocationJobRepository.save(any())).thenReturn(visitOrderAllocationJob)
 
     // an exception thrown when sending message for prison 1
-    whenever(visitAllocationEventJobSqsService.sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.prisonId)).thenThrow(RuntimeException::class.java)
+    whenever(visitAllocationEventJobSqsService.sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.agencyId)).thenThrow(RuntimeException::class.java)
 
     // Begin test
     prisonService.triggerVisitAllocationForActivePrisons()
 
     // then - SQS messages for the second active prison is still sent
     verify(visitAllocationEventJobSqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
-    verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.prisonId)
-    verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison2.prisonId)
+    verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.agencyId)
+    verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison2.agencyId)
   }
 }
