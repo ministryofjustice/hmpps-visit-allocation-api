@@ -149,7 +149,10 @@ class NomisSyncService(
           .filter { it.type == visitOrderType && it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
           .sortedBy { it.createdTimestamp }
           .take(abs(balanceChange))
-          .forEach { it.status = VisitOrderStatus.EXPIRED }
+          .forEach {
+            it.status = VisitOrderStatus.EXPIRED
+            it.expiryDate = LocalDate.now()
+          }
       } else {
         val negativeVosToCreate = abs(prisonerDpsBalance + balanceChange)
         LOG.info("Balance decreased and is negative for prisoner ${prisoner.prisonerId}, expiring all $visitOrderType and creating $negativeVosToCreate $visitOrderType")
