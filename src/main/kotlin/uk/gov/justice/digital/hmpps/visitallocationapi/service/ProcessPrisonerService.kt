@@ -225,7 +225,7 @@ class ProcessPrisonerService(
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): UUID? {
+  fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>?, fromRetryQueue: Boolean? = false): UUID? {
     LOG.info("Entered ProcessPrisonerService - processPrisoner for prisoner - $prisonerId")
 
     try {
@@ -276,13 +276,13 @@ class ProcessPrisonerService(
     return voChanged || nvoChanged
   }
 
-  private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>) {
+  private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>?) {
     LOG.info("Entered ProcessPrisonerService - processPrisonerAllocation with prisonerId ${dpsPrisoner.prisonerId}")
 
     val prisonerPrisonId = prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId).prisonId
     val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)
 
-    val prisonIncentiveAmounts = allPrisonIncentiveAmounts.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
+    val prisonIncentiveAmounts = allPrisonIncentiveAmounts?.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
       ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisonerPrisonId, prisonerIncentive.iepCode)
 
     val visitOrders = mutableListOf<VisitOrder>()

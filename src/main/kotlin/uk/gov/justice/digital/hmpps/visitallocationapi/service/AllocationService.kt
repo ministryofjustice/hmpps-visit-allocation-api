@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 
 @Transactional
@@ -28,7 +27,7 @@ class AllocationService(
     prisonService.setVisitOrderAllocationPrisonJobStartTime(jobReference, prisonId)
 
     val allPrisoners = getConvictedPrisonersForPrison(jobReference = jobReference, prisonId = prisonId)
-    val allIncentiveLevels = getIncentiveLevelsForPrison(jobReference = jobReference, prisonId = prisonId)
+    val allIncentiveLevels = incentivesClient.getPrisonIncentiveLevels(prisonId = prisonId)
     var totalConvictedPrisonersProcessed = 0
     var totalConvictedPrisonersFailedOrSkipped = 0
 
@@ -73,18 +72,5 @@ class AllocationService(
     }
 
     return convictedPrisonersForPrison
-  }
-
-  private fun getIncentiveLevelsForPrison(jobReference: String, prisonId: String): List<PrisonIncentiveAmountsDto> {
-    val incentiveLevelsForPrison = try {
-      incentivesClient.getPrisonIncentiveLevels(prisonId)
-    } catch (e: Exception) {
-      val failureMessage = "failed to get incentive levels by prisonId - $prisonId"
-      LOG.error(failureMessage, e)
-      prisonService.setVisitOrderAllocationPrisonJobEndTimeAndFailureMessage(jobReference, prisonId, failureMessage)
-      throw e
-    }
-
-    return incentiveLevelsForPrison
   }
 }

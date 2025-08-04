@@ -32,7 +32,7 @@ class IncentivesClient(
       .block() ?: throw TimeoutException("Request timed out while fetching prisoner incentive level for prisoner ID $prisonerId")
   }
 
-  fun getPrisonIncentiveLevels(prisonId: String): List<PrisonIncentiveAmountsDto> {
+  fun getPrisonIncentiveLevels(prisonId: String): List<PrisonIncentiveAmountsDto>? {
     LOG.info("Calling incentives-api to get prison all incentive levels for prison $prisonId")
 
     val uri = "/incentive/prison-levels/$prisonId"
@@ -41,15 +41,10 @@ class IncentivesClient(
       .retrieve()
       .bodyToMono<List<PrisonIncentiveAmountsDto>>()
       .onErrorResume { e ->
-        if (!isNotFoundError(e)) {
-          LOG.error("getPrisonIncentiveLevels Failed for get request $uri")
-          Mono.error(e)
-        } else {
-          LOG.error("getPrisonIncentiveLevels NOT_FOUND for get request $uri")
-          Mono.error { NotFoundException("Incentive levels not found for prison $prisonId, $e") }
-        }
+        LOG.error("getPrisonIncentiveLevels failed for get request $uri, returning null")
+        Mono.empty()
       }
-      .block() ?: throw TimeoutException("Request timed out while fetching incentive levels for $prisonId")
+      .block()
   }
 
   fun getPrisonIncentiveLevelByLevelCode(prisonId: String, levelCode: String): PrisonIncentiveAmountsDto {

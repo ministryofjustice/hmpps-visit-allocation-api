@@ -6,11 +6,11 @@ import jakarta.validation.constraints.NotNull
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 
 data class PrisonerReceivedInfo(
-  @NotBlank
+  @field:NotBlank
   @JsonProperty("nomsNumber")
   val prisonerId: String,
 
-  @NotBlank
+  @field:NotBlank
   @JsonProperty("prisonId")
   val prisonCode: String,
 

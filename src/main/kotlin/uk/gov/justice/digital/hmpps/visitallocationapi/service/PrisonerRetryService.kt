@@ -6,8 +6,6 @@ import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.AllocationService.Companion.LOG
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
 
 @Service
@@ -37,7 +35,7 @@ class PrisonerRetryService(
   fun handlePrisonerRetry(jobReference: String, prisonerId: String) {
     log.info("handle prisoner - $prisonerId on retry queue")
     val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
-    val allIncentiveLevels = getIncentiveLevelsForPrison(prisonId = prisoner.prisonId)
+    val allIncentiveLevels = incentivesClient.getPrisonIncentiveLevels(prisonId = prisoner.prisonId)
     val changeLogReference = processPrisonerService.processPrisonerAllocation(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
     if (changeLogReference != null) {
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisonerId, changeLogReference)
@@ -45,17 +43,5 @@ class PrisonerRetryService(
         snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
       }
     }
-  }
-
-  private fun getIncentiveLevelsForPrison(prisonId: String): List<PrisonIncentiveAmountsDto> {
-    val incentiveLevelsForPrison = try {
-      incentivesClient.getPrisonIncentiveLevels(prisonId)
-    } catch (e: Exception) {
-      val failureMessage = "failed to get incentive levels by prisonId - $prisonId in retry queue consumer"
-      LOG.error(failureMessage, e)
-      throw e
-    }
-
-    return incentiveLevelsForPrison
   }
 }

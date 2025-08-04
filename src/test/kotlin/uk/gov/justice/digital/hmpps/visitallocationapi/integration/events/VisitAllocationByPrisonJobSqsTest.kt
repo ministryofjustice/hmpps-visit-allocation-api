@@ -686,10 +686,10 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   }
 
   /**
-   * Scenario - Allocation: Visit allocation job is run, but call to get convicted prisoners fail.
+   * Scenario - Allocation: Visit allocation job is run, but call to get incentive levels fails, job still runs successfully.
    */
   @Test
-  fun `when call to get incentive levels for a prison fails with a status of NOT_FOUND then end time and failure message are populated`() {
+  fun `when call to get incentive levels for a prison fails with a status of INTERNAL_SERVER_ERROR then job contains and finishes successfully`() {
     // Given - message sent to start allocation job for prison
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
@@ -701,44 +701,26 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // When
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
-    incentivesMockServer.stubGetAllPrisonIncentiveLevels(PRISON_CODE, null, HttpStatus.NOT_FOUND)
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(PRISON_CODE, null, HttpStatus.INTERNAL_SERVER_ERROR)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+
+    incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "STD", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"))
+    incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "ENH", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "ENH"))
+    incentivesMockServer.stubGetPrisonIncentiveLevelsByLevelCode(prisonId = PRISON_CODE, levelCode = "ENH2", prisonIncentiveAmountsDto = PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"))
+
     prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
     Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
       await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+
       val visitOrders = visitOrderRepository.findAll()
-
-      assertThat(visitOrders.size).isEqualTo(0)
-      val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get incentive levels by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
-    }
-  }
-
-  /**
-   * Scenario - Allocation: Visit allocation job is run, but call to get convicted prisoners fail.
-   */
-  @Test
-  fun `when call to get incentive levels for a prison fails with a status of INTERNAL_SERVER_ERROR then end time and failure message are populated`() {
-    // Given - message sent to start allocation job for prison
-    val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
-    val allocationJobReference = "job-ref"
-    val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
-    val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
-    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
-
-    // When
-    val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
-    prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
-    incentivesMockServer.stubGetAllPrisonIncentiveLevels(PRISON_CODE, null, HttpStatus.NOT_FOUND)
-    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
-
-    Awaitility.await().atMost(5, TimeUnit.SECONDS).untilAsserted {
-      await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
-      val visitOrders = visitOrderRepository.findAll()
-
-      assertThat(visitOrders.size).isEqualTo(0)
-      val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-      assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get incentive levels by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
+      assertThat(visitOrders.size).isEqualTo(9)
     }
   }
 
