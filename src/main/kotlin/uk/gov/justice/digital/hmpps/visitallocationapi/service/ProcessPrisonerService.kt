@@ -235,8 +235,8 @@ class ProcessPrisonerService(
 
       val dpsPrisonerDetailsBefore = dpsPrisonerDetails.deepCopy()
 
-      processPrisonerAllocation(dpsPrisonerDetails, allPrisonIncentiveAmounts)
       processPrisonerAccumulation(dpsPrisonerDetails)
+      processPrisonerAllocation(dpsPrisonerDetails, allPrisonIncentiveAmounts)
       processPrisonerExpiration(dpsPrisonerDetails)
 
       val changeLog: ChangeLog? = if (hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
@@ -382,7 +382,15 @@ class ProcessPrisonerService(
       if (negativeVoCount > 0) {
         handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, VisitOrderType.VO, visitOrders)
       } else {
-        repeat(prisonIncentivesForPrisonerLevel.visitOrders) {
+        val currentVOs = prisoner.visitOrders.count {
+          it.type == VisitOrderType.VO && (it.status == VisitOrderStatus.AVAILABLE || it.status == VisitOrderStatus.ACCUMULATED)
+        }
+
+        val slotsRemaining = (maxAccumulatedVisitOrders - currentVOs).coerceAtLeast(0)
+
+        val amountToAllocate = prisonIncentivesForPrisonerLevel.visitOrders.coerceAtMost(slotsRemaining)
+
+        repeat(amountToAllocate) {
           visitOrders.add(createVisitOrder(prisoner, VisitOrderType.VO))
         }
       }
