@@ -34,7 +34,6 @@ class ProcessPrisonerService(
   private val changeLogService: ChangeLogService,
   private val telemetryClientService: TelemetryClientService,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
-
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -382,20 +381,24 @@ class ProcessPrisonerService(
       if (negativeVoCount > 0) {
         handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, VisitOrderType.VO, visitOrders)
       } else {
-        val currentVOs = prisoner.visitOrders.count {
-          it.type == VisitOrderType.VO && (it.status == VisitOrderStatus.AVAILABLE || it.status == VisitOrderStatus.ACCUMULATED)
-        }
-
-        val slotsRemaining = (maxAccumulatedVisitOrders - currentVOs).coerceAtLeast(0)
-
-        val amountToAllocate = prisonIncentivesForPrisonerLevel.visitOrders.coerceAtMost(slotsRemaining)
-
-        repeat(amountToAllocate) {
+        repeat(amountOfVosToGenerate(prisoner, prisonIncentivesForPrisonerLevel.visitOrders)) {
           visitOrders.add(createVisitOrder(prisoner, VisitOrderType.VO))
         }
       }
     }
     return visitOrders
+  }
+
+  private fun amountOfVosToGenerate(prisoner: PrisonerDetails, incentiveLevelAllocation: Int): Int {
+    val currentVOs = prisoner.visitOrders.count {
+      it.type == VisitOrderType.VO && (it.status == VisitOrderStatus.AVAILABLE || it.status == VisitOrderStatus.ACCUMULATED)
+    }
+
+    // Don't go past 0 as a safeguard
+    val remainingVoAllowance = (maxAccumulatedVisitOrders - currentVOs).coerceAtLeast(0)
+
+    // Return the maximum they can be allocated without breaching the hard cap maxAccumulatedVisitOrders
+    return incentiveLevelAllocation.coerceAtMost(remainingVoAllowance)
   }
 
   private fun generatePVos(prisoner: PrisonerDetails, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {

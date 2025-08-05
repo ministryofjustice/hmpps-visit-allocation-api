@@ -675,8 +675,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     // Maximum balance for prisoner1
     entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner1.prisonerId, LocalDate.now().minusDays(14), null))
-    entityHelper.createAndSaveVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDateTime.now(),2)
-    entityHelper.createAndSaveVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDateTime.now(),24)
+    entityHelper.createAndSaveVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDateTime.now(), 2)
+    entityHelper.createAndSaveVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDateTime.now(), 24)
 
     // When
     val convictedPrisoners = listOf(prisoner1)
