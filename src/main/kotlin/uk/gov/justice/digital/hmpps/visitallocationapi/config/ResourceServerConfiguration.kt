@@ -39,6 +39,7 @@ class ResourceServerConfiguration {
           "/swagger-resources/configuration/security",
           // Protected by the ingress - see Kube config in helm_deploy
           "/visits/allocation/job/start",
+          "/queue-admin/retry-all-dlqs",
         ).forEach { authorize(it, permitAll) }
         authorize(anyRequest, authenticated)
       }
