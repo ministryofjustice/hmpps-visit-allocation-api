@@ -91,8 +91,12 @@ class SnsService(
     val currentEntry = prisonerChangeLogs[currentIndex]
     val previousEntry = if (currentIndex > 0) prisonerChangeLogs[currentIndex - 1] else null
 
-    val previousVoBalance = previousEntry?.visitOrderBalance ?: 0
-    val previousPvoBalance = previousEntry?.privilegedVisitOrderBalance ?: 0
+    if (previousEntry == null) {
+      return true
+    }
+
+    val previousVoBalance = previousEntry.visitOrderBalance
+    val previousPvoBalance = previousEntry.privilegedVisitOrderBalance
 
     return currentEntry.visitOrderBalance != previousVoBalance || currentEntry.privilegedVisitOrderBalance != previousPvoBalance
   }
