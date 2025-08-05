@@ -18,7 +18,7 @@ import java.util.*
 
 @Transactional
 @Service
-class ChangeLogService(val changeLogRepository: ChangeLogRepository) {
+class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     const val CHANGE_LOG_SYSTEM_USER_ID = "SYSTEM"
