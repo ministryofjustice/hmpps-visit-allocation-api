@@ -85,8 +85,7 @@ class SnsService(
 
     val currentIndex = prisonerChangeLogs.indexOfFirst { it.id == changeLog.id }
     if (currentIndex == -1) {
-      // TODO: Should we throw exception, or just return True to avoid failing SNS publishing?
-      return true
+      return true // Default to true, to avoid assuming balance hasn't changed.
     }
 
     val currentEntry = prisonerChangeLogs[currentIndex]
@@ -95,7 +94,7 @@ class SnsService(
     val previousVoBalance = previousEntry?.visitOrderBalance ?: 0
     val previousPvoBalance = previousEntry?.privilegedVisitOrderBalance ?: 0
 
-    return currentEntry.visitOrderBalance - previousVoBalance != 0 || currentEntry.privilegedVisitOrderBalance - previousPvoBalance != 0
+    return currentEntry.visitOrderBalance != previousVoBalance || currentEntry.privilegedVisitOrderBalance != previousPvoBalance
   }
 }
 
