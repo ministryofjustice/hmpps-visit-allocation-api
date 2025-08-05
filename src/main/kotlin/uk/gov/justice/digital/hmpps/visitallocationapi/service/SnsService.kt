@@ -6,6 +6,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.PublishEventException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
@@ -21,6 +22,7 @@ class SnsService(
   private val objectMapper: ObjectMapper,
   @Value("\${feature.events.sns.enabled:true}")
   private val snsEventsEnabled: Boolean,
+  private val changeLogService: ChangeLogService,
 ) {
 
   companion object {
@@ -37,19 +39,20 @@ class SnsService(
   fun LocalDateTime.toOffsetDateFormat(): String = atZone(ZoneId.of(EVENT_ZONE_ID)).toOffsetDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
   fun sendPrisonAllocationAdjustmentCreatedEvent(changeLog: ChangeLog) {
-    publishToDomainEventsTopic(
-      HMPPSDomainEvent(
-        eventType = EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED,
-        version = EVENT_PRISON_VISIT_VERSION,
-        description = EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED_DESC,
-        occurredAt = changeLog.changeTimestamp.toOffsetDateFormat(),
-        personReference = PersonReference(identifiers = listOf(PersonIdentifier("NOMIS", changeLog.prisonerId))),
-        additionalInformation = AdditionalInformation(
-          prisonerId = changeLog.prisonerId,
-          adjustmentId = changeLog.id.toString(),
-        ),
+    val event = HMPPSDomainEvent(
+      eventType = EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED,
+      version = EVENT_PRISON_VISIT_VERSION,
+      description = EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED_DESC,
+      occurredAt = changeLog.changeTimestamp.toOffsetDateFormat(),
+      personReference = PersonReference(identifiers = listOf(PersonIdentifier("NOMIS", changeLog.prisonerId))),
+      additionalInformation = AdditionalInformation(
+        prisonerId = changeLog.prisonerId,
+        adjustmentId = changeLog.id.toString(),
+        hasBalanceChanged = hasBalanceChanged(changeLog),
       ),
     )
+
+    publishToDomainEventsTopic(event)
   }
 
   private fun publishToDomainEventsTopic(payloadEvent: HMPPSDomainEvent) {
@@ -76,6 +79,24 @@ class SnsService(
       throw PublishEventException(message, e)
     }
   }
+
+  private fun hasBalanceChanged(changeLog: ChangeLog): Boolean {
+    val prisonerChangeLogs = changeLogService.findAllChangeLogsForPrisoner(changeLog.prisonerId).sortedBy { it.id }
+
+    val currentIndex = prisonerChangeLogs.indexOfFirst { it.id == changeLog.id }
+    if (currentIndex == -1) {
+      // TODO: Should we throw exception, or just return True to avoid failing SNS publishing?
+      return true
+    }
+
+    val currentEntry = prisonerChangeLogs[currentIndex]
+    val previousEntry = if (currentIndex > 0) prisonerChangeLogs[currentIndex - 1] else null
+
+    val previousVoBalance = previousEntry?.visitOrderBalance ?: 0
+    val previousPvoBalance = previousEntry?.privilegedVisitOrderBalance ?: 0
+
+    return currentEntry.visitOrderBalance - previousVoBalance != 0 || currentEntry.privilegedVisitOrderBalance - previousPvoBalance != 0
+  }
 }
 
 internal data class HMPPSDomainEvent(
@@ -91,6 +112,7 @@ internal data class HMPPSDomainEvent(
 internal data class AdditionalInformation(
   val prisonerId: String,
   val adjustmentId: String,
+  val hasBalanceChanged: Boolean,
 )
 
 internal data class PersonReference(
