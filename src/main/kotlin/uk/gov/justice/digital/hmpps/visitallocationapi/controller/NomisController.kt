@@ -36,7 +36,7 @@ class NomisController(
   @PostMapping(VO_PRISONER_MIGRATION)
   @Operation(
     summary = "Endpoint to migrate prisoner VO / PVO balances from NOMIS to DPS.",
-    description = "Takes a prisoner and 'onboards' them onto DPS, syncing their balance with NOMIS.",
+    description = "Takes a prisoner and 'onboards' them onto DPS, syncing their balance with NOMIS. Also used by NOMIS for Initial IEP Entitlement syncs, not just initial migration",
     responses = [
       ApiResponse(
         responseCode = "200",
