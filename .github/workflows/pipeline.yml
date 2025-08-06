@@ -92,5 +92,6 @@ jobs:
     uses: ministryofjustice/hmpps-github-actions/.github/workflows/deploy_env.yml@v2 # WORKFLOW_VERSION
     secrets: inherit
     with:
+      slack_notification: true
       environment: 'prod'
       app_version: '${{ needs.build.outputs.app_version }}'
