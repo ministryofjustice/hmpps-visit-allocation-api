@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerSe
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.VisitCancelledInfo
-import java.time.LocalDate
 
 @Service
 class VisitCancelledEventHandler(
@@ -38,12 +37,9 @@ class VisitCancelledEventHandler(
 
     if (prisonService.getPrisonEnabledForDpsByCode(visit.prisonCode)) {
       LOG.info("Prison ${visit.prisonCode} is enabled for DPS, processing event")
-      val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
-      if (dpsPrisonerDetails == null) {
-        prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
-      }
 
       val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit)
+
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(visit.prisonerId, changeLogReference)
       if (changeLog != null) {
         snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)

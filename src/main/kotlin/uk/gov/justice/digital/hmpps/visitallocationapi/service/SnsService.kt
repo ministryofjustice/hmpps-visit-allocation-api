@@ -19,7 +19,7 @@ class SnsService(
   private val hmppsQueueService: HmppsQueueService,
   private val telemetryClient: TelemetryClient,
   private val objectMapper: ObjectMapper,
-  @Value("\${feature.events.sns.enabled:true}")
+  @param:Value("\${feature.events.sns.enabled:true}")
   private val snsEventsEnabled: Boolean,
   private val changeLogService: ChangeLogService,
 ) {

@@ -38,7 +38,9 @@ class NomisSyncService(
 
     validateSyncRequest(syncDto)
 
-    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)!!
+    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
+
     compareBalanceBeforeSync(syncDto, dpsPrisoner.getBalance())
 
     LOG.info("Current loaded prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
@@ -93,7 +95,8 @@ class NomisSyncService(
       }
     }
 
-    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)!!
+    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
     val voBalanceChange = (prisonerNomisBalance.remainingVo - dpsPrisoner.getVoBalance())
     processSync(

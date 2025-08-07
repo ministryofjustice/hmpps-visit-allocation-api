@@ -6,10 +6,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerBookingMovedInfo
-import java.time.LocalDate
 
 @Service
 class PrisonerBookingMovedEventHandler(
@@ -17,7 +15,6 @@ class PrisonerBookingMovedEventHandler(
   private val prisonService: PrisonService,
   private val prisonerSearchClient: PrisonerSearchClient,
   private val nomisSyncService: NomisSyncService,
-  private val prisonerDetailsService: PrisonerDetailsService,
 ) : DomainEventHandler {
 
   override fun handle(domainEvent: DomainEvent) {
@@ -35,11 +32,6 @@ class PrisonerBookingMovedEventHandler(
   }
 
   private fun processNomis(prisonerId: String) {
-    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)
-    if (dpsPrisoner == null) {
-      prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    }
-
     nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE)
   }
 }

@@ -3,13 +3,11 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import java.time.LocalDate
 import kotlin.jvm.optionals.getOrNull
 
-@Transactional
 @Service
 class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDetailsRepository) {
   companion object {
