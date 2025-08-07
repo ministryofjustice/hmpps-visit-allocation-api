@@ -8,12 +8,10 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.VisitBookedInfo
-import java.time.LocalDate
 
 @Service
 class VisitBookedEventHandler(
@@ -24,7 +22,6 @@ class VisitBookedEventHandler(
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
-  private val prisonerDetailsService: PrisonerDetailsService,
 ) : DomainEventHandler {
 
   companion object {
@@ -41,13 +38,9 @@ class VisitBookedEventHandler(
 
     if (prisonService.getPrisonEnabledForDpsByCode(visit.prisonCode)) {
       LOG.info("Prison ${visit.prisonCode} is enabled for DPS, processing event")
+
       val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
       if (prisoner.convictedStatus == CONVICTED) {
-        val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
-        if (dpsPrisonerDetails == null) {
-          prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
-        }
-
         val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit)
         if (changeLogReference != null) {
           val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisoner.prisonerId, changeLogReference)

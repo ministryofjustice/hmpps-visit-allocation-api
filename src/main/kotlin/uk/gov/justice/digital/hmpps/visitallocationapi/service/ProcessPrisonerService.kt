@@ -25,6 +25,7 @@ import java.time.LocalTime
 import java.time.temporal.TemporalAdjusters
 import java.util.*
 
+@Transactional
 @Service
 class ProcessPrisonerService(
   private val prisonerSearchClient: PrisonerSearchClient,
@@ -39,9 +40,9 @@ class ProcessPrisonerService(
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @Transactional
   fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID? {
-    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)!!
+    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
     // Due to our SQS queues being "At least once delivery", this specific event needs to return early if this visit has already been mapped.
     if (visitAlreadyMapped(dpsPrisonerDetails, visit)) {
@@ -91,11 +92,9 @@ class ProcessPrisonerService(
     return changeLog.reference
   }
 
-  private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }
-
-  @Transactional
   fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID {
-    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)!!
+    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
     // Find the VO used by the visit.
     val voUsedForVisit: VisitOrder? = dpsPrisonerDetails.visitOrders.firstOrNull { it.visitReference == visit.reference }
@@ -133,13 +132,14 @@ class ProcessPrisonerService(
     return changeLog.reference
   }
 
-  @Transactional
   fun processPrisonerMerge(newPrisonerId: String, removedPrisonerId: String): UUID? {
     var visitOrdersToBeCreated = 0
     var privilegedVisitOrdersToBeCreated = 0
 
     LOG.info("processPrisonerMerge with newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
-    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId)!!
+    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(newPrisonerId, LocalDate.now().minusDays(14), null)
+
     val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetails(removedPrisonerId)
 
     if (removedPrisonerDetails != null) {
@@ -191,9 +191,9 @@ class ProcessPrisonerService(
     }
   }
 
-  @Transactional
   fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): UUID {
-    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)!!
+    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
     dpsPrisonerDetails.visitOrders
       .filter { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
@@ -444,4 +444,6 @@ class ProcessPrisonerService(
       }
     }
   }
+
+  private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }
 }

@@ -29,7 +29,7 @@ class NomisMigrationService(
   fun migratePrisoner(migrationDto: VisitAllocationPrisonerMigrationDto) {
     LOG.info("Entered NomisMigrationService - migratePrisoner with migration dto {}", migrationDto)
 
-    // If prisoner exists, reset their details and balance ready for migration
+    // If the prisoner exists, reset their details and balance ready for migration
     if (prisonerDetailsService.getPrisonerDetails(migrationDto.prisonerId) != null) {
       LOG.info("Prisoner ${migrationDto.prisonerId} found in DB, resetting their balance ready for migration")
       prisonerDetailsService.removePrisonerDetails(migrationDto.prisonerId)
