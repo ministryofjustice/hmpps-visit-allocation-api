@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.interceptor.TransactionAspectSupport
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
@@ -250,6 +251,8 @@ class ProcessPrisonerService(
     } catch (e: Exception) {
       // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
       // Instead, it should go onto the DLQ.
+      TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()
+
       if (fromRetryQueue == false) {
         LOG.error("Error processing prisoner - $prisonerId, putting $prisonerId on prisoner retry queue", e)
         prisonerRetryService.sendMessageToPrisonerRetryQueue(
