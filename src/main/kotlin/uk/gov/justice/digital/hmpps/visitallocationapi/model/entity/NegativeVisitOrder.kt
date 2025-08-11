@@ -18,7 +18,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "negative_visit_order")
-data class NegativeVisitOrder(
+open class NegativeVisitOrder(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,

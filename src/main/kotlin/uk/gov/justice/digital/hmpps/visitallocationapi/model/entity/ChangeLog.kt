@@ -18,7 +18,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "change_log")
-data class ChangeLog(
+open class ChangeLog(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,

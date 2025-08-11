@@ -18,7 +18,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "visit_order")
-data class VisitOrder(
+open class VisitOrder(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,
