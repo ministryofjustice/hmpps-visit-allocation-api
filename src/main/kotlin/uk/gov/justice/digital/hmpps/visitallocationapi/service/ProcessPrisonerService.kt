@@ -10,6 +10,7 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.snapshot
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
@@ -20,6 +21,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.utils.PrisonerChangeTrackingUtil
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -233,13 +235,14 @@ class ProcessPrisonerService(
       val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
         ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
-      val dpsPrisonerDetailsBefore = dpsPrisonerDetails.deepCopy()
+      // Capture the before details, used at the end to track if changes have been made. If so, a change_log entry will be generated.
+      val dpsPrisonerDetailsBefore = dpsPrisonerDetails.snapshot()
 
       processPrisonerAccumulation(dpsPrisonerDetails)
       processPrisonerAllocation(dpsPrisonerDetails, allPrisonIncentiveAmounts)
       processPrisonerExpiration(dpsPrisonerDetails)
 
-      val changeLog: ChangeLog? = if (hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
+      val changeLog: ChangeLog? = if (PrisonerChangeTrackingUtil.hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
         changeLogService.createLogBatchProcess(dpsPrisonerDetails).also {
           dpsPrisonerDetails.changeLogs.add(it)
         }
@@ -266,16 +269,6 @@ class ProcessPrisonerService(
     }
 
     return null
-  }
-
-  private fun hasChangeOccurred(
-    before: PrisonerDetails,
-    after: PrisonerDetails,
-  ): Boolean {
-    val voChanged = before.visitOrders.toSet() != after.visitOrders.toSet()
-    val nvoChanged = before.negativeVisitOrders.toSet() != after.negativeVisitOrders.toSet()
-
-    return voChanged || nvoChanged
   }
 
   private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>) {
