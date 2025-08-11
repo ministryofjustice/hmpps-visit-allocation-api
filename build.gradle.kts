@@ -2,6 +2,7 @@ plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.4"
   kotlin("plugin.spring") version "2.2.0"
   kotlin("plugin.jpa") version "2.2.0"
+  kotlin("plugin.allopen") version "2.2.0"
 }
 
 configurations {
@@ -35,6 +36,11 @@ dependencies {
 kotlin {
   jvmToolchain(21)
 }
+
+allOpen {
+  annotation("javax.persistence.Entity")
+  annotation("javax.persistence.Embeddable")
+  annotation("javax.persistence.MappedSuperclass")}
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
