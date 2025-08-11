@@ -40,7 +40,8 @@ kotlin {
 allOpen {
   annotation("javax.persistence.Entity")
   annotation("javax.persistence.Embeddable")
-  annotation("javax.persistence.MappedSuperclass")}
+  annotation("javax.persistence.MappedSuperclass")
+}
 
 tasks {
   withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
