@@ -34,7 +34,7 @@ open class PrisonerDetails(
   var negativeVisitOrders: MutableList<NegativeVisitOrder> = mutableListOf()
 
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  var changeLogs: MutableList<ChangeLog> = mutableListOf()
+  open var changeLogs: MutableList<ChangeLog> = mutableListOf()
 
   fun getBalance(): PrisonerBalanceDto = PrisonerBalanceDto(
     prisonerId = prisonerId,

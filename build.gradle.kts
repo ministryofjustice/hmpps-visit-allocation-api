@@ -2,6 +2,7 @@ plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "8.3.4"
   kotlin("plugin.spring") version "2.2.0"
   kotlin("plugin.jpa") version "2.2.0"
+  id("org.jetbrains.kotlin.plugin.noarg") version "2.2.0"
 }
 
 configurations {
@@ -34,6 +35,9 @@ dependencies {
 
 kotlin {
   jvmToolchain(21)
+  noArg {
+    annotation("jakarta.persistence.Entity")
+  }
 }
 
 tasks {
