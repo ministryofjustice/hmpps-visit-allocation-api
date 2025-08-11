@@ -10,6 +10,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import java.time.LocalDateTime
@@ -17,7 +18,7 @@ import java.util.UUID
 
 @Entity
 @Table(name = "change_log")
-data class ChangeLog(
+open class ChangeLog(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,
@@ -54,4 +55,13 @@ data class ChangeLog(
 
   @Column(nullable = false)
   val reference: UUID,
-)
+) {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as ChangeLog
+    return id == other.id
+  }
+
+  override fun hashCode(): Int = javaClass.hashCode()
+}

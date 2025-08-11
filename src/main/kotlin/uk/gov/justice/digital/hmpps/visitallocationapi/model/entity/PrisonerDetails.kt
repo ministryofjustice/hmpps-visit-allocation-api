@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -15,7 +16,7 @@ import java.time.LocalDate
 
 @Entity
 @Table(name = "prisoner_details")
-data class PrisonerDetails(
+open class PrisonerDetails(
   @Id
   @Column(nullable = false)
   val prisonerId: String,
@@ -58,41 +59,12 @@ data class PrisonerDetails(
   }
     .minus(this.negativeVisitOrders.count { it.type == VisitOrderType.PVO && it.status == NegativeVisitOrderStatus.USED })
 
-  fun deepCopy(): PrisonerDetails {
-    val copy = PrisonerDetails(
-      prisonerId = this.prisonerId,
-      lastVoAllocatedDate = this.lastVoAllocatedDate,
-      lastPvoAllocatedDate = this.lastPvoAllocatedDate,
-    )
-
-    // Deep copy visit orders
-    copy.visitOrders = this.visitOrders.map {
-      VisitOrder(
-        id = it.id,
-        type = it.type,
-        createdTimestamp = it.createdTimestamp,
-        expiryDate = it.expiryDate,
-        prisonerId = it.prisonerId,
-        status = it.status,
-        prisoner = copy, // Point to the new copy, not the original
-      )
-    }.toMutableList()
-
-    // Deep copy negative visit orders
-    copy.negativeVisitOrders = this.negativeVisitOrders.map {
-      NegativeVisitOrder(
-        id = it.id,
-        type = it.type,
-        status = it.status,
-        createdTimestamp = it.createdTimestamp,
-        repaidDate = it.repaidDate,
-        prisonerId = it.prisonerId,
-        prisoner = copy,
-      )
-    }.toMutableList()
-
-    // !! Don't copy changeLogs as it's lazy and might not be loaded. Also, not needed for deep copy purposes.
-
-    return copy
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as PrisonerDetails
+    return prisonerId == other.prisonerId
   }
+
+  override fun hashCode(): Int = javaClass.hashCode()
 }

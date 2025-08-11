@@ -10,6 +10,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import java.time.LocalDate
@@ -17,7 +18,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "visit_order")
-data class VisitOrder(
+open class VisitOrder(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0L,
@@ -45,4 +46,13 @@ data class VisitOrder(
   @ManyToOne
   @JoinColumn(name = "prisoner_id", referencedColumnName = "prisonerId", insertable = false, updatable = false)
   val prisoner: PrisonerDetails,
-)
+) {
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+    other as VisitOrder
+    return id == other.id
+  }
+
+  override fun hashCode(): Int = javaClass.hashCode()
+}
