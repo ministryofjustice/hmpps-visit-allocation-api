@@ -22,27 +22,27 @@ import java.time.LocalDateTime
 open class VisitOrder(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  open var id: Long? = null,
+  var id: Long? = null,
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  open var type: VisitOrderType,
+  var type: VisitOrderType,
 
   @Column(nullable = false) @Enumerated(EnumType.STRING)
-  open var status: VisitOrderStatus,
+  var status: VisitOrderStatus,
 
   @Column(nullable = false)
-  open var createdTimestamp: LocalDateTime = LocalDateTime.now(),
+  var createdTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
-  open var expiryDate: LocalDate? = null,
+  var expiryDate: LocalDate? = null,
 
   @Column(nullable = true)
-  open var visitReference: String? = null,
+  var visitReference: String? = null,
 
   @ManyToOne
   @JoinColumn(name = "prisoner_id", nullable = false)
-  open var prisoner: PrisonerDetails,
+  var prisoner: PrisonerDetails,
 ) {
   @get:Transient
   val prisonerId: String get() = prisoner.prisonerId

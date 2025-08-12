@@ -22,37 +22,37 @@ import java.util.UUID
 open class ChangeLog(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  open var id: Long? = null,
+  var id: Long? = null,
 
   @Column(nullable = false)
-  open var changeTimestamp: LocalDateTime = LocalDateTime.now(),
-
-  @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
-  open var changeType: ChangeLogType,
+  var changeTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  open var changeSource: ChangeLogSource,
+  var changeType: ChangeLogType,
 
   @Column(nullable = false)
-  open var userId: String,
+  @Enumerated(EnumType.STRING)
+  var changeSource: ChangeLogSource,
+
+  @Column(nullable = false)
+  var userId: String,
 
   @Column
-  open var comment: String? = null,
+  var comment: String? = null,
 
   @Column(nullable = false)
-  open var visitOrderBalance: Int,
+  var visitOrderBalance: Int,
 
   @Column(nullable = false)
-  open var privilegedVisitOrderBalance: Int,
+  var privilegedVisitOrderBalance: Int,
 
   @ManyToOne
   @JoinColumn(name = "prisoner_id", nullable = false)
-  open var prisoner: PrisonerDetails,
+  var prisoner: PrisonerDetails,
 
   @Column(nullable = false)
-  open var reference: UUID,
+  var reference: UUID,
 ) {
   @get:Transient val prisonerId: String get() = prisoner.prisonerId
 
