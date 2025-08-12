@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
@@ -21,7 +20,6 @@ class VisitCancelledEventHandler(
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
-  private val prisonerDetailsService: PrisonerDetailsService,
 ) : DomainEventHandler {
 
   companion object {
