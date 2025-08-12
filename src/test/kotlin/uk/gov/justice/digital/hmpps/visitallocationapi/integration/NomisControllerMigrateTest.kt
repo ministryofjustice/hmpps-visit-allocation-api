@@ -35,7 +35,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     responseSpec.expectStatus().isOk
 
     verify(negativeVisitOrderRepository, times(0)).saveAll<NegativeVisitOrder>(any())
-    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
+    verify(prisonerDetailsRepository, times(1)).insertNewPrisonerDetails(any(), any(), any())
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(7)
@@ -64,7 +64,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     responseSpec.expectStatus().isOk
 
     verify(visitOrderRepository, times(0)).saveAll<VisitOrder>(any())
-    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
+    verify(prisonerDetailsRepository, times(1)).insertNewPrisonerDetails(any(), any(), any())
 
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.size).isEqualTo(7)
@@ -92,7 +92,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     // Then
     responseSpec.expectStatus().isOk
 
-    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
+    verify(prisonerDetailsRepository, times(1)).insertNewPrisonerDetails(any(), any(), any())
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(5)
@@ -126,7 +126,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     responseSpec.expectStatus().isOk
 
     verify(negativeVisitOrderRepository, times(0)).saveAll<NegativeVisitOrder>(any())
-    verify(prisonerDetailsRepository, times(1)).save<PrisonerDetails>(any())
+    verify(prisonerDetailsRepository, times(1)).insertNewPrisonerDetails(any(), any(), any())
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(7)
@@ -159,7 +159,7 @@ class NomisControllerMigrateTest : IntegrationTestBase() {
     responseSpec.expectStatus().isOk
 
     verify(negativeVisitOrderRepository, times(0)).saveAll<NegativeVisitOrder>(any())
-    verify(prisonerDetailsRepository, times(2)).save<PrisonerDetails>(any())
+    verify(prisonerDetailsRepository, times(1)).insertNewPrisonerDetails(any(), any(), any())
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(7)

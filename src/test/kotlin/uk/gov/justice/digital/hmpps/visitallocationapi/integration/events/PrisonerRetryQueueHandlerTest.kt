@@ -7,6 +7,7 @@ import org.awaitility.kotlin.untilAsserted
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
@@ -20,6 +21,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationPrisonerRetryQueueListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService.VisitAllocationPrisonerRetryJob
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
+import java.time.LocalDate
 
 class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
   @MockitoSpyBean
@@ -52,7 +54,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { prisonVisitsAllocationPrisonerRetryQueueSqsClient.countMessagesOnQueue(prisonVisitsAllocationPrisonerRetryQueueUrl).get() } matches { it == 0 }
     await untilAsserted { verify(visitAllocationPrisonerRetryQueueListenerSpy, times(1)).processMessage(visitAllocationPrisonerRetryJob) }
-    await untilAsserted { verify(prisonerDetailsRepository, times(1)).save(any()) }
+    await untilAsserted { verify(prisonerDetailsRepository, times(1)).insertNewPrisonerDetails(eq("TEST"), eq(LocalDate.of(2025, 7, 29)), eq(null)) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
     val visitOrders = visitOrderRepository.findAll()
