@@ -19,22 +19,22 @@ import java.time.LocalDate
 open class PrisonerDetails(
   @Id
   @Column(nullable = false)
-  val prisonerId: String,
+  open val prisonerId: String,
 
   @Column(nullable = false)
-  var lastVoAllocatedDate: LocalDate,
+  open var lastVoAllocatedDate: LocalDate,
 
   @Column(nullable = true)
-  var lastPvoAllocatedDate: LocalDate?,
+  open var lastPvoAllocatedDate: LocalDate?,
 ) {
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
-  val visitOrders: MutableList<VisitOrder> = mutableListOf()
+  open val visitOrders: MutableList<VisitOrder> = mutableListOf()
 
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
-  val negativeVisitOrders: MutableList<NegativeVisitOrder> = mutableListOf()
+  open val negativeVisitOrders: MutableList<NegativeVisitOrder> = mutableListOf()
 
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
-  val changeLogs: MutableList<ChangeLog> = mutableListOf()
+  open val changeLogs: MutableList<ChangeLog> = mutableListOf()
 
   fun getBalance(): PrisonerBalanceDto = PrisonerBalanceDto(
     prisonerId = prisonerId,
