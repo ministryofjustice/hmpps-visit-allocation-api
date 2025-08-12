@@ -838,7 +838,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
     await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any()) }
 
-    val changeLogs = changeLogRepository.findAllByPrisonerId(prisoner1.prisonerId)
+    val changeLogs = changeLogRepository.findAllByPrisonerPrisonerId(prisoner1.prisonerId)
     assertThat(changeLogs).isNullOrEmpty()
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())

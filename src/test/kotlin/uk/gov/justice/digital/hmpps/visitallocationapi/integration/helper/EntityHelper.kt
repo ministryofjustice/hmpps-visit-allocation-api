@@ -35,7 +35,6 @@ class EntityHelper(
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
-          prisonerId = prisoner.prisonerId,
           type = visitOrderType,
           status = status,
           prisoner = prisoner,
@@ -55,7 +54,6 @@ class EntityHelper(
     repeat(amountToCreate) {
       negativeVisitOrders.add(
         NegativeVisitOrder(
-          prisonerId = prisoner.prisonerId,
           type = negativeVoType,
           status = NegativeVisitOrderStatus.USED,
           prisoner = prisoner,

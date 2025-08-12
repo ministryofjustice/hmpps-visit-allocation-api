@@ -27,14 +27,14 @@ open class PrisonerDetails(
   @Column(nullable = true)
   var lastPvoAllocatedDate: LocalDate?,
 ) {
-  @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  var visitOrders: MutableList<VisitOrder> = mutableListOf()
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
+  val visitOrders: MutableList<VisitOrder> = mutableListOf()
 
-  @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
-  var negativeVisitOrders: MutableList<NegativeVisitOrder> = mutableListOf()
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
+  val negativeVisitOrders: MutableList<NegativeVisitOrder> = mutableListOf()
 
-  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.ALL], orphanRemoval = true)
-  open var changeLogs: MutableList<ChangeLog> = mutableListOf()
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
+  val changeLogs: MutableList<ChangeLog> = mutableListOf()
 
   fun getBalance(): PrisonerBalanceDto = PrisonerBalanceDto(
     prisonerId = prisonerId,
@@ -65,6 +65,5 @@ open class PrisonerDetails(
     other as PrisonerDetails
     return prisonerId == other.prisonerId
   }
-
-  override fun hashCode(): Int = javaClass.hashCode()
+  override fun hashCode(): Int = prisonerId.hashCode()
 }

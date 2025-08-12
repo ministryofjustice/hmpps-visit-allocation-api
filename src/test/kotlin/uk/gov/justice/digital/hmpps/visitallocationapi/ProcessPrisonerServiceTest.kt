@@ -82,7 +82,6 @@ class ProcessPrisonerServiceTest {
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
     val changeLog = ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.BATCH_PROCESS,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",
@@ -123,7 +122,6 @@ class ProcessPrisonerServiceTest {
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 0, levelCode = "STD"))
     val changeLog = ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.BATCH_PROCESS,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",
@@ -163,7 +161,6 @@ class ProcessPrisonerServiceTest {
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
     val changeLog = ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.BATCH_PROCESS,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",
@@ -233,7 +230,6 @@ class ProcessPrisonerServiceTest {
     val prisonerIncentive = PrisonerIncentivesDto(iepCode = "STD")
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 2, privilegedVisitOrders = 1, levelCode = "STD"))
     val changeLog = ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.BATCH_PROCESS,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",
@@ -272,10 +268,9 @@ class ProcessPrisonerServiceTest {
     val prisonId = "HEI"
     val visit = createVisitDto(visitReference, prisonerId, prisonId)
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    dpsPrisoner.visitOrders = mutableListOf(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, prisonerId = dpsPrisoner.prisonerId, prisoner = dpsPrisoner))
+    dpsPrisoner.visitOrders.add(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, prisoner = dpsPrisoner))
 
     val changeLog = ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.ALLOCATION_USED_BY_VISIT,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",
@@ -311,10 +306,9 @@ class ProcessPrisonerServiceTest {
     val prisonId = "HEI"
     val visit = createVisitDto(visitReference, prisonerId, prisonId)
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    dpsPrisoner.visitOrders = mutableListOf(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisonerId = dpsPrisoner.prisonerId, prisoner = dpsPrisoner))
+    dpsPrisoner.visitOrders.add(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisoner = dpsPrisoner))
 
     val changeLog = ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",
@@ -349,10 +343,9 @@ class ProcessPrisonerServiceTest {
     val prisonerId = "AA123456"
 
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    dpsPrisoner.visitOrders = mutableListOf(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisonerId = dpsPrisoner.prisonerId, prisoner = dpsPrisoner))
+    dpsPrisoner.visitOrders.add(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisoner = dpsPrisoner))
 
     val changeLog = ChangeLog(
-      prisonerId = dpsPrisoner.prisonerId,
       changeType = ChangeLogType.PRISONER_BALANCE_RESET,
       changeSource = ChangeLogSource.SYSTEM,
       userId = "SYSTEM",

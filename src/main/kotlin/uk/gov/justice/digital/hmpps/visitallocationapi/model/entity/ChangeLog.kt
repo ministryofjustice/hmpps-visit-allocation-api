@@ -10,6 +10,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
@@ -21,41 +22,40 @@ import java.util.UUID
 open class ChangeLog(
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val id: Long = 0L,
+  var id: Long? = null,
 
   @Column(nullable = false)
-  val changeTimestamp: LocalDateTime = LocalDateTime.now(),
-
-  @Column(nullable = false)
-  @Enumerated(EnumType.STRING)
-  val changeType: ChangeLogType,
+  var changeTimestamp: LocalDateTime = LocalDateTime.now(),
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val changeSource: ChangeLogSource,
+  var changeType: ChangeLogType,
 
   @Column(nullable = false)
-  val userId: String,
-
-  @Column(nullable = true)
-  val comment: String? = null,
-
-  @Column(name = "prisoner_id", nullable = false)
-  val prisonerId: String,
+  @Enumerated(EnumType.STRING)
+  var changeSource: ChangeLogSource,
 
   @Column(nullable = false)
-  val visitOrderBalance: Int,
+  var userId: String,
+
+  @Column
+  var comment: String? = null,
 
   @Column(nullable = false)
-  val privilegedVisitOrderBalance: Int,
+  var visitOrderBalance: Int,
+
+  @Column(nullable = false)
+  var privilegedVisitOrderBalance: Int,
 
   @ManyToOne
-  @JoinColumn(name = "prisoner_id", referencedColumnName = "prisonerId", insertable = false, updatable = false)
-  val prisoner: PrisonerDetails,
+  @JoinColumn(name = "prisoner_id", nullable = false)
+  var prisoner: PrisonerDetails,
 
   @Column(nullable = false)
-  val reference: UUID,
+  var reference: UUID,
 ) {
+  @get:Transient val prisonerId: String get() = prisoner.prisonerId
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

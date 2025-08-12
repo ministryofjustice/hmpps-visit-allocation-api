@@ -35,7 +35,6 @@ class NomisControllerGetAdjustmentTest : IntegrationTestBase() {
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         comment = "Synced prisoner",
-        prisonerId = prisoner.prisonerId,
         visitOrderBalance = 5,
         privilegedVisitOrderBalance = 2,
         prisoner = prisoner,
@@ -49,13 +48,12 @@ class NomisControllerGetAdjustmentTest : IntegrationTestBase() {
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         comment = "Synced prisoner",
-        prisonerId = prisoner.prisonerId,
         visitOrderBalance = 7,
         privilegedVisitOrderBalance = 3,
         prisoner = prisoner,
         reference = UUID.randomUUID(),
       ),
-    ).id
+    ).id!!
 
     val adjustmentRequestDto = createAdjustmentRequest(PRISONER_ID, changeLogId)
 
@@ -80,13 +78,12 @@ class NomisControllerGetAdjustmentTest : IntegrationTestBase() {
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
         comment = "Synced prisoner",
-        prisonerId = prisoner.prisonerId,
         visitOrderBalance = 7,
         privilegedVisitOrderBalance = 3,
         prisoner = prisoner,
         reference = UUID.randomUUID(),
       ),
-    ).id
+    ).id!!
 
     val adjustmentRequestDto = createAdjustmentRequest(PRISONER_ID, changeLogId)
 
