@@ -28,7 +28,8 @@ open class VisitOrder(
   @Enumerated(EnumType.STRING)
   var type: VisitOrderType,
 
-  @Column(nullable = false) @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
   var status: VisitOrderStatus,
 
   @Column(nullable = false)
