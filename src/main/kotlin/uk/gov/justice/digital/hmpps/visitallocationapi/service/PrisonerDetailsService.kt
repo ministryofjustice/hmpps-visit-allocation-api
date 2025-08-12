@@ -19,7 +19,7 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
 
     // Instead of using repository.save() we do a custom insert to avoid racing requests overwriting each other.
     // This insert forces an insert, and on duplicate insert it will fail and rollback txn for retry.
-    prisonerDetailsRepository.insertNewPrisonerDetails(prisonerId = prisonerId, lastVoAllocatedVoDate = newLastAllocatedDate, lastPvoAllocatedVoDate = null)
+    prisonerDetailsRepository.insertNewPrisonerDetails(prisonerId = prisonerId, lastVoAllocatedVoDate = newLastAllocatedDate, lastPvoAllocatedVoDate = newLastPvoAllocatedDate)
 
     return prisonerDetailsRepository.findByIdWithLock(prisonerId).get()
   }
