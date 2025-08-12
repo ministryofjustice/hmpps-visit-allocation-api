@@ -73,7 +73,6 @@ class ProcessPrisonerService(
       val negativeVo = NegativeVisitOrder(
         status = NegativeVisitOrderStatus.USED,
         type = VisitOrderType.VO,
-        prisonerId = dpsPrisonerDetails.prisonerId,
         prisoner = dpsPrisonerDetails,
         visitReference = visit.reference,
       )
@@ -349,7 +348,6 @@ class ProcessPrisonerService(
     type: VisitOrderType,
     createdTimestamp: LocalDateTime = LocalDateTime.now(),
   ): VisitOrder = VisitOrder(
-    prisonerId = prisoner.prisonerId,
     type = type,
     status = VisitOrderStatus.AVAILABLE,
     createdTimestamp = createdTimestamp,

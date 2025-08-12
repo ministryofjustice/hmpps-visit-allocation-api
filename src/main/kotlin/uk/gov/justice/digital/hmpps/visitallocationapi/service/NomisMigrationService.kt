@@ -79,7 +79,6 @@ class NomisMigrationService(
     LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a ${type.name} balance of $balance")
     val visitOrders = List(balance) {
       VisitOrder(
-        prisonerId = prisoner.prisonerId,
         type = type,
         status = VisitOrderStatus.AVAILABLE,
         createdTimestamp = migrationDto.lastVoAllocationDate!!.atStartOfDay(),
@@ -99,7 +98,6 @@ class NomisMigrationService(
     LOG.info("Migrating prisoner ${migrationDto.prisonerId} with a negative ${type.name} balance of $balance")
     val negativeVisitOrders = List(abs(balance)) {
       NegativeVisitOrder(
-        prisonerId = prisoner.prisonerId,
         status = NegativeVisitOrderStatus.USED,
         type = type,
         createdTimestamp = LocalDateTime.now(),

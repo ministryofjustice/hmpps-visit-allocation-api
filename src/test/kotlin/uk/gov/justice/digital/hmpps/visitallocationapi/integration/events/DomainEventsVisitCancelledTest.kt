@@ -49,7 +49,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         status = VisitOrderStatus.USED,
         createdTimestamp = LocalDateTime.now().minusDays(1),
         visitReference = visitReference,
-        prisonerId = prisonerId,
         prisoner = dpsPrisoner,
       ),
     )
@@ -60,7 +59,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         changeType = ChangeLogType.BATCH_PROCESS,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
-        prisonerId = dpsPrisoner.prisonerId,
         comment = "Random existing changeLog",
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
@@ -117,7 +115,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         status = VisitOrderStatus.USED,
         createdTimestamp = LocalDateTime.now().minusDays(1),
         visitReference = visitReference,
-        prisonerId = prisonerId,
         prisoner = dpsPrisoner,
       ),
     )
@@ -128,7 +125,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         changeType = ChangeLogType.BATCH_PROCESS,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
-        prisonerId = dpsPrisoner.prisonerId,
         comment = "Random existing changeLog",
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
@@ -185,7 +181,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         status = NegativeVisitOrderStatus.USED,
         createdTimestamp = LocalDateTime.now().minusDays(1),
         visitReference = visitReference,
-        prisonerId = prisonerId,
         prisoner = dpsPrisoner,
       ),
     )
@@ -196,7 +191,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         changeType = ChangeLogType.BATCH_PROCESS,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
-        prisonerId = dpsPrisoner.prisonerId,
         comment = "Random existing changeLog",
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
@@ -286,8 +280,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val prisonId = "HEI"
     val prisonerId = "AA123456"
 
-    val visit = createVisitDto(visitReference, prisonerId, prisonId)
-
     val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
     dpsPrisoner.negativeVisitOrders.add(
       NegativeVisitOrder(
@@ -295,7 +287,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         status = NegativeVisitOrderStatus.USED,
         createdTimestamp = LocalDateTime.now().minusDays(1),
         visitReference = visitReference,
-        prisonerId = prisonerId,
         prisoner = dpsPrisoner,
       ),
     )
@@ -306,7 +297,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         changeType = ChangeLogType.BATCH_PROCESS,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
-        prisonerId = dpsPrisoner.prisonerId,
         comment = "Random existing changeLog",
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
@@ -350,7 +340,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         status = NegativeVisitOrderStatus.USED,
         createdTimestamp = LocalDateTime.now().minusDays(1),
         visitReference = visitReference,
-        prisonerId = prisonerId,
         prisoner = dpsPrisoner,
       ),
     )
@@ -361,7 +350,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
-        prisonerId = dpsPrisoner.prisonerId,
         comment = "Random existing changeLog",
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,
@@ -405,7 +393,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         status = NegativeVisitOrderStatus.USED,
         createdTimestamp = LocalDateTime.now().minusDays(1),
         visitReference = visitReference,
-        prisonerId = prisonerId,
         prisoner = dpsPrisoner,
       ),
     )
@@ -416,7 +403,6 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
         changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
         changeSource = ChangeLogSource.SYSTEM,
         userId = "SYSTEM",
-        prisonerId = dpsPrisoner.prisonerId,
         comment = "Random existing changeLog",
         prisoner = dpsPrisoner,
         visitOrderBalance = 2,

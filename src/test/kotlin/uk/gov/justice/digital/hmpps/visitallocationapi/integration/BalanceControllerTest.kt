@@ -29,9 +29,9 @@ class BalanceControllerTest : IntegrationTestBase() {
   fun `when request to get existing prisoner with positive balance, then return prisoner balance`() {
     // Given
     val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null))
-    visitOrderRepository.save(VisitOrder(prisonerId = prisoner.prisonerId, type = VisitOrderType.VO, status = VisitOrderStatus.AVAILABLE, prisoner = prisoner))
-    visitOrderRepository.save(VisitOrder(prisonerId = prisoner.prisonerId, type = VisitOrderType.VO, status = VisitOrderStatus.EXPIRED, prisoner = prisoner))
-    visitOrderRepository.save(VisitOrder(prisonerId = prisoner.prisonerId, type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, prisoner = prisoner))
+    visitOrderRepository.save(VisitOrder(type = VisitOrderType.VO, status = VisitOrderStatus.AVAILABLE, prisoner = prisoner))
+    visitOrderRepository.save(VisitOrder(type = VisitOrderType.VO, status = VisitOrderStatus.EXPIRED, prisoner = prisoner))
+    visitOrderRepository.save(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, prisoner = prisoner))
 
     // When
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
@@ -49,8 +49,8 @@ class BalanceControllerTest : IntegrationTestBase() {
   fun `when request to get existing prisoner with negative balance, then return prisoner balance`() {
     // Given
     val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null))
-    negativeVisitOrderRepository.save(NegativeVisitOrder(prisonerId = prisoner.prisonerId, type = VisitOrderType.VO, status = NegativeVisitOrderStatus.USED, prisoner = prisoner))
-    negativeVisitOrderRepository.save(NegativeVisitOrder(prisonerId = prisoner.prisonerId, type = VisitOrderType.PVO, status = NegativeVisitOrderStatus.USED, prisoner = prisoner))
+    negativeVisitOrderRepository.save(NegativeVisitOrder(type = VisitOrderType.VO, status = NegativeVisitOrderStatus.USED, prisoner = prisoner))
+    negativeVisitOrderRepository.save(NegativeVisitOrder(type = VisitOrderType.PVO, status = NegativeVisitOrderStatus.USED, prisoner = prisoner))
 
     // When
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))

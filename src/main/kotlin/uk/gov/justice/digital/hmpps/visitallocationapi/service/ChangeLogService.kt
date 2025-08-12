@@ -14,9 +14,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundExcepti
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
-import java.util.*
+import java.util.UUID
 
-@Transactional
 @Service
 class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
   companion object {
@@ -118,9 +117,10 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
     )
   }
 
+  @Transactional(readOnly = true)
   fun findAllChangeLogsForPrisoner(prisonerId: String): List<ChangeLog> {
     LOG.info("ChangeLogService - findAllChangeLogsForPrisoner called with prisonerId - $prisonerId")
-    val prisonerChangeLogs = changeLogRepository.findAllByPrisonerId(prisonerId)
+    val prisonerChangeLogs = changeLogRepository.findAllByPrisonerPrisonerId(prisonerId)
     if (prisonerChangeLogs.isNullOrEmpty()) {
       throw NotFoundException("No change logs found for prisoner $prisonerId")
     }
@@ -128,7 +128,8 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
     return prisonerChangeLogs
   }
 
-  fun findChangeLogForPrisonerByReference(prisonerId: String, reference: UUID): ChangeLog? = changeLogRepository.findFirstByPrisonerIdAndReference(prisonerId, reference)
+  @Transactional(readOnly = true)
+  fun findChangeLogForPrisonerByReference(prisonerId: String, reference: UUID): ChangeLog? = changeLogRepository.findFirstByPrisonerPrisonerIdAndReference(prisonerId, reference)
 
   private fun createChangeLog(
     dpsPrisoner: PrisonerDetails,
@@ -137,7 +138,6 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
     userId: String,
     comment: String,
   ) = ChangeLog(
-    prisonerId = dpsPrisoner.prisonerId,
     changeType = changeLogType,
     changeSource = changeLogSource,
     userId = userId,

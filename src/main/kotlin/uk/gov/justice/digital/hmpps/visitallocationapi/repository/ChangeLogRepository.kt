@@ -7,7 +7,7 @@ import java.util.*
 
 @Repository
 interface ChangeLogRepository : JpaRepository<ChangeLog, Long> {
-  fun findAllByPrisonerId(prisonerId: String): List<ChangeLog>?
+  fun findAllByPrisonerPrisonerId(prisonerId: String): List<ChangeLog>?
 
-  fun findFirstByPrisonerIdAndReference(prisonerId: String, reference: UUID): ChangeLog?
+  fun findFirstByPrisonerPrisonerIdAndReference(prisonerId: String, reference: UUID): ChangeLog?
 }

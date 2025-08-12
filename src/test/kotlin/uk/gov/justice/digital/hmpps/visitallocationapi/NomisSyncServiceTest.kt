@@ -340,7 +340,6 @@ class NomisSyncServiceTest {
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
-          prisonerId = prisoner.prisonerId,
           type = visitOrderType,
           status = VisitOrderStatus.AVAILABLE,
           prisoner = prisoner,
@@ -355,7 +354,6 @@ class NomisSyncServiceTest {
     repeat(amountToCreate) {
       negativeVisitOrder.add(
         NegativeVisitOrder(
-          prisonerId = prisoner.prisonerId,
           type = visitOrderType,
           status = NegativeVisitOrderStatus.USED,
           prisoner = prisoner,
