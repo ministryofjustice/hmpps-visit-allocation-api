@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import jakarta.persistence.Version
 import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
@@ -16,7 +17,7 @@ import java.time.LocalDate
 
 @Entity
 @Table(name = "prisoner_details")
-open class PrisonerDetails(
+class PrisonerDetails(
   @Id
   @Column(nullable = false)
   val prisonerId: String,
@@ -35,6 +36,10 @@ open class PrisonerDetails(
 
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
   val changeLogs: MutableList<ChangeLog> = mutableListOf()
+
+  @Version
+  @Column(nullable = false)
+  var rowVersion: Long = 0L
 
   fun getBalance(): PrisonerBalanceDto = PrisonerBalanceDto(
     prisonerId = prisonerId,

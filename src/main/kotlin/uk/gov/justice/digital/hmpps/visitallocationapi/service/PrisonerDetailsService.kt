@@ -16,13 +16,15 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
 
   fun createPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
     LOG.info("PrisonerDetailsService - createPrisonerDetails called with prisonerId - $prisonerId, newLastAllocatedDate - $newLastAllocatedDate and newLastPvoAllocatedDate - $newLastPvoAllocatedDate")
-    return prisonerDetailsRepository.save(
+    val insertedPrisoner = prisonerDetailsRepository.saveAndFlush(
       PrisonerDetails(
         prisonerId = prisonerId,
         lastVoAllocatedDate = newLastAllocatedDate,
         lastPvoAllocatedDate = newLastPvoAllocatedDate,
       ),
     )
+
+    return prisonerDetailsRepository.findByIdWithLock(insertedPrisoner.prisonerId).get()
   }
 
   fun getPrisonerDetails(prisonerId: String): PrisonerDetails? {

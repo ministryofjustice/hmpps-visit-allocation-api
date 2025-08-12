@@ -13,7 +13,7 @@ import java.util.*
 @Repository
 interface PrisonerDetailsRepository : JpaRepository<PrisonerDetails, String> {
 
-  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Lock(LockModeType.OPTIMISTIC_FORCE_INCREMENT)
   @QueryHints(value = [QueryHint(name = "jakarta.persistence.lock.timeout", value = "5000")])
   @Query("SELECT pd FROM PrisonerDetails pd WHERE pd.prisonerId = :id")
   fun findByIdWithLock(id: String): Optional<PrisonerDetails>
