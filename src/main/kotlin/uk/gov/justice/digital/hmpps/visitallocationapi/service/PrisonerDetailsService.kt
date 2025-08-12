@@ -16,13 +16,12 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
 
   fun createPrisonerDetails(prisonerId: String, newLastAllocatedDate: LocalDate, newLastPvoAllocatedDate: LocalDate?): PrisonerDetails {
     LOG.info("PrisonerDetailsService - createPrisonerDetails called with prisonerId - $prisonerId, newLastAllocatedDate - $newLastAllocatedDate and newLastPvoAllocatedDate - $newLastPvoAllocatedDate")
-    return prisonerDetailsRepository.save(
-      PrisonerDetails(
-        prisonerId = prisonerId,
-        lastVoAllocatedDate = newLastAllocatedDate,
-        lastPvoAllocatedDate = newLastPvoAllocatedDate,
-      ),
-    )
+
+    // Instead of using repository.save() we do a custom insert to avoid racing requests overwriting each other.
+    // This insert forces an insert, and on duplicate insert it will fail and rollback txn for retry.
+    prisonerDetailsRepository.insertNewPrisonerDetails(prisonerId = prisonerId, lastVoAllocatedVoDate = newLastAllocatedDate, lastPvoAllocatedVoDate = null)
+
+    return prisonerDetailsRepository.findByIdWithLock(prisonerId).get()
   }
 
   fun getPrisonerDetails(prisonerId: String): PrisonerDetails? {
