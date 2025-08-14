@@ -21,7 +21,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationPrisonerRetryQueueListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService.VisitAllocationPrisonerRetryJob
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
-import java.time.LocalDate
 
 class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
   @MockitoSpyBean
