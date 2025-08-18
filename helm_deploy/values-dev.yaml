@@ -31,6 +31,8 @@ generic-prometheus-alerts:
     - "book-a-prison-visit-dev-hmpps_prison_visits_allocation_events_dlq"
     - "book-a-prison-visit-dev-hmpps_prison_visits_allocation_processing_job_queue"
     - "book-a-prison-visit-dev-hmpps_prison_visits_allocation_processing_job_dlq"
+    - "book-a-prison-visit-dev-hmpps_prison_visits_allocation_prisoner_retry_queue"
+    - "book-a-prison-visit-dev-hmpps_prison_visits_allocation_prisoner_retry_dlq"
   sqsAlertsOldestThreshold: 1
   sqsAlertsTotalMessagesThreshold: 1
 
