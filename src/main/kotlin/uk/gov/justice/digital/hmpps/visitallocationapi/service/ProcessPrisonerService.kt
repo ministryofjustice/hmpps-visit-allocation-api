@@ -94,14 +94,19 @@ class ProcessPrisonerService(
     return changeLog.reference
   }
 
-  fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID {
+  fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID? {
     val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
     // Find the VO used by the visit.
-    val voUsedForVisit: VisitOrder? = dpsPrisonerDetails.visitOrders.firstOrNull { it.visitReference == visit.reference }
+    val voUsedForVisit = dpsPrisonerDetails.visitOrders.firstOrNull { it.visitReference == visit.reference }
 
     if (voUsedForVisit != null) {
+      if (voUsedForVisit.type == VisitOrderType.VO && hasPrisonerReachedVoCap(dpsPrisonerDetails)) {
+        LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} already has the maximum number of VOs. Refund for visit ${visit.reference} will not be processed.")
+        return null
+      }
+
       voUsedForVisit.status = VisitOrderStatus.AVAILABLE
       voUsedForVisit.visitReference = null
 
@@ -111,10 +116,15 @@ class ProcessPrisonerService(
       }
     } else {
       // If none are found, find the negative VO used for the visit, and remove it, as it was never used.
-      val negativeVoUsedForVisit: NegativeVisitOrder? = dpsPrisonerDetails.negativeVisitOrders.firstOrNull { it.visitReference == visit.reference }
+      val negativeVoUsedForVisit = dpsPrisonerDetails.negativeVisitOrders.firstOrNull { it.visitReference == visit.reference }
       if (negativeVoUsedForVisit != null) {
         dpsPrisonerDetails.negativeVisitOrders.remove(negativeVoUsedForVisit)
       } else {
+        if (hasPrisonerReachedVoCap(dpsPrisonerDetails)) {
+          LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} already has the maximum number of VOs. Refund for visit ${visit.reference} will not be processed.")
+          return null
+        }
+
         LOG.warn("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on visit allocation api. Creating VO.")
         dpsPrisonerDetails.visitOrders.add(createVisitOrder(dpsPrisonerDetails, VisitOrderType.VO))
       }
@@ -269,6 +279,8 @@ class ProcessPrisonerService(
 
     return null
   }
+
+  private fun hasPrisonerReachedVoCap(dpsPrisonerDetails: PrisonerDetails): Boolean = dpsPrisonerDetails.visitOrders.count { it.type == VisitOrderType.VO && it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) } >= maxAccumulatedVisitOrders
 
   private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>) {
     LOG.info("Entered ProcessPrisonerService - processPrisonerAllocation with prisonerId ${dpsPrisoner.prisonerId}")

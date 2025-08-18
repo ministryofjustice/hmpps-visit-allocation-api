@@ -434,4 +434,60 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
   }
+
+  @Test
+  fun `when domain event visit cancelled is found, and prisoner is at maximum VO balance, then no VO is refunded`() {
+    // Given
+    val visitReference = "ab-cd-ef-gh"
+    val prisonId = "HEI"
+    val prisonerId = "AA123456"
+
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+
+    val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    dpsPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 26, dpsPrisoner))
+
+    dpsPrisoner.changeLogs.add(
+      ChangeLog(
+        changeTimestamp = LocalDateTime.now().minusSeconds(1),
+        changeType = ChangeLogType.BATCH_PROCESS,
+        changeSource = ChangeLogSource.SYSTEM,
+        userId = "SYSTEM",
+        comment = "Random existing changeLog",
+        prisoner = dpsPrisoner,
+        visitOrderBalance = 2,
+        privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
+      ),
+    )
+    prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson(visitReference),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
+    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
+    await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(26)
+
+    val changLogCount = changeLogRepository.findAll().count { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
+    assertThat(changLogCount).isEqualTo(0)
+  }
 }
