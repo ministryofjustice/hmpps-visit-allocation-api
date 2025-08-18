@@ -38,9 +38,11 @@ class VisitCancelledEventHandler(
 
       val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit)
 
-      val changeLog = changeLogService.findChangeLogForPrisonerByReference(visit.prisonerId, changeLogReference)
-      if (changeLog != null) {
-        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+      if (changeLogReference != null) {
+        val changeLog = changeLogService.findChangeLogForPrisonerByReference(visit.prisonerId, changeLogReference)
+        if (changeLog != null) {
+          snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+        }
       }
     } else {
       LOG.info("Prison ${visit.prisonCode} is not enabled for DPS, skipping processing")
