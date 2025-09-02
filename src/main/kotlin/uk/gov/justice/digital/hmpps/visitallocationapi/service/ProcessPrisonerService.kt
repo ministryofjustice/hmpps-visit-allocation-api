@@ -56,13 +56,13 @@ class ProcessPrisonerService(
     // Find the oldest PVO to use. If none exists, find the oldest VO to use.
     val selected: VisitOrder? = dpsPrisonerDetails.visitOrders
       .asSequence()
-      .filter { it.status == VisitOrderStatus.AVAILABLE }
       .filter { it.type == VisitOrderType.PVO }
+      .filter { it.status == VisitOrderStatus.AVAILABLE }
       .minByOrNull { it.createdTimestamp }
       ?: dpsPrisonerDetails.visitOrders
         .asSequence()
-        .filter { it.status == VisitOrderStatus.AVAILABLE }
         .filter { it.type == VisitOrderType.VO }
+        .filter { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
         .minByOrNull { it.createdTimestamp }
 
     if (selected != null) {
