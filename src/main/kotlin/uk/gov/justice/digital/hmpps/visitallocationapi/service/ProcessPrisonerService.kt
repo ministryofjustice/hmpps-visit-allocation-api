@@ -24,8 +24,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.PrisonerChangeTrackingUtil
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.temporal.TemporalAdjusters
 import java.util.*
 
 @Transactional
@@ -109,11 +107,6 @@ class ProcessPrisonerService(
 
       voUsedForVisit.status = VisitOrderStatus.AVAILABLE
       voUsedForVisit.visitReference = null
-
-      // If it's a PVO, we also set the created date to the 1st of the month, to avoid instant expiry scenarios.
-      if (voUsedForVisit.type == VisitOrderType.PVO) {
-        voUsedForVisit.createdTimestamp = LocalDateTime.now().with(TemporalAdjusters.firstDayOfMonth()).with(LocalTime.MIN)
-      }
     } else {
       // If none are found, find the negative VO used for the visit, and remove it, as it was never used.
       val negativeVoUsedForVisit = dpsPrisonerDetails.negativeVisitOrders.firstOrNull { it.visitReference == visit.reference }
