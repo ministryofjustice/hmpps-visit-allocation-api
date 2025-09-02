@@ -12,7 +12,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerSe
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.VisitCancelledInfo
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers.VisitBookedEventHandler.Companion.CONVICTED
 
 @Service
 class VisitCancelledEventHandler(
@@ -27,6 +26,7 @@ class VisitCancelledEventHandler(
 
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
+    const val CONVICTED = "Convicted"
   }
 
   override fun handle(domainEvent: DomainEvent) {
