@@ -50,7 +50,7 @@ class VisitCancelledEventHandler(
           }
         }
       } else {
-        VisitBookedEventHandler.Companion.LOG.info("Prisoner ${visit.prisonerId} is on Remand, no processing needed")
+        LOG.info("Prisoner ${visit.prisonerId} is on Remand, no processing needed")
       }
     } else {
       LOG.info("Prison ${visit.prisonCode} is not enabled for DPS, skipping processing")
