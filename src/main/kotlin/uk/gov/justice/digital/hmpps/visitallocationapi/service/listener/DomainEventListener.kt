@@ -26,7 +26,7 @@ class DomainEventListener(
     private val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  @SqsListener(PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy")
+  @SqsListener(PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2", maxMessagesPerPoll = "2")
   fun processMessage(sqsMessage: SQSMessage): CompletableFuture<Void?> {
     if (domainEventProcessingEnabled) {
       val event = objectMapper.readValue(sqsMessage.message, DomainEvent::class.java)
