@@ -18,7 +18,7 @@ class VisitAllocationByPrisonJobListener(
     const val PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY = "visitsallocationeventjob"
   }
 
-  @SqsListener(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy")
+  @SqsListener(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2")
   fun processMessage(visitAllocationEventJob: VisitAllocationEventJob): CompletableFuture<Void?> = CoroutineScope(Context.current().asContextElement()).future {
     visitAllocationByPrisonJobListenerService.handleVisitAllocationJob(visitAllocationEventJob)
     null
