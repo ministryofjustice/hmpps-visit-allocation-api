@@ -52,7 +52,8 @@ interface VisitOrderAllocationPrisonJobRepository : JpaRepository<VisitOrderAllo
         v.endTimestamp = :endTimestamp, 
         v.convictedPrisoners = :totalPrisoners,
         v.processedPrisoners = :processedPrisoners,
-        v.failedOrSkippedPrisoners = :failedOrSkippedPrisoners
+        v.failedOrSkippedPrisoners = :failedOrSkippedPrisoners,
+        v.failureMessage = null
         WHERE v.prisonCode = :prisonCode 
         AND v.allocationJobReference = :allocationJobReference
     """,
