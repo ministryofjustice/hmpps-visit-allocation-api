@@ -363,14 +363,8 @@ class ProcessPrisonerService(
   private fun isDueVO(prisoner: PrisonerDetails): Boolean = prisoner.lastVoAllocatedDate <= LocalDate.now().minusDays(14)
 
   private fun isDuePVO(prisoner: PrisonerDetails): Boolean {
-    val lastPVODate = prisoner.lastPvoAllocatedDate
-
-    // If they haven't been given a PVO before, we wait until their VO due date to allocate it, to align the dates.
-    if (lastPVODate == null) {
-      return isDueVO(prisoner)
-    }
-
-    return lastPVODate <= LocalDate.now().minusDays(28)
+    val pvoWindowReached = prisoner.lastPvoAllocatedDate?.let { it <= LocalDate.now().minusDays(28) } ?: true
+    return pvoWindowReached && isDueVO(prisoner)
   }
 
   private fun generateVos(prisoner: PrisonerDetails, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
