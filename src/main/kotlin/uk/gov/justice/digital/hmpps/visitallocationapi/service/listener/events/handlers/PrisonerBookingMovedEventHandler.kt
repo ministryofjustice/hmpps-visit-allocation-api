@@ -5,14 +5,12 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerBookingMovedInfo
 
 @Service
 class PrisonerBookingMovedEventHandler(
   private val objectMapper: ObjectMapper,
-  private val prisonService: PrisonService,
   private val prisonerSearchClient: PrisonerSearchClient,
   private val nomisSyncService: NomisSyncService,
 ) : DomainEventHandler {
@@ -21,14 +19,10 @@ class PrisonerBookingMovedEventHandler(
     val additionalInfo = objectMapper.readValue(domainEvent.additionalInformation, PrisonerBookingMovedInfo::class.java)
 
     val movedFromPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedFromNomsNumber)
-    if (!prisonService.getPrisonEnabledForDpsByCode(movedFromPrisoner.prisonId)) {
-      processNomis(movedFromPrisoner.prisonerId)
-    }
+    processNomis(movedFromPrisoner.prisonerId)
 
     val movedToPrisoner = prisonerSearchClient.getPrisonerById(additionalInfo.movedToNomsNumber)
-    if (!prisonService.getPrisonEnabledForDpsByCode(movedToPrisoner.prisonId)) {
-      processNomis(movedToPrisoner.prisonerId)
-    }
+    processNomis(movedToPrisoner.prisonerId)
   }
 
   private fun processNomis(prisonerId: String) {
