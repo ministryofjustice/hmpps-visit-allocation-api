@@ -12,7 +12,6 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.http.HttpStatus
-import org.springframework.test.context.TestPropertySource
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
@@ -32,7 +31,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit
 
-@TestPropertySource(properties = ["prisoner-search.attribute-search.page-size=100"])
 class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   companion object {
     const val PRISON_CODE = "MDI"
