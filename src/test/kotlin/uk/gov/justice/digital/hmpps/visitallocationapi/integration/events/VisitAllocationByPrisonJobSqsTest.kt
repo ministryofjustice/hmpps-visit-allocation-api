@@ -856,6 +856,56 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.count { it.prisoner.prisonerId == prisonerId && it.type == type && it.status == status }).isEqualTo(total)
   }
 
+  /**
+   * Scenario - 205 prisoners, all with Standard (STD) incentive.
+   */
+  @Test
+  fun `when visit allocation job run for a prison and number of prisoners are more than page capacity of 100 then processMessage is called and visit orders are created for convicted prisoners`() {
+    // Given - message sent to start allocation job for prison
+    val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
+    val allocationJobReference = "job-ref"
+    val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
+    val message = objectMapper.writeValueAsString(event)
+    val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
+    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+    val convictedPrisoners = mutableListOf<PrisonerDto>()
+
+    // When
+    // there are 205 convicted prisoners with STD incentive - while page limit on prisoner search is 100
+    for (i in 1..205) {
+      val prisoner = PrisonerDto(prisonerId = "ABC$i", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI")
+      convictedPrisoners.add(prisoner)
+      prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner.prisonerId, createPrisonerDto(prisonerId = prisoner.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
+      incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
+    }
+
+    prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
+
+    incentivesMockServer.stubGetAllPrisonIncentiveLevels(
+      prisonId = PRISON_CODE,
+      listOf(
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+      ),
+    )
+
+    prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
+
+    await untilCallTo { prisonVisitsAllocationEventJobSqsClient.countMessagesOnQueue(prisonVisitsAllocationEventJobQueueUrl).get() } matches { it == 0 }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
+    await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any()) }
+
+    val visitOrders = visitOrderRepository.findAll()
+
+    assertThat(visitOrders.size).isEqualTo(205)
+
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
+    verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
+    verify(snsService, times(205)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
+    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 205, processedPrisoners = 205, failedOrSkippedPrisoners = 0)
+  }
+
   private fun assertVisitOrderAllocationPrisonJob(
     visitOrderAllocationPrisonJob: VisitOrderAllocationPrisonJob,
     failureMessage: String?,
