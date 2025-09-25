@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.clients
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
@@ -14,6 +15,7 @@ import java.util.concurrent.TimeoutException
 @Component
 class PrisonerSearchClient(
   @Qualifier("prisonerSearchWebClient") private val webClient: WebClient,
+  @Value("\${prisoner-search.attribute-search.page-size:500}") private val attributeSearchPageSize: Int,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -45,7 +47,7 @@ class PrisonerSearchClient(
 
     return webClient
       .post()
-      .uri("/attribute-search?size=100")
+      .uri("/attribute-search?size=$attributeSearchPageSize")
       .bodyValue(requestBody)
       .accept(MediaType.APPLICATION_JSON)
       .retrieve()

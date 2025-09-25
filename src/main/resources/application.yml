@@ -95,3 +95,7 @@ feature:
   events:
     sns:
       enabled: true
+
+prisoner-search:
+  attribute-search:
+    page-size: 500
