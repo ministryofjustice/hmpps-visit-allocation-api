@@ -63,3 +63,5 @@ feature:
   events:
     sns:
       enabled: true
+  dps-process-special-prison-codes:
+    enabled: false

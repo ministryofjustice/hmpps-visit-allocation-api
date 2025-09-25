@@ -2,11 +2,13 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.SpecialPrisonCodes
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
@@ -21,12 +23,20 @@ class PrisonService(
   private val visitOrderAllocationJobRepository: VisitOrderAllocationJobRepository,
   private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
   private val visitAllocationEventJobSqsService: VisitAllocationEventJobSqsService,
+  @Value("\${feature.dps-process-special-prison-codes.enabled}") val dpsProcessSpecialPrisonCodes: Boolean,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun getPrisonEnabledForDpsByCode(prisonCode: String): Boolean = prisonApiClient.getPrisonEnabledForDps(prisonCode)
+  fun getPrisonEnabledForDpsByCode(prisonCode: String): Boolean {
+    if (dpsProcessSpecialPrisonCodes && SpecialPrisonCodes.entries.any { it.name == prisonCode }) {
+      LOG.info("Special prison code $prisonCode found, feature is enabled, returning true for is enabled for DPS")
+      return true
+    } else {
+      return prisonApiClient.getPrisonEnabledForDps(prisonCode)
+    }
+  }
 
   fun triggerVisitAllocationForActivePrisons(): VisitAllocationEventJobDto {
     log.info("Trigger allocation by prison started")
