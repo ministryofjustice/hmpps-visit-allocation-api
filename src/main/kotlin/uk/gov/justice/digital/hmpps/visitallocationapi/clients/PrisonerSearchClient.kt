@@ -45,7 +45,7 @@ class PrisonerSearchClient(
 
     return webClient
       .post()
-      .uri("/attribute-search?size=10000")
+      .uri("/attribute-search?size=100")
       .bodyValue(requestBody)
       .accept(MediaType.APPLICATION_JSON)
       .retrieve()

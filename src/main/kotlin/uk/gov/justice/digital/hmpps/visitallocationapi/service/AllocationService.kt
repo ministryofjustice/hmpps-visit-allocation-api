@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.RestPage
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 
@@ -64,7 +65,7 @@ class AllocationService(
 
   private fun getConvictedPrisonersForPrison(jobReference: String, prisonId: String): List<PrisonerDto> {
     val convictedPrisonersForPrison = try {
-      prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId).content.toList()
+      getAllPrisoners(prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId))
     } catch (e: Exception) {
       val failureMessage = "failed to get convicted prisoners by prisonId - $prisonId"
       LOG.error(failureMessage, e)
@@ -86,5 +87,15 @@ class AllocationService(
     }
 
     return incentiveLevelsForPrison
+  }
+
+  private fun getAllPrisoners(restPage: RestPage<PrisonerDto>): List<PrisonerDto> {
+    val prisoners = mutableListOf<PrisonerDto>()
+    prisoners.addAll(restPage.content)
+    while (restPage.hasNext()) {
+      prisoners.addAll(restPage.content)
+    }
+
+    return prisoners.toList()
   }
 }
