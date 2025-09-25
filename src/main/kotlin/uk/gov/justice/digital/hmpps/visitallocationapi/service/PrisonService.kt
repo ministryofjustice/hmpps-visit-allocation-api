@@ -31,7 +31,7 @@ class PrisonService(
 
   fun getPrisonEnabledForDpsByCode(prisonCode: String): Boolean {
     if (dpsProcessSpecialPrisonCodes && SpecialPrisonCodes.entries.any { it.name == prisonCode }) {
-      LOG.info("Special prison code $prisonCode found, feature is enabled, returning true for is enabled for DPS")
+      log.info("Special prison code $prisonCode found, feature is enabled, returning true for is enabled for DPS")
       return true
     } else {
       return prisonApiClient.getPrisonEnabledForDps(prisonCode)
