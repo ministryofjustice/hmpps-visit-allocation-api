@@ -857,10 +857,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   }
 
   /**
-   * Scenario - Allocation: Visit allocation job is run, and all prisoners are allocated visit orders (VO / PVO).
-   * Prisoner1 - Standard incentive, Gets 1 VO, 0 PVO.
-   * Prisoner2 - Enhanced incentive, Gets 2 VO, 1 PVO.
-   * Prisoner3 - Enhanced2 incentive, Gets 3 VO, 2 PVOs.
+   * Scenario - 205 prisoners, all with Standard (STD) incentive.
    */
   @Test
   fun `when visit allocation job run for a prison and number of prisoners are more than page capacity of 100 then processMessage is called and visit orders are created for convicted prisoners`() {
