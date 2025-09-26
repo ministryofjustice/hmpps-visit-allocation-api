@@ -32,7 +32,6 @@ class DomainEventListener(
 
   @SqsListener(PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2", maxMessagesPerPoll = "2")
   fun processMessage(sqsMessage: SQSMessage): CompletableFuture<Void?> {
-
     val span = tracer.spanBuilder("VisitAllocationDomainEventProcessingJob")
       .setSpanKind(SpanKind.CONSUMER)
       .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id

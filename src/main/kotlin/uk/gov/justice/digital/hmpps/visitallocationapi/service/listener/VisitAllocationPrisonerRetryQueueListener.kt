@@ -26,7 +26,6 @@ class VisitAllocationPrisonerRetryQueueListener(private val prisonerRetryService
 
   @SqsListener(PRISON_VISITS_ALLOCATION_PRISONER_RETRY_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2", maxMessagesPerPoll = "2")
   fun processMessage(visitAllocationPrisonerRetryJob: VisitAllocationPrisonerRetryJob): CompletableFuture<Void?> = CoroutineScope(Context.root().asContextElement()).future {
-
     val span = tracer.spanBuilder("VisitAllocationDomainEventProcessingJob")
       .setSpanKind(SpanKind.CONSUMER)
       .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
