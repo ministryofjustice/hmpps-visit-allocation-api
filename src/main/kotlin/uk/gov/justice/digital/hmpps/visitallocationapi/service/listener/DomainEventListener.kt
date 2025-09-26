@@ -2,6 +2,8 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.context.Context
 import io.opentelemetry.extension.kotlin.asContextElement
 import kotlinx.coroutines.CoroutineScope
@@ -26,12 +28,29 @@ class DomainEventListener(
     private val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  private val tracer = GlobalOpenTelemetry.getTracer("uk.gov.justice.digital.hmpps.visitallocationapi.service.listener")
+
   @SqsListener(PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2", maxMessagesPerPoll = "2")
   fun processMessage(sqsMessage: SQSMessage): CompletableFuture<Void?> {
     if (domainEventProcessingEnabled) {
       val event = objectMapper.readValue(sqsMessage.message, DomainEvent::class.java)
-      return CoroutineScope(Context.current().asContextElement()).future {
-        domainEventListenerService.handleMessage(event)
+      return CoroutineScope(Context.root().asContextElement()).future {
+        val span = tracer.spanBuilder("VisitAllocationDomainEventProcessingJob")
+          .setSpanKind(SpanKind.CONSUMER)
+          .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
+          .startSpan()
+
+        val scope = span.makeCurrent()
+
+        try {
+          domainEventListenerService.handleMessage(event)
+        } catch (t: Throwable) {
+          span.recordException(t)
+          throw t
+        } finally {
+          scope.close()
+          span.end()
+        }
         null
       }
     } else {
