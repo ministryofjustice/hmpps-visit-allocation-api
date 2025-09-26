@@ -24,7 +24,7 @@ class VisitAllocationByPrisonJobListener(
 
   @SqsListener(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2", maxMessagesPerPoll = "2")
   fun processMessage(visitAllocationEventJob: VisitAllocationEventJob): CompletableFuture<Void?> = CoroutineScope(Context.root().asContextElement()).future {
-    val span = tracer.spanBuilder("VisitAllocationJob")
+    val span = tracer.spanBuilder("VisitAllocationPrisonAllocationJob")
       .setSpanKind(SpanKind.CONSUMER)
       .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
       .startSpan()
