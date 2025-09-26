@@ -38,7 +38,7 @@ class PrisonerSearchMockServer : WireMockServer(8094) {
   ) {
     val responseBuilder = createJsonResponseBuilder()
     stubFor(
-      post("/attribute-search?size=100")
+      post("/attribute-search?size=10000")
         .willReturn(
           if (convictedPrisoners == null) {
             responseBuilder

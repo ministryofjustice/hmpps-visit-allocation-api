@@ -65,7 +65,3 @@ feature:
       enabled: true
   dps-process-special-prison-codes:
     enabled: false
-
-prisoner-search:
-  attribute-search:
-    page-size: 100
