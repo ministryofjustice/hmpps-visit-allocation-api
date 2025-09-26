@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.AttributeSearchPrisonerDto
 
 @Transactional
 @Service
@@ -62,7 +62,7 @@ class AllocationService(
     LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
   }
 
-  private fun getConvictedPrisonersForPrison(jobReference: String, prisonId: String): List<PrisonerDto> {
+  private fun getConvictedPrisonersForPrison(jobReference: String, prisonId: String): List<AttributeSearchPrisonerDto> {
     val convictedPrisonersForPrison = try {
       prisonerSearchClient.getConvictedPrisonersByPrisonId(prisonId).content.toList()
     } catch (e: Exception) {

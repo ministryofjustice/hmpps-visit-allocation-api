@@ -1,8 +1,10 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.WireMock.containing
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import org.junit.jupiter.api.extension.AfterAllCallback
 import org.junit.jupiter.api.extension.BeforeAllCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
@@ -38,7 +40,9 @@ class PrisonerSearchMockServer : WireMockServer(8094) {
   ) {
     val responseBuilder = createJsonResponseBuilder()
     stubFor(
-      post("/attribute-search?size=10000")
+      post(urlPathEqualTo("/attribute-search"))
+        .withQueryParam("size", containing("5000"))
+        .withQueryParam("responseFields", containing("prisonerNumber"))
         .willReturn(
           if (convictedPrisoners == null) {
             responseBuilder

@@ -7,6 +7,7 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.AttributeSearchPrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ConvictedStatus
 import java.util.concurrent.TimeoutException
@@ -17,6 +18,9 @@ class PrisonerSearchClient(
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
+
+    const val DEFAULT_PAGE_SIZE = 5000
+    const val RESPONSE_FIELD = "prisonerNumber"
   }
 
   fun getPrisonerById(prisonerId: String): PrisonerDto {
@@ -29,7 +33,7 @@ class PrisonerSearchClient(
       .block() ?: throw TimeoutException("Request timed out while fetching prisoner with ID $prisonerId")
   }
 
-  fun getConvictedPrisonersByPrisonId(prisonId: String): RestPage<PrisonerDto> {
+  fun getConvictedPrisonersByPrisonId(prisonId: String): RestPage<AttributeSearchPrisonerDto> {
     LOG.info("Calling prisoner-search to get all convicted prisoners for prison $prisonId")
     val requestBody = AttributeSearch(
       queries = listOf(
@@ -45,11 +49,11 @@ class PrisonerSearchClient(
 
     return webClient
       .post()
-      .uri("/attribute-search?size=10000")
+      .uri("/attribute-search?size=$DEFAULT_PAGE_SIZE&responseFields=$RESPONSE_FIELD")
       .bodyValue(requestBody)
       .accept(MediaType.APPLICATION_JSON)
       .retrieve()
-      .bodyToMono<RestPage<PrisonerDto>>()
+      .bodyToMono<RestPage<AttributeSearchPrisonerDto>>()
       .block() ?: throw TimeoutException("Request timed out while fetching all prisoners from prison $prisonId")
   }
 }
