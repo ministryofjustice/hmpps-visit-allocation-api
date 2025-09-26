@@ -32,30 +32,30 @@ class DomainEventListener(
 
   @SqsListener(PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2", maxMessagesPerPoll = "2")
   fun processMessage(sqsMessage: SQSMessage): CompletableFuture<Void?> {
-    val span = tracer.spanBuilder("VisitAllocationDomainEventProcessingJob")
-      .setSpanKind(SpanKind.CONSUMER)
-      .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
-      .startSpan()
+    if (domainEventProcessingEnabled) {
+      val event = objectMapper.readValue(sqsMessage.message, DomainEvent::class.java)
+      return CoroutineScope(Context.root().asContextElement()).future {
+        val span = tracer.spanBuilder("VisitAllocationDomainEventProcessingJob")
+          .setSpanKind(SpanKind.CONSUMER)
+          .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
+          .startSpan()
 
-    val scope = span.makeCurrent()
+        val scope = span.makeCurrent()
 
-    try {
-      if (domainEventProcessingEnabled) {
-        val event = objectMapper.readValue(sqsMessage.message, DomainEvent::class.java)
-        return CoroutineScope(Context.root().asContextElement()).future {
+        try {
           domainEventListenerService.handleMessage(event)
-          null
+        } catch (t: Throwable) {
+          span.recordException(t)
+          throw t
+        } finally {
+          scope.close()
+          span.end()
         }
-      } else {
-        LOG.debug("Domain event processing is disabled")
-        return CompletableFuture.completedFuture(null)
+        null
       }
-    } catch (t: Throwable) {
-      span.recordException(t)
-      throw t
-    } finally {
-      scope.close()
-      span.end()
+    } else {
+      LOG.debug("Domain event processing is disabled")
+      return CompletableFuture.completedFuture(null)
     }
   }
 }
