@@ -1,6 +1,8 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener
 
 import io.awspring.cloud.sqs.annotation.SqsListener
+import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.context.Context
 import io.opentelemetry.extension.kotlin.asContextElement
 import kotlinx.coroutines.CoroutineScope
@@ -18,9 +20,27 @@ class VisitAllocationByPrisonJobListener(
     const val PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY = "visitsallocationeventjob"
   }
 
+  private val tracer = GlobalOpenTelemetry.getTracer("uk.gov.justice.digital.hmpps.visitallocationapi.service.listener")
+
   @SqsListener(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2", maxMessagesPerPoll = "2")
-  fun processMessage(visitAllocationEventJob: VisitAllocationEventJob): CompletableFuture<Void?> = CoroutineScope(Context.current().asContextElement()).future {
-    visitAllocationByPrisonJobListenerService.handleVisitAllocationJob(visitAllocationEventJob)
+  fun processMessage(visitAllocationEventJob: VisitAllocationEventJob): CompletableFuture<Void?> = CoroutineScope(Context.root().asContextElement()).future {
+    val span = tracer.spanBuilder("VisitAllocationJob")
+      .setSpanKind(SpanKind.CONSUMER)
+      .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
+      .startSpan()
+
+    val scope = span.makeCurrent()
+
+    try {
+      visitAllocationByPrisonJobListenerService.handleVisitAllocationJob(visitAllocationEventJob)
+    } catch (t: Throwable) {
+      span.recordException(t)
+      throw t
+    } finally {
+      scope.close()
+      span.end()
+    }
+
     null
   }
 }
