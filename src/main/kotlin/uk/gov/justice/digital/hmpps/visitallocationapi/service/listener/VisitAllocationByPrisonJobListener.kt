@@ -22,7 +22,7 @@ class VisitAllocationByPrisonJobListener(
 
   private val tracer = GlobalOpenTelemetry.getTracer("uk.gov.justice.digital.hmpps.visitallocationapi.service.listener")
 
-  @SqsListener(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "2", maxMessagesPerPoll = "2")
+  @SqsListener(PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY, factory = "hmppsQueueContainerFactoryProxy", maxConcurrentMessages = "1", maxMessagesPerPoll = "1")
   fun processMessage(visitAllocationEventJob: VisitAllocationEventJob): CompletableFuture<Void?> = CoroutineScope(Context.root().asContextElement()).future {
     val span = tracer.spanBuilder("VisitAllocationPrisonAllocationJob")
       .setSpanKind(SpanKind.CONSUMER)
