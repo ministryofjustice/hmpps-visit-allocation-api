@@ -10,7 +10,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Mono
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import java.util.concurrent.TimeoutException
 
@@ -20,16 +19,6 @@ class IncentivesClient(
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
-  }
-
-  fun getPrisonerIncentiveReviewHistory(prisonerId: String): PrisonerIncentivesDto {
-    LOG.info("Calling incentives-api to get prisoner incentive code for prisoner ID $prisonerId")
-
-    return webClient.get()
-      .uri("/incentive-reviews/prisoner/$prisonerId")
-      .retrieve()
-      .bodyToMono(PrisonerIncentivesDto::class.java)
-      .block() ?: throw TimeoutException("Request timed out while fetching prisoner incentive level for prisoner ID $prisonerId")
   }
 
   fun getPrisonIncentiveLevels(prisonId: String): List<PrisonIncentiveAmountsDto> {

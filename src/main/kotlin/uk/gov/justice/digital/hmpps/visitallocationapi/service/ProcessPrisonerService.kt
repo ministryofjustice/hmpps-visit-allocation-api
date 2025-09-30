@@ -278,11 +278,10 @@ class ProcessPrisonerService(
   private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>) {
     LOG.info("Entered ProcessPrisonerService - processPrisonerAllocation with prisonerId ${dpsPrisoner.prisonerId}")
 
-    val prisonerPrisonId = prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId).prisonId
-    val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)
+    val prisonerSearchDetails = prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)
 
-    val prisonIncentiveAmounts = allPrisonIncentiveAmounts.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
-      ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisonerPrisonId, prisonerIncentive.iepCode)
+    val prisonIncentiveAmounts = allPrisonIncentiveAmounts.firstOrNull { it.levelCode == prisonerSearchDetails.currentIncentive.level.code }
+      ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisonerSearchDetails.prisonId, prisonerSearchDetails.currentIncentive.level.code)
 
     val visitOrders = mutableListOf<VisitOrder>()
     visitOrders.addAll(generateVos(dpsPrisoner, prisonIncentiveAmounts))

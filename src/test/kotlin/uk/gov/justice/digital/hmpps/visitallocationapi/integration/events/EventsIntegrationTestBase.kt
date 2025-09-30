@@ -15,6 +15,8 @@ import software.amazon.awssdk.services.sns.model.PublishRequest
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
 import software.amazon.awssdk.services.sqs.model.PurgeQueueRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.CurrentIncentive
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Level
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
@@ -70,6 +72,13 @@ abstract class EventsIntegrationTestBase {
     fun testcontainers(registry: DynamicPropertyRegistry) {
       localStackContainer?.also { setLocalStackProperties(it, registry) }
     }
+
+    const val PRISON_CODE = "MDI"
+
+    val prisoner1 = PrisonerDto(prisonerId = "ABC121", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI", currentIncentive = CurrentIncentive(level = Level(code = "STD")))
+    val prisoner2 = PrisonerDto(prisonerId = "ABC122", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI", currentIncentive = CurrentIncentive(level = Level(code = "ENH")))
+    val prisoner3 = PrisonerDto(prisonerId = "ABC123", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI", currentIncentive = CurrentIncentive(level = Level(code = "ENH2")))
+    val prisoner4 = PrisonerDto(prisonerId = "ABC124", prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = "HEI", currentIncentive = CurrentIncentive(level = Level(code = "ENH2")))
   }
 
   @Autowired
@@ -227,7 +236,7 @@ abstract class EventsIntegrationTestBase {
     return createAdditionalInformationJson(jsonValues)
   }
 
-  protected fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI", convictedStatus: String? = "Convicted"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId, convictedStatus = convictedStatus)
+  protected fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI", convictedStatus: String? = "Convicted", currentIncentiveLevel: String = "STD"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId, convictedStatus = convictedStatus, currentIncentive = CurrentIncentive(level = Level(code = currentIncentiveLevel)))
 
   protected fun createVisitBalancesDto(remainingVo: Int, remainingPvo: Int, latestIepAdjustDate: LocalDate? = null, latestPrivIepAdjustDate: LocalDate? = null): VisitBalancesDto = VisitBalancesDto(remainingVo, remainingPvo, latestIepAdjustDate, latestPrivIepAdjustDate)
 

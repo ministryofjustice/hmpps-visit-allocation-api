@@ -19,4 +19,15 @@ data class PrisonerDto(
 
   @Schema(description = "Convicted Status", example = "Convicted", allowableValues = ["Convicted", "Remand"])
   val convictedStatus: String? = null,
+
+  @Schema(description = "The current incentive level of the prisoner")
+  val currentIncentive: CurrentIncentive,
+)
+
+data class CurrentIncentive(
+  val level: Level,
+)
+
+data class Level(
+  val code: String,
 )

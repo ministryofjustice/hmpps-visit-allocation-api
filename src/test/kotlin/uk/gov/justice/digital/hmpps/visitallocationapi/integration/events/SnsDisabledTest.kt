@@ -12,11 +12,6 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.springframework.test.context.TestPropertySource
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.VisitAllocationByPrisonJobSqsTest.Companion.PRISON_CODE
-import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.VisitAllocationByPrisonJobSqsTest.Companion.prisoner1
-import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.VisitAllocationByPrisonJobSqsTest.Companion.prisoner2
-import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.VisitAllocationByPrisonJobSqsTest.Companion.prisoner3
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJob
@@ -38,13 +33,9 @@ class SnsDisabledTest : EventsIntegrationTestBase() {
     val convictedPrisoners = listOf(prisoner1, prisoner2, prisoner3)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
 
-    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
-    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
-    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
-
-    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
-    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner2.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH"))
-    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner3.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("ENH2"))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE, currentIncentiveLevel = "STD"))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner2.prisonerId, createPrisonerDto(prisonerId = prisoner2.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE, currentIncentiveLevel = "ENH"))
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner3.prisonerId, createPrisonerDto(prisonerId = prisoner3.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE, currentIncentiveLevel = "ENH2"))
 
     incentivesMockServer.stubGetAllPrisonIncentiveLevels(
       prisonId = PRISON_CODE,
