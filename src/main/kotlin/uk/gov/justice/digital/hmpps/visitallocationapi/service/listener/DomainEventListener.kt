@@ -8,6 +8,7 @@ import io.opentelemetry.context.Context
 import io.opentelemetry.extension.kotlin.asContextElement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
+import kotlinx.coroutines.time.withTimeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.SQSMessage
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 @Service
@@ -35,23 +37,25 @@ class DomainEventListener(
     if (domainEventProcessingEnabled) {
       val event = objectMapper.readValue(sqsMessage.message, DomainEvent::class.java)
       return CoroutineScope(Context.root().asContextElement()).future {
-        val span = tracer.spanBuilder("VisitAllocationDomainEventProcessingJob")
-          .setSpanKind(SpanKind.CONSUMER)
-          .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
-          .startSpan()
+        withTimeout(Duration.ofMinutes(10)) {
+          val span = tracer.spanBuilder("VisitAllocationDomainEventProcessingJob")
+            .setSpanKind(SpanKind.CONSUMER)
+            .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
+            .startSpan()
 
-        val scope = span.makeCurrent()
+          val scope = span.makeCurrent()
 
-        try {
-          domainEventListenerService.handleMessage(event)
-        } catch (t: Throwable) {
-          span.recordException(t)
-          throw t
-        } finally {
-          scope.close()
-          span.end()
+          try {
+            domainEventListenerService.handleMessage(event)
+          } catch (t: Throwable) {
+            span.recordException(t)
+            throw t
+          } finally {
+            scope.close()
+            span.end()
+          }
+          null
         }
-        null
       }
     } else {
       LOG.debug("Domain event processing is disabled")

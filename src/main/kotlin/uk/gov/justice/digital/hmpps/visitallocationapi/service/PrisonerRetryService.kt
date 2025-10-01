@@ -4,6 +4,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
@@ -34,6 +36,7 @@ class PrisonerRetryService(
     }
   }
 
+  @Transactional(propagation = Propagation.NOT_SUPPORTED, readOnly = true)
   fun handlePrisonerRetry(jobReference: String, prisonerId: String) {
     log.info("handle prisoner - $prisonerId on retry queue")
     val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
