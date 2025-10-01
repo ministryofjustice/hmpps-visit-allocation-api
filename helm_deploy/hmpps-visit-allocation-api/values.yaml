@@ -28,7 +28,7 @@ generic-service:
 
   # Environment variables to load into the deployment
   env:
-    JAVA_OPTS: "-Xmx512m"
+    JAVA_OPTS: "-Xmx1024m"
     SERVER_PORT: "8080"
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
 
@@ -57,6 +57,14 @@ generic-service:
       HMPPS_SQS_QUEUES_PRISONVISITSALLOCATIONPRISONERRETRYQUEUE_QUEUE_NAME: "sqs_queue_name"
     sqs-prison-visits-allocation-prisoner-retry-dlq-secret:
       HMPPS_SQS_QUEUES_PRISONVISITSALLOCATIONPRISONERRETRYQUEUE_DLQ_NAME: "sqs_queue_name"
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1024Mi
+    limits:
+      cpu: 2000m
+      memory: 2048Mi
 
   allowlist:
     groups:
