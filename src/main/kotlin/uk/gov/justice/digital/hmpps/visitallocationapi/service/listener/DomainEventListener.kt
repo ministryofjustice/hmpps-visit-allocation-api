@@ -37,7 +37,7 @@ class DomainEventListener(
     if (domainEventProcessingEnabled) {
       val event = objectMapper.readValue(sqsMessage.message, DomainEvent::class.java)
       return CoroutineScope(Context.root().asContextElement()).future {
-        withTimeout(Duration.ofMinutes(10)) {
+        withTimeout(Duration.ofMinutes(5)) {
           val span = tracer.spanBuilder("VisitAllocationDomainEventProcessingJob")
             .setSpanKind(SpanKind.CONSUMER)
             .setNoParent() // Force a new trace ID here to stop all jobs being processed under the same operation_id
