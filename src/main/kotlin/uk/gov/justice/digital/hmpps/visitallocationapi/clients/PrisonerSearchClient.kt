@@ -56,6 +56,28 @@ class PrisonerSearchClient(
       .bodyToMono<RestPage<AttributeSearchPrisonerDto>>()
       .block() ?: throw TimeoutException("Request timed out while fetching all prisoners from prison $prisonId")
   }
+
+  fun getAllPrisonersByPrisonId(prisonId: String): RestPage<AttributeSearchPrisonerDto> {
+    LOG.info("Calling prisoner-search to get all prisoners for prison $prisonId")
+    val requestBody = AttributeSearch(
+      queries = listOf(
+        AttributeQuery(
+          matchers = listOf(
+            Matcher(attribute = "prisonId", condition = "IS", searchTerm = prisonId),
+          ),
+        ),
+      ),
+    )
+
+    return webClient
+      .post()
+      .uri("/attribute-search?size=$DEFAULT_PAGE_SIZE&responseFields=$RESPONSE_FIELD")
+      .bodyValue(requestBody)
+      .accept(MediaType.APPLICATION_JSON)
+      .retrieve()
+      .bodyToMono<RestPage<AttributeSearchPrisonerDto>>()
+      .block() ?: throw TimeoutException("Request timed out while fetching all prisoners from prison $prisonId")
+  }
 }
 
 data class AttributeSearch(
