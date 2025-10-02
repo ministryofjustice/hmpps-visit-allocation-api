@@ -15,7 +15,7 @@ import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 const val RESET_NEGATIVE_VO_BALANCE = "/admin/prison/{prisonCode}/reset"
 
 @RestController
-class BalanceController(val adminService: AdminService) {
+class AdminController(val adminService: AdminService) {
   @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__ADMIN')")
   @PostMapping(RESET_NEGATIVE_VO_BALANCE)
   @Operation(
