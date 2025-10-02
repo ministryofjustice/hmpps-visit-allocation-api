@@ -12,7 +12,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCAT
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.AdminService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
-const val RESET_NEGATIVE_VO_BALANCE = "/admin/{prisonCode}/reset"
+const val RESET_NEGATIVE_VO_BALANCE = "/admin/prison/{prisonCode}/reset"
 
 @RestController
 class BalanceController(val adminService: AdminService) {
