@@ -229,6 +229,40 @@ class ProcessPrisonerService(
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
+  fun processAdminResetPrisonerNegativeBalance(prisonerId: String): UUID? {
+    val details = prisonerDetailsService.getPrisonerDetails(prisonerId)
+    if (details == null) {
+      LOG.info("Prisoner $prisonerId not found in DPS DB, skipping admin reset negative balance")
+      return null
+    }
+
+    val used = details.negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED }
+    if (used.isEmpty()) {
+      LOG.info("Prisoner $prisonerId has no negative VOs, skipping admin reset negative balance")
+      return null
+    }
+
+    val amountToRepay = used.count()
+    used.forEach {
+      it.status = NegativeVisitOrderStatus.REPAID
+      it.repaidDate = LocalDate.now()
+    }
+
+    val changeLog = changeLogService.createLogPrisonerNegativeBalanceAdminReset(details)
+    details.changeLogs.add(changeLog)
+
+    telemetryClientService.trackEvent(
+      TelemetryEventType.VO_PRISONER_NEGATIVE_BALANCE_ADMIN_RESET,
+      mapOf(
+        "prisonerId" to prisonerId,
+      ),
+    )
+
+    LOG.info("Admin reset negative balance by repaying $amountToRepay for prisoner $prisonerId")
+    return changeLog.reference
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): UUID? {
     LOG.info("Entered ProcessPrisonerService - processPrisoner for prisoner - $prisonerId")
 
