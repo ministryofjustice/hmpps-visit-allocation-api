@@ -238,6 +238,7 @@ class ProcessPrisonerService(
 
     val used = details.negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED }
     if (used.isEmpty()) {
+      LOG.info("Prisoner $prisonerId has no negative VOs, skipping admin reset negative balance")
       return null
     }
 
@@ -256,6 +257,7 @@ class ProcessPrisonerService(
       ),
     )
 
+    LOG.info("Admin reset negative balance for prisoner $prisonerId")
     return changeLog.reference
   }
 

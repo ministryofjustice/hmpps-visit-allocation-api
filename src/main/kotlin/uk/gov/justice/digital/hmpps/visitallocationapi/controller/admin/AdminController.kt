@@ -36,11 +36,6 @@ class AdminController(val adminService: AdminService) {
         description = "Incorrect permissions to reset prisoners balances.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Prison code invalid",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
     ],
   )
   fun resetPrisonersNegativeBalance(

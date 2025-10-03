@@ -23,6 +23,12 @@ class AdminService(
     LOG.info("Entered AdminService - resetPrisonerNegativeBalance for prison {}", prisonCode)
 
     val prisoners = prisonerSearchClient.getAllPrisonersByPrisonId(prisonCode).content
+    if (prisoners.isEmpty()) {
+      LOG.info("No prisoners found for prison $prisonCode")
+      return
+    }
+
+    LOG.info("Found ${prisoners.size} prisoners for prison $prisonCode")
     for (prisoner in prisoners) {
       val changeLogReference = processPrisonerService.processAdminResetPrisonerNegativeBalance(prisoner.prisonerId)
       if (changeLogReference != null) {
