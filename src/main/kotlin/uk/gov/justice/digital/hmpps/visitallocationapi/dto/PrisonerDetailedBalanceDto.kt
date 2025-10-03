@@ -13,13 +13,13 @@ data class PrisonerDetailedBalanceDto(
   @Schema(description = "The current accumulated VO balance", example = "5", required = true)
   val accumulatedVos: Int,
 
-  @Schema(description = "The current negative VO balance, denoted as a postive value", example = "5", required = true)
+  @Schema(description = "The current negative VO balance, denoted as a positive value", example = "5", required = true)
   val negativeVos: Int,
 
   @Schema(description = "The current available PVO balance", example = "5", required = true)
   val availablePvos: Int,
 
-  @Schema(description = "The current negative VO balance, denoted as a postive value", example = "5", required = true)
+  @Schema(description = "The current negative VO balance, denoted as a positive value", example = "5", required = true)
   val negativePvos: Int,
 
   @Schema(description = "The date VOs were last allocated to the prisoner", example = "2025-01-01", required = true)
