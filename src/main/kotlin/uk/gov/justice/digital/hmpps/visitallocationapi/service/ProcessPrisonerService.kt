@@ -42,7 +42,7 @@ class ProcessPrisonerService(
   }
 
   fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID? {
-    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
+    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
     // Due to our SQS queues being "At least once delivery", this specific event needs to return early if this visit has already been mapped.
@@ -93,7 +93,7 @@ class ProcessPrisonerService(
   }
 
   fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID? {
-    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(visit.prisonerId)
+    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
     // Find the VO used by the visit.
@@ -142,10 +142,10 @@ class ProcessPrisonerService(
     var privilegedVisitOrdersToBeCreated = 0
 
     LOG.info("processPrisonerMerge with newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
-    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetails(newPrisonerId)
+    val newPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(newPrisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(newPrisonerId, LocalDate.now().minusDays(14), null)
 
-    val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetails(removedPrisonerId)
+    val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(removedPrisonerId)
 
     if (removedPrisonerDetails != null) {
       // create VOs - if the VO balance of the new prisoner is less than the removed prisoner's VO balance
@@ -197,7 +197,7 @@ class ProcessPrisonerService(
   }
 
   fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): UUID {
-    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
+    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
     dpsPrisonerDetails.visitOrders
@@ -268,7 +268,7 @@ class ProcessPrisonerService(
 
     try {
       // Get prisoner on DPS (or create if they're new).
-      val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetails(prisonerId)
+      val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
         ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
       // Capture the before details, used at the end to track if changes have been made. If so, a change_log entry will be generated.

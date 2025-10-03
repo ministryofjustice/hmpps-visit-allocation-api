@@ -38,7 +38,7 @@ class NomisSyncService(
 
     validateSyncRequest(syncDto)
 
-    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(syncDto.prisonerId)
+    val dpsPrisoner = prisonerDetailsService.getPrisonerDetailsWithLock(syncDto.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
 
     compareBalanceBeforeSync(syncDto, dpsPrisoner.getBalance())
@@ -82,7 +82,7 @@ class NomisSyncService(
     val prisonerNomisBalance = prisonApiClient.getBookingVisitBalances(prisonerId)
     if (prisonerNomisBalance == null) {
       LOG.warn("Prisoner $prisonerId balance not found on NOMIS. Checking if prisoner exists in DPS allocation service")
-      val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)
+      val dpsPrisoner = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
       if (dpsPrisoner == null) {
         LOG.warn("Prisoner $prisonerId not found in DPS allocation service. Skipping sync.")
         return
@@ -95,7 +95,7 @@ class NomisSyncService(
       }
     }
 
-    val dpsPrisoner = prisonerDetailsService.getPrisonerDetails(prisonerId)
+    val dpsPrisoner = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
     val voBalanceChange = (prisonerNomisBalance.remainingVo - dpsPrisoner.getVoBalance())

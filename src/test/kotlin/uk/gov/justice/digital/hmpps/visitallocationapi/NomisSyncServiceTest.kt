@@ -68,7 +68,7 @@ class NomisSyncServiceTest {
     existingPrisonerDetails.visitOrders.addAll(createVisitOrders(existingPrisonerDetails, VisitOrderType.PVO, 1))
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -103,7 +103,7 @@ class NomisSyncServiceTest {
       .whenever(spyDetails)
       .getBalance()
 
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId))
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId))
       .thenReturn(spyDetails)
 
     // WHEN
@@ -128,7 +128,7 @@ class NomisSyncServiceTest {
     existingPrisonerDetails.visitOrders.addAll(createVisitOrders(existingPrisonerDetails, VisitOrderType.PVO, 1))
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -171,7 +171,7 @@ class NomisSyncServiceTest {
       .whenever(spyDetails)
       .getBalance()
 
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId))
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId))
       .thenReturn(spyDetails)
 
     // WHEN
@@ -207,7 +207,7 @@ class NomisSyncServiceTest {
       .whenever(spyDetails)
       .getBalance()
 
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId))
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId))
       .thenReturn(spyDetails)
 
     // WHEN
@@ -232,7 +232,7 @@ class NomisSyncServiceTest {
     existingPrisonerDetails.negativeVisitOrders.addAll(createNegativeVisitOrders(existingPrisonerDetails, VisitOrderType.PVO, 1))
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -255,7 +255,7 @@ class NomisSyncServiceTest {
     val existingPrisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), lastPvoAllocatedDate = null)
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -276,7 +276,7 @@ class NomisSyncServiceTest {
     val existingPrisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), lastPvoAllocatedDate = null)
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -303,7 +303,7 @@ class NomisSyncServiceTest {
 
     // WHEN
     whenever(prisonApiClient.getBookingVisitBalances(prisonerId)).thenReturn(existingNomisBalance)
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
 
     // WHEN
     nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE)

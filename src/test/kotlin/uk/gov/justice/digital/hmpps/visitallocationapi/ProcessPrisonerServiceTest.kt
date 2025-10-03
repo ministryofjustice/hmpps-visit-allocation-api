@@ -93,7 +93,7 @@ class ProcessPrisonerServiceTest {
     )
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
     whenever(changeLogService.createLogBatchProcess(dpsPrisoner)).thenReturn(changeLog)
@@ -133,7 +133,7 @@ class ProcessPrisonerServiceTest {
     )
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
     whenever(changeLogService.createLogBatchProcess(dpsPrisoner)).thenReturn(changeLog)
@@ -172,7 +172,7 @@ class ProcessPrisonerServiceTest {
     )
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
     whenever(changeLogService.createLogBatchProcess(dpsPrisoner)).thenReturn(changeLog)
@@ -202,7 +202,7 @@ class ProcessPrisonerServiceTest {
     val prisonIncentiveAmounts = listOf(PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH"))
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
 
@@ -241,7 +241,7 @@ class ProcessPrisonerServiceTest {
     )
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId)).thenReturn(prisonerSearchResult)
     whenever(incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)).thenReturn(prisonerIncentive)
     whenever(changeLogService.createLogBatchProcess(dpsPrisoner)).thenReturn(changeLog)
@@ -282,7 +282,7 @@ class ProcessPrisonerServiceTest {
     )
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(changeLogService.createLogAllocationUsedByVisit(dpsPrisoner, visitReference)).thenReturn(changeLog)
 
     // Begin test
@@ -320,7 +320,7 @@ class ProcessPrisonerServiceTest {
     )
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference)).thenReturn(changeLog)
 
     // Begin test
@@ -357,7 +357,7 @@ class ProcessPrisonerServiceTest {
     )
 
     // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetails(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(changeLogService.createLogPrisonerBalanceReset(dpsPrisoner, PrisonerReceivedReasonType.NEW_ADMISSION)).thenReturn(changeLog)
 
     // Begin test
