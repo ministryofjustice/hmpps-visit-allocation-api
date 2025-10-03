@@ -27,7 +27,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepos
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 
