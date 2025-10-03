@@ -66,16 +66,14 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     )
     .components(
       Components().addSecuritySchemes(
-        "visit-allocation-api-nomis-role",
-        SecurityScheme().addBearerJwtRequirement(ROLE_VISIT_ALLOCATION_API__NOMIS_API),
+        "bearer-jwt",
+        SecurityScheme()
+          .type(SecurityScheme.Type.HTTP)
+          .scheme("bearer")
+          .bearerFormat("JWT")
       )
-        .addSecuritySchemes(
-          "visit-allocation-api-admin-role",
-          SecurityScheme().addBearerJwtRequirement(ROLE_VISIT_ALLOCATION_API__ADMIN),
-        )
     )
-    .addSecurityItem(SecurityRequirement().addList("visit-allocation-api-nomis-role", listOf("read", "write")))
-    .addSecurityItem(SecurityRequirement().addList("visit-allocation-api-admin-role", listOf("read", "write")))
+    .addSecurityItem(SecurityRequirement().addList("bearer-jwt"))
 
   @Bean
   fun preAuthorizeCustomizer(): OperationCustomizer = OperationCustomizer { operation: Operation, handlerMethod: HandlerMethod ->
