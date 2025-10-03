@@ -242,6 +242,7 @@ class ProcessPrisonerService(
       return null
     }
 
+    val amountToRepay = used.count { it.status == NegativeVisitOrderStatus.USED }
     used.forEach {
       it.status = NegativeVisitOrderStatus.REPAID
       it.repaidDate = LocalDate.now()
@@ -257,7 +258,7 @@ class ProcessPrisonerService(
       ),
     )
 
-    LOG.info("Admin reset negative balance for prisoner $prisonerId")
+    LOG.info("Admin reset negative balance by repaying $amountToRepay for prisoner $prisonerId")
     return changeLog.reference
   }
 
