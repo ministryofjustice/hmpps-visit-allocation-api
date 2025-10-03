@@ -242,7 +242,7 @@ class ProcessPrisonerService(
       return null
     }
 
-    val amountToRepay = used.count { it.status == NegativeVisitOrderStatus.USED }
+    val amountToRepay = used.count()
     used.forEach {
       it.status = NegativeVisitOrderStatus.REPAID
       it.repaidDate = LocalDate.now()
