@@ -54,4 +54,4 @@ domain-event-processing:
 
 feature:
   dps-process-special-prison-codes:
-    enabled: true
+    enabled: false

@@ -57,6 +57,8 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
             | 
             |Pre-existing roles:
             | 1. ROLE_VISIT_ALLOCATION_API__NOMIS_API - [NOMIS use only] - Grants NOMIS read/write access to the API (syncing / retrieving balances).
+            | 2. ROLE_VISIT_ALLOCATION_API__ADMIN     - [Admin use only] - Grants ability to action special requests via the admin controller.
+
             |
           """.trimMargin(),
         )
@@ -64,11 +66,14 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
     )
     .components(
       Components().addSecuritySchemes(
-        "visit-allocation-api-nomis-role",
-        SecurityScheme().addBearerJwtRequirement(ROLE_VISIT_ALLOCATION_API__NOMIS_API),
+        "bearer-jwt",
+        SecurityScheme()
+          .type(SecurityScheme.Type.HTTP)
+          .scheme("bearer")
+          .bearerFormat("JWT"),
       ),
     )
-    .addSecurityItem(SecurityRequirement().addList("visit-allocation-api-nomis-role", listOf("read", "write")))
+    .addSecurityItem(SecurityRequirement().addList("bearer-jwt"))
 
   @Bean
   fun preAuthorizeCustomizer(): OperationCustomizer = OperationCustomizer { operation: Operation, handlerMethod: HandlerMethod ->

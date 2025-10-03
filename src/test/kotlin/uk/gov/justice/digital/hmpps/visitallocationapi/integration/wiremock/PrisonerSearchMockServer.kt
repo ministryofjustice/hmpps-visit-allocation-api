@@ -55,6 +55,29 @@ class PrisonerSearchMockServer : WireMockServer(8094) {
         ),
     )
   }
+
+  fun stubGetAllPrisonersForPrison(
+    prisonId: String,
+    allPrisoners: List<PrisonerDto>?,
+    httpStatus: HttpStatus = HttpStatus.NOT_FOUND,
+  ) {
+    val responseBuilder = createJsonResponseBuilder()
+    stubFor(
+      post(urlPathEqualTo("/attribute-search"))
+        .withQueryParam("size", containing("5000"))
+        .withQueryParam("responseFields", containing("prisonerNumber"))
+        .willReturn(
+          if (allPrisoners == null) {
+            responseBuilder
+              .withStatus(httpStatus.value())
+          } else {
+            responseBuilder
+              .withStatus(HttpStatus.OK.value())
+              .withBody(getJsonString(RestPage(content = allPrisoners, size = allPrisoners.size, total = allPrisoners.size.toLong(), page = 0)))
+          },
+        ),
+    )
+  }
 }
 
 class PrisonerSearchMockExtension :

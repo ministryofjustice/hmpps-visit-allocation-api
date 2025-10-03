@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -18,6 +19,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.Entity
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.HmppsAuthApiExtension.Companion.hmppsAuth
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -28,10 +30,13 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepo
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 
-@ExtendWith(HmppsAuthApiExtension::class)
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @ActiveProfiles("test")
-@ExtendWith(PrisonApiMockExtension::class)
+@ExtendWith(
+  PrisonApiMockExtension::class,
+  PrisonerSearchMockExtension::class,
+  HmppsAuthApiExtension::class,
+)
 abstract class IntegrationTestBase {
   @Autowired
   protected lateinit var objectMapper: ObjectMapper
@@ -110,4 +115,6 @@ abstract class IntegrationTestBase {
     }
     return negativeVisitOrder
   }
+
+  protected fun createPrisonerDto(prisonerId: String, prisonId: String = "HEI", inOutStatus: String = "IN", lastPrisonId: String = "BRI", convictedStatus: String? = "Convicted"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId, convictedStatus = convictedStatus)
 }

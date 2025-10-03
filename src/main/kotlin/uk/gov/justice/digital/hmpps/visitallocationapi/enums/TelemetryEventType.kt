@@ -7,4 +7,5 @@ enum class TelemetryEventType(val telemetryEventName: String) {
   VO_REFUNDED_AFTER_VISIT_CANCELLATION("allocation-api-vo-refunded-by-visit-cancelled"),
   VO_ADDED_POST_MERGE("allocation-api-vo-added-post-merge"),
   VO_PRISONER_BALANCE_RESET("allocation-api-vo-prisoner-balance-reset"),
+  VO_PRISONER_NEGATIVE_BALANCE_ADMIN_RESET("allocation-api-vo-prisoner-negative-balance-admin-reset"),
 }

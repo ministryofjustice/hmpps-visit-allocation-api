@@ -117,6 +117,17 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
     )
   }
 
+  fun createLogPrisonerNegativeBalanceAdminReset(dpsPrisoner: PrisonerDetails): ChangeLog {
+    LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogPrisonerNegativeBalanceAdminReset")
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.ADMIN_RESET_NEGATIVE_BALANCE,
+      changeLogSource = ChangeLogSource.SYSTEM,
+      userId = CHANGE_LOG_SYSTEM_USER_ID,
+      comment = "prisoners negative balance reset by admin",
+    )
+  }
+
   @Transactional(readOnly = true)
   fun findAllChangeLogsForPrisoner(prisonerId: String): List<ChangeLog> {
     LOG.info("ChangeLogService - findAllChangeLogsForPrisoner called with prisonerId - $prisonerId")

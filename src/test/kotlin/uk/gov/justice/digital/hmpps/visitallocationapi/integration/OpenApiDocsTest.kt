@@ -1,11 +1,8 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 
 import io.swagger.v3.parser.OpenAPIV3Parser
-import net.minidev.json.JSONArray
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.http.MediaType
 import java.time.LocalDate
@@ -80,28 +77,18 @@ class OpenApiDocsTest : IntegrationTestBase() {
     }
   }
 
-  @ParameterizedTest
-  @CsvSource(value = ["visit-allocation-api-nomis-role, ROLE_VISIT_ALLOCATION_API__NOMIS_API"])
-  fun `the nomis security scheme is setup for bearer tokens`(key: String, role: String) {
-    val response = webTestClient.get()
-      .uri("/v3/api-docs")
+  @Test
+  fun `bearer scheme is configured correctly`() {
+    val res = webTestClient.get().uri("/v3/api-docs")
       .accept(MediaType.APPLICATION_JSON)
       .exchange()
       .expectStatus().isOk
       .expectBody()
 
-    response
-      .jsonPath("$.components.securitySchemes.$key.type").isEqualTo("http")
-      .jsonPath("$.components.securitySchemes.$key.scheme").isEqualTo("bearer")
-      .jsonPath("$.components.securitySchemes.$key.description").value<String> {
-        assertThat(it).contains(role)
-      }
-      .jsonPath("$.components.securitySchemes.$key.bearerFormat").isEqualTo("JWT")
-      .jsonPath("$.security[0].$key").isEqualTo(
-        JSONArray().apply {
-          this.add("read")
-          this.add("write")
-        },
-      )
+    res
+      .jsonPath("$.components.securitySchemes['bearer-jwt'].type").isEqualTo("http")
+      .jsonPath("$.components.securitySchemes['bearer-jwt'].scheme").isEqualTo("bearer")
+      .jsonPath("$.components.securitySchemes['bearer-jwt'].bearerFormat").isEqualTo("JWT")
+      .jsonPath("$.security[0]['bearer-jwt']").value<List<Any>> { assertThat(it).isEmpty() }
   }
 }
