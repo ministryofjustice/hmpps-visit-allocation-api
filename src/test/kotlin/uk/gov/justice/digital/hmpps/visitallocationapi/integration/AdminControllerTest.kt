@@ -3,6 +3,10 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -10,6 +14,7 @@ import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__ADMIN
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.admin.RESET_NEGATIVE_VO_BALANCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPost
@@ -43,6 +48,8 @@ class AdminControllerTest : IntegrationTestBase() {
     assertThat(negativeVisitOrders.size).isEqualTo(2)
     assertThat(negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED }.size).isEqualTo(0)
     assertThat(negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.REPAID }.size).isEqualTo(2)
+
+    verify(telemetryClientService, times(1)).trackEvent(eq(TelemetryEventType.VO_PRISONER_NEGATIVE_BALANCE_ADMIN_RESET), any())
   }
 
   @Test
@@ -71,6 +78,8 @@ class AdminControllerTest : IntegrationTestBase() {
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(1)
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(1)
+
+    verify(telemetryClientService, times(0)).trackEvent(eq(TelemetryEventType.VO_PRISONER_NEGATIVE_BALANCE_ADMIN_RESET), any())
   }
 
   @Test

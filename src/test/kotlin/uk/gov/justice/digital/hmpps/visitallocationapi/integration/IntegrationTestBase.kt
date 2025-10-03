@@ -66,9 +66,6 @@ abstract class IntegrationTestBase {
   @MockitoSpyBean
   lateinit var telemetryClientService: TelemetryClientService
 
-  @MockitoSpyBean
-  lateinit var snsService: SnsService
-
   protected lateinit var startVisitAllocationJobRoleHttpHeaders: (HttpHeaders) -> Unit
 
   @BeforeEach
