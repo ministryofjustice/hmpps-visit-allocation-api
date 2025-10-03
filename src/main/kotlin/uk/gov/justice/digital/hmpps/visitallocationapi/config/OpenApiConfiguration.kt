@@ -70,8 +70,8 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
         SecurityScheme()
           .type(SecurityScheme.Type.HTTP)
           .scheme("bearer")
-          .bearerFormat("JWT")
-      )
+          .bearerFormat("JWT"),
+      ),
     )
     .addSecurityItem(SecurityRequirement().addList("bearer-jwt"))
 
