@@ -51,3 +51,7 @@ hmpps:
 
 domain-event-processing:
   enabled: true
+
+feature:
+  dps-process-special-prison-codes:
+    enabled: false
