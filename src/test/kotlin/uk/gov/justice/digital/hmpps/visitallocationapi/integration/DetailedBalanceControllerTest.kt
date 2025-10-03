@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
-import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE_DETAILED
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerDetailedBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
@@ -40,7 +40,7 @@ class DetailedBalanceControllerTest : IntegrationTestBase() {
     negativeVisitOrderRepository.save(NegativeVisitOrder(type = VisitOrderType.PVO, status = NegativeVisitOrderStatus.USED, prisoner = prisoner))
 
     // When
-    val responseSpec = callVisitAllocationPrisonerBalanceDetailedEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+    val responseSpec = callVisitAllocationPrisonerBalanceDetailedEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -72,7 +72,7 @@ class DetailedBalanceControllerTest : IntegrationTestBase() {
     negativeVisitOrderRepository.save(NegativeVisitOrder(type = VisitOrderType.PVO, status = NegativeVisitOrderStatus.USED, prisoner = prisoner))
 
     // When
-    val responseSpec = callVisitAllocationPrisonerBalanceDetailedEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+    val responseSpec = callVisitAllocationPrisonerBalanceDetailedEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
 
     // Then
     responseSpec.expectStatus().isOk
@@ -94,7 +94,7 @@ class DetailedBalanceControllerTest : IntegrationTestBase() {
   fun `when request to get an unknown prisoner, then status 404 NOT_FOUND is returned`() {
     // Given
     // When
-    val responseSpec = callVisitAllocationPrisonerBalanceDetailedEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__NOMIS_API)))
+    val responseSpec = callVisitAllocationPrisonerBalanceDetailedEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
 
     // Then
     responseSpec.expectStatus().isNotFound

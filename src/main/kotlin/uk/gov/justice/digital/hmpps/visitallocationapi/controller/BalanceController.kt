@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerDetailedBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
@@ -53,7 +54,7 @@ class BalanceController(val balanceService: BalanceService) {
     prisonerId: String,
   ): PrisonerBalanceDto = balanceService.getPrisonerBalance(prisonerId) ?: throw NotFoundException("Prisoner $prisonerId not found")
 
-  @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
+  @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API')")
   @GetMapping(VO_BALANCE_DETAILED)
   @Operation(
     summary = "Endpoint to get a prisoners current balance, detailed version.",
