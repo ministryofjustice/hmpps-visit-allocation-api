@@ -24,9 +24,14 @@ class PrisonerDetailsService(private val prisonerDetailsRepository: PrisonerDeta
     return prisonerDetailsRepository.findByIdWithLock(prisonerId).get()
   }
 
+  fun getPrisonerDetailsWithLock(prisonerId: String): PrisonerDetails? {
+    LOG.info("PrisonerDetailsService - getPrisonerDetailsWithLock called with prisonerId - $prisonerId")
+    return prisonerDetailsRepository.findByIdWithLock(prisonerId).getOrNull()
+  }
+
   fun getPrisonerDetails(prisonerId: String): PrisonerDetails? {
     LOG.info("PrisonerDetailsService - getPrisonerDetails called with prisonerId - $prisonerId")
-    return prisonerDetailsRepository.findByIdWithLock(prisonerId).getOrNull()
+    return prisonerDetailsRepository.findById(prisonerId).getOrNull()
   }
 
   fun removePrisonerDetails(prisonerId: String) {

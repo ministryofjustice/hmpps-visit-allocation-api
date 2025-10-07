@@ -30,7 +30,7 @@ class NomisMigrationService(
     LOG.info("Entered NomisMigrationService - migratePrisoner with migration dto {}", migrationDto)
 
     // If the prisoner exists, reset their details and balance ready for migration
-    if (prisonerDetailsService.getPrisonerDetails(migrationDto.prisonerId) != null) {
+    if (prisonerDetailsService.getPrisonerDetailsWithLock(migrationDto.prisonerId) != null) {
       LOG.info("Prisoner ${migrationDto.prisonerId} found in DB, resetting their balance ready for migration")
       prisonerDetailsService.removePrisonerDetails(migrationDto.prisonerId)
     }
