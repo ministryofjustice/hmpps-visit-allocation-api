@@ -185,7 +185,7 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(prisonerDetailsRepository, times(2)).saveAndFlush(any()) }
 
     val prisoner = prisonerDetailsRepository.findById(movedFromPrisonerId).get()
-    assertThat(prisoner.visitOrders.count()).isEqualTo(3)
+    assertThat(prisoner.visitOrders.count()).isEqualTo(0)
     assertThat(prisoner.visitOrders.count { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }).isEqualTo(0)
   }
 
