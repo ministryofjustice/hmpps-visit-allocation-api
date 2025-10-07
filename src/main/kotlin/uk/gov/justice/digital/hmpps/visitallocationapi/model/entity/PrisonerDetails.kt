@@ -8,6 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.SQLRestriction
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -28,6 +29,7 @@ open class PrisonerDetails(
   var lastPvoAllocatedDate: LocalDate?,
 ) {
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
+  @SQLRestriction("status <> 'EXPIRED'")
   val visitOrders: MutableList<VisitOrder> = mutableListOf()
 
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.EAGER, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
