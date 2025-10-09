@@ -38,7 +38,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
-      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.READMISSION),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 
@@ -55,6 +55,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogSyncEventChange(any(), any()) }
+    await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val visitOrders = visitOrderRepository.findAll()
@@ -74,7 +75,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
-      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.READMISSION),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 
@@ -91,6 +92,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerReceivedResetBalance(any(), any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogPrisonerBalanceReset(any(), any()) }
+    await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
@@ -160,14 +162,14 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
   }
 
   @Test
-  fun `when domain event prisoner received is found, then new prisoner balance is synced`() {
+  fun `when domain event prisoner received is found, then new prisoner balance is synced for dps prison`() {
     // Given
     val prisonerId = "AA123456"
     val prisonId = "HEI"
 
     val domainEvent = createDomainEventJson(
       DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
-      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.READMISSION),
     )
     val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
 
@@ -222,5 +224,41 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+  }
+
+  @Test
+  fun `when domain event prisoner received is found, and reason is NEW_ADMISSION and is DPS prison, no adjustment event is raised`() {
+    // Given
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value,
+      createPrisonerReceivedAdditionalInformationJson(prisonerId, prisonId, PrisonerReceivedReasonType.NEW_ADMISSION),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.PRISONER_RECEIVED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN"))
+    prisonApiMockServer.stubGetVisitBalances(prisonerId = prisonerId, createVisitBalancesDto(3, 2))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, false)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogSyncEventChange(any(), any()) }
+    await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(5)
+
+    val prisonerDetails = prisonerDetailsRepository.findById(prisonerId).get()
+    assertThat(prisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(14))
+    assertThat(prisonerDetails.lastPvoAllocatedDate).isNull()
   }
 }

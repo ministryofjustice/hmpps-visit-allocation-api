@@ -62,7 +62,7 @@ class PrisonerReceivedEventHandler(
 
       val changeLogReference = processPrisonerService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)
-      if (changeLog != null) {
+      if (changeLog != null && info.reason != NEW_ADMISSION) {
         snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
       }
     } else {
