@@ -417,15 +417,37 @@ class ProcessPrisonerService(
   }
 
   private fun amountOfVosToGenerate(prisoner: PrisonerDetails, incentiveLevelAllocation: Int): Int {
-    val currentVOs = prisoner.visitOrders.count {
+    val currentVOs = prisoner.visitOrders.filter {
       it.type == VisitOrderType.VO && (it.status == VisitOrderStatus.AVAILABLE || it.status == VisitOrderStatus.ACCUMULATED)
     }
 
-    // Don't go past 0 as a safeguard
-    val remainingVoAllowance = (maxAccumulatedVisitOrders - currentVOs).coerceAtLeast(0)
+    val remainingVoAllowance = (maxAccumulatedVisitOrders - currentVOs.size).coerceAtLeast(0)
 
-    // Return the maximum they can be allocated without breaching the hard cap maxAccumulatedVisitOrders
-    return incentiveLevelAllocation.coerceAtMost(remainingVoAllowance)
+    if (remainingVoAllowance > 0) {
+      return incentiveLevelAllocation.coerceAtMost(remainingVoAllowance)
+    }
+
+    // At cap: only rotate if ALL are ACCUMULATED
+    val allAccumulated = currentVOs.all { it.status == VisitOrderStatus.ACCUMULATED }
+    return if (allAccumulated) {
+      val accumulated = currentVOs.filter { it.status == VisitOrderStatus.ACCUMULATED }
+
+      // how many to rotate
+      val rotationCount = incentiveLevelAllocation.coerceAtMost(accumulated.size)
+
+      // expire the oldest `rotationCount` accumulated VOs
+      accumulated
+        .sortedBy { it.createdTimestamp }
+        .take(rotationCount)
+        .forEach { accumulatedVo ->
+          accumulatedVo.status = VisitOrderStatus.EXPIRED
+          accumulatedVo.expiryDate = LocalDate.now()
+        }
+
+      rotationCount
+    } else {
+      0
+    }
   }
 
   private fun generatePVos(prisoner: PrisonerDetails, prisonIncentivesForPrisonerLevel: PrisonIncentiveAmountsDto): List<VisitOrder> {
