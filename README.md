@@ -4,6 +4,7 @@
 [![Docker Repository on ghcr](https://img.shields.io/badge/ghcr.io-repository-2496ED.svg?logo=docker)](https://ghcr.io/ministryofjustice/hmpps-visit-allocation-api)
 [![API docs](https://img.shields.io/badge/API_docs_-view-85EA2D.svg?logo=swagger)](https://hmpps-visit-allocation-api-dev.prison.service.justice.gov.uk/swagger-ui/index.html)
 [![GitHub Actions Pipeline](https://github.com/ministryofjustice/hmpps-visit-allocation-api/actions/workflows/pipeline.yml/badge.svg)](https://github.com/ministryofjustice/hmpps-visit-allocation-api/actions/workflows/pipeline.yml)
+[![Event docs](https://img.shields.io/badge/Event_docs-view-85EA2D.svg)](https://studio.asyncapi.com/?url=https://raw.githubusercontent.com/ministryofjustice/hmpps-visit-allocation-api/main/async-api.yml)
 
 This is a Spring Boot application, written in Kotlin, providing visit allocation services. Used by the Visits team.
 
