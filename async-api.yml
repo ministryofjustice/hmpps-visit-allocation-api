@@ -1,0 +1,47 @@
+asyncapi: 3.0.0
+info:
+  title: Visit Allocation Service
+  description: Publishes events relating to visit allocation
+  version: 1.0.0
+
+servers:
+  development:
+    host: hmpps-domain-events-dev.live-1.cloud-platform.service.justice.gov.uk
+    protocol: sqs
+    description: Development environment
+  preproduction:
+    host: hmpps-domain-events-preprod.live-1.cloud-platform.service.justice.gov.uk
+    protocol: sqs
+    description: Pre-production environment
+  production:
+    host: hmpps-domain-events-prod.live-1.cloud-platform.service.justice.gov.uk
+    protocol: sqs
+    description: Production environment
+
+components:
+  messages:
+    prison-visit-allocation.adjustment.created:
+      $ref: https://raw.githubusercontent.com/ministryofjustice/hmpps-domain-events/main/spec/schemas/prison-visit-allocation/prison-visit-allocation-adjustment-created.yaml
+    prison-visit-allocation.balance.reset:
+      $ref: https://raw.githubusercontent.com/ministryofjustice/hmpps-domain-events/main/spec/schemas/prison-visit-allocation/prison-visit-allocation-balance-reset.yaml
+
+channels:
+  hmpps-domain-events:
+    description: HMPPS domain events SNS topic
+    bindings:
+      sns:
+        name: domainevents
+    messages:
+      prison-visit-allocation.adjustment.created:
+        $ref: '#/components/messages/prison-visit-allocation.adjustment.created'
+      prison-visit-allocation.balance.reset:
+        $ref: '#/components/messages/prison-visit-allocation.balance.reset'
+
+operations:
+  publish-event:
+    action: send
+    channel:
+      $ref: '#/channels/hmpps-domain-events'
+    messages:
+      - $ref: '#/channels/hmpps-domain-events/messages/prison-visit-allocation.adjustment.created'
+      - $ref: '#/channels/hmpps-domain-events/messages/prison-visit-allocation.balance.reset'
