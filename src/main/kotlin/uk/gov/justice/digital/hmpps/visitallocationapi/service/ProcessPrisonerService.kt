@@ -271,11 +271,17 @@ class ProcessPrisonerService(
       val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
         ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
+      // Get the incentive amount for the prison given the prisoners incentive level
+      val prisonerPrisonId = prisonerSearchClient.getPrisonerById(dpsPrisonerDetails.prisonerId).prisonId
+      val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisonerDetails.prisonerId)
+      val prisonIncentiveAmounts = allPrisonIncentiveAmounts.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
+        ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisonerPrisonId, prisonerIncentive.iepCode)
+
       // Capture the before details, used at the end to track if changes have been made. If so, a change_log entry will be generated.
       val dpsPrisonerDetailsBefore = dpsPrisonerDetails.snapshot()
 
-      processPrisonerAccumulation(dpsPrisonerDetails)
-      processPrisonerAllocation(dpsPrisonerDetails, allPrisonIncentiveAmounts)
+      processPrisonerAccumulation(dpsPrisonerDetails, prisonIncentiveAmounts)
+      processPrisonerAllocation(dpsPrisonerDetails, prisonIncentiveAmounts)
       processPrisonerExpiration(dpsPrisonerDetails)
 
       val changeLog: ChangeLog? = if (PrisonerChangeTrackingUtil.hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
@@ -309,14 +315,8 @@ class ProcessPrisonerService(
 
   private fun hasPrisonerReachedVoCap(dpsPrisonerDetails: PrisonerDetails): Boolean = dpsPrisonerDetails.visitOrders.count { it.type == VisitOrderType.VO && it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) } >= maxAccumulatedVisitOrders
 
-  private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>) {
+  private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, prisonIncentiveAmounts: PrisonIncentiveAmountsDto) {
     LOG.info("Entered ProcessPrisonerService - processPrisonerAllocation with prisonerId ${dpsPrisoner.prisonerId}")
-
-    val prisonerPrisonId = prisonerSearchClient.getPrisonerById(dpsPrisoner.prisonerId).prisonId
-    val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisoner.prisonerId)
-
-    val prisonIncentiveAmounts = allPrisonIncentiveAmounts.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
-      ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisonerPrisonId, prisonerIncentive.iepCode)
 
     val visitOrders = mutableListOf<VisitOrder>()
     visitOrders.addAll(generateVos(dpsPrisoner, prisonIncentiveAmounts))
@@ -330,11 +330,32 @@ class ProcessPrisonerService(
     LOG.info("Successfully generated ${visitOrders.size} visit orders for prisoner ${dpsPrisoner.prisonerId}: " + "${visitOrders.count { it.type == VisitOrderType.PVO }} PVOs and ${visitOrders.count { it.type == VisitOrderType.VO }} VOs")
   }
 
-  private fun processPrisonerAccumulation(dpsPrisoner: PrisonerDetails) {
+  private fun processPrisonerAccumulation(dpsPrisoner: PrisonerDetails, prisonIncentiveAmounts: PrisonIncentiveAmountsDto) {
     LOG.info("Entered ProcessPrisonerService - processPrisonerAccumulation with prisonerId: ${dpsPrisoner.prisonerId}")
 
+    // Move any VOs in status of 'AVAILABLE' older than 28 days, to 'ACCUMULATED'.
     dpsPrisoner.visitOrders.filter { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.AVAILABLE && it.createdTimestamp.isBefore(LocalDateTime.now().minusDays(28)) }.forEach { it.status = VisitOrderStatus.ACCUMULATED }
-    LOG.info("Completed accumulation for ${dpsPrisoner.prisonerId}")
+
+    if (isDueVO(dpsPrisoner)) {
+      // Capture all 'AVAILABLE' and 'ACCUMULATED' VOs, we will use these to check if 'ACCUMULATED' VOs need expiring to make room for new 'AVAILABLE' VOs during allocation
+      val currentVOs = dpsPrisoner.visitOrders.filter {
+        it.type == VisitOrderType.VO && (it.status == VisitOrderStatus.AVAILABLE || it.status == VisitOrderStatus.ACCUMULATED)
+      }
+
+      if (currentVOs.size + prisonIncentiveAmounts.visitOrders >= maxAccumulatedVisitOrders) {
+        val amountToRotate = (currentVOs.size + prisonIncentiveAmounts.visitOrders) - maxAccumulatedVisitOrders
+
+        currentVOs.filter { it.status == VisitOrderStatus.ACCUMULATED }
+          .sortedBy { it.createdTimestamp }
+          .take(amountToRotate)
+          .forEach { accumulatedVo ->
+            accumulatedVo.status = VisitOrderStatus.EXPIRED
+            accumulatedVo.expiryDate = LocalDate.now()
+          }
+      }
+
+      LOG.info("Completed accumulation for ${dpsPrisoner.prisonerId}")
+    }
   }
 
   private fun processPrisonerExpiration(dpsPrisoner: PrisonerDetails) {

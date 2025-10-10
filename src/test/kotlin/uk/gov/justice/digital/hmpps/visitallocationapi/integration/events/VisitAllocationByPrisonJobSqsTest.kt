@@ -7,6 +7,8 @@ import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
 import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -660,37 +662,80 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   }
 
   /**
-   * Scenario - Allocation with maximum balances: Visit allocation job is run, prisoner already has maximum VOs of 26, no extra VOs are generated.
-   * Prisoner1 - Start balance (VO=26, PVO=0) - Standard incentive, Gets 1 VO, 0 PVO. End balance (VO=26, PVO=0)
+   * Scenario - Allocation with maximum balances: Visit allocation job is run, prisoners allocation would push them over cap, so accumulated is expired, making way for available VOs.
    */
-  @Test
-  fun `when visit allocation job run for a prison with prisoner at maximum vo balance, then processMessage is called and no VOs are generated`() {
+  @ParameterizedTest(
+    name = "VOs: available={0}, accumulated={1}, incentive{2} -> total={3}, avail={4}, accum={5}, expired={6}",
+  )
+  @CsvSource(
+    // available, accumulated, incentive, expectedTotal, expectedAvail, expectedAccum, expectedExpired
+    "2, 24, 1, 27, 3, 23, 1",
+    "5, 21, 10, 36, 15, 11, 10",
+    "2, 20, 10, 32, 12, 14, 6",
+    "2, 20, 2, 24, 4, 20, 0",
+    "2, 22, 2, 26, 4, 22, 0",
+    "0, 26, 2, 28, 2, 24, 2",
+  )
+  fun `when visit allocation job runs, old accumulated VOs may expire making way for new available VOs`(
+    availableVoCreateCount: Int,
+    accumulatedVoCreateCount: Int,
+    incentiveAmount: Int,
+    expectedTotalVoCount: Int,
+    expectedFinalAvailableVoCount: Int,
+    expectedFinalAccumulatedVoCount: Int,
+    expectedFinalExpiredVoCount: Int,
+  ) {
     // Given - message sent to start allocation job for prison
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
     val message = objectMapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
-    visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
+    visitOrderAllocationPrisonJobRepository.save(
+      VisitOrderAllocationPrisonJob(
+        allocationJobReference = allocationJobReference,
+        prisonCode = PRISON_CODE,
+      ),
+    )
 
     // Maximum balance for prisoner1
-    entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner1.prisonerId, LocalDate.now().minusDays(14), null))
-    entityHelper.createAndSaveVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, LocalDateTime.now(), 2)
-    entityHelper.createAndSaveVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, LocalDateTime.now(), 24)
+    entityHelper.createPrisonerDetails(
+      PrisonerDetails(prisonerId = prisoner1.prisonerId, LocalDate.now().minusDays(14), null),
+    )
+    entityHelper.createAndSaveVisitOrders(
+      prisoner1.prisonerId,
+      VisitOrderType.VO,
+      VisitOrderStatus.AVAILABLE,
+      LocalDateTime.now(),
+      availableVoCreateCount,
+    )
+    entityHelper.createAndSaveVisitOrders(
+      prisoner1.prisonerId,
+      VisitOrderType.VO,
+      VisitOrderStatus.ACCUMULATED,
+      LocalDateTime.now(),
+      accumulatedVoCreateCount,
+    )
 
     // When
     val convictedPrisoners = listOf(prisoner1)
     prisonerSearchMockServer.stubGetConvictedPrisoners(PRISON_CODE, convictedPrisoners)
-
-    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisoner1.prisonerId, createPrisonerDto(prisonerId = prisoner1.prisonerId, prisonId = PRISON_CODE, inOutStatus = "IN", lastPrisonId = PRISON_CODE))
-
-    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(prisoner1.prisonerId, prisonerIncentivesDto = PrisonerIncentivesDto("STD"))
-
+    prisonerSearchMockServer.stubGetPrisonerById(
+      prisonerId = prisoner1.prisonerId,
+      createPrisonerDto(
+        prisonerId = prisoner1.prisonerId,
+        prisonId = PRISON_CODE,
+        inOutStatus = "IN",
+        lastPrisonId = PRISON_CODE,
+      ),
+    )
+    incentivesMockServer.stubGetPrisonerIncentiveReviewHistory(
+      prisoner1.prisonerId,
+      prisonerIncentivesDto = PrisonerIncentivesDto("STD"),
+    )
     incentivesMockServer.stubGetAllPrisonIncentiveLevels(
       prisonId = PRISON_CODE,
-      listOf(
-        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
-      ),
+      listOf(PrisonIncentiveAmountsDto(visitOrders = incentiveAmount, privilegedVisitOrders = 0, levelCode = "STD")),
     )
 
     prisonVisitsAllocationEventJobSqsClient.sendMessage(sendMessageRequest)
@@ -702,18 +747,43 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     val visitOrders = visitOrderRepository.findAll()
 
-    assertThat(visitOrders.size).isEqualTo(26)
+    // Then
+    assertThat(visitOrders.size).isEqualTo(expectedTotalVoCount)
 
-    // Prisoner1 should have 26 VOs
-    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 2)
-    assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.ACCUMULATED, 24)
+    assertVisitOrdersAssignedBy(
+      visitOrders,
+      prisoner1.prisonerId,
+      VisitOrderType.VO,
+      VisitOrderStatus.AVAILABLE,
+      expectedFinalAvailableVoCount,
+    )
+    assertVisitOrdersAssignedBy(
+      visitOrders,
+      prisoner1.prisonerId,
+      VisitOrderType.VO,
+      VisitOrderStatus.ACCUMULATED,
+      expectedFinalAccumulatedVoCount,
+    )
+    assertVisitOrdersAssignedBy(
+      visitOrders,
+      prisoner1.prisonerId,
+      VisitOrderType.VO,
+      VisitOrderStatus.EXPIRED,
+      expectedFinalExpiredVoCount,
+    )
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
-    verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
 
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
-    assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 1, processedPrisoners = 0, failedOrSkippedPrisoners = 1)
+    assertVisitOrderAllocationPrisonJob(
+      visitOrderAllocationPrisonJobs[0],
+      null,
+      convictedPrisoners = 1,
+      processedPrisoners = 1,
+      failedOrSkippedPrisoners = 0,
+    )
   }
 
   /**
