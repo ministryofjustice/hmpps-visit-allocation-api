@@ -49,10 +49,10 @@ class VisitBookedEventHandler(
           }
         }
       } else {
-        LOG.info("Prisoner ${visit.prisonerId} is on Remand, no processing needed")
+        LOG.info("Prisoner ${prisoner.prisonerId} is on Remand, no processing needed")
       }
     } else {
-      LOG.info("Prison ${visit.prisonCode} is not enabled for DPS, skipping processing")
+      LOG.info("Prison ${prisoner.prisonId} is not enabled for DPS, skipping processing")
     }
   }
 }
