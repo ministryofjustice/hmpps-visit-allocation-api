@@ -40,7 +40,6 @@ class VisitCancelledEventHandler(
     if (prisonService.getPrisonEnabledForDpsByCode(prisoner.prisonId)) {
       LOG.info("Prisoner ${prisoner.prisonerId} is in ${prisoner.prisonId} which is enabled for DPS, processing event")
 
-      val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
       if (prisoner.convictedStatus == CONVICTED) {
         val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit)
 
