@@ -662,14 +662,13 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
   }
 
   /**
-   * Scenario - Allocation with maximum balances: Visit allocation job is run, prisoner already has maximum VOs of 26, no extra VOs are generated.
-   * Prisoner1 - Start balance (VO=26, PVO=0) - Standard incentive, Gets 1 VO, 0 PVO. End balance (VO=26, PVO=0)
+   * Scenario - Allocation with maximum balances: Visit allocation job is run, prisoners allocation would push them over cap, so accumulated is expired, making way for available VOs.
    */
   @ParameterizedTest(
     name = "VOs: available={0}, accumulated={1}, incentive{2} -> total={3}, avail={4}, accum={5}, expired={6}",
   )
   @CsvSource(
-    // available, accumulated, incentive, total, expectedAvail, expectedAccum, expectedExpired
+    // available, accumulated, incentive, expectedTotal, expectedAvail, expectedAccum, expectedExpired
     "2, 24, 1, 27, 3, 23, 1",
     "5, 21, 10, 36, 15, 11, 10",
     "2, 20, 10, 32, 12, 14, 6",
