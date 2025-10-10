@@ -35,11 +35,11 @@ class VisitBookedEventHandler(
 
     LOG.info("Getting visit using reference - ${additionalInfo.reference}")
     val visit = visitSchedulerClient.getVisitByReference(additionalInfo.reference)
+    val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
 
-    if (prisonService.getPrisonEnabledForDpsByCode(visit.prisonCode)) {
-      LOG.info("Prison ${visit.prisonCode} is enabled for DPS, processing event")
+    if (prisonService.getPrisonEnabledForDpsByCode(prisoner.prisonId)) {
+      LOG.info("Prisoner ${prisoner.prisonerId} is in ${prisoner.prisonId} which is enabled for DPS, processing event")
 
-      val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
       if (prisoner.convictedStatus == CONVICTED) {
         val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit)
         if (changeLogReference != null) {
@@ -49,10 +49,10 @@ class VisitBookedEventHandler(
           }
         }
       } else {
-        LOG.info("Prisoner ${visit.prisonerId} is on Remand, no processing needed")
+        LOG.info("Prisoner ${prisoner.prisonerId} is on Remand, no processing needed")
       }
     } else {
-      LOG.info("Prison ${visit.prisonCode} is not enabled for DPS, skipping processing")
+      LOG.info("Prison ${prisoner.prisonId} is not enabled for DPS, skipping processing")
     }
   }
 }
