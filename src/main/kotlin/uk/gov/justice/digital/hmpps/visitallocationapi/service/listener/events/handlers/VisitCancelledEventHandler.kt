@@ -35,11 +35,11 @@ class VisitCancelledEventHandler(
 
     LOG.info("Getting visit using reference - ${additionalInfo.reference}")
     val visit = visitSchedulerClient.getVisitByReference(additionalInfo.reference)
+    val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
 
-    if (prisonService.getPrisonEnabledForDpsByCode(visit.prisonCode)) {
-      LOG.info("Prison ${visit.prisonCode} is enabled for DPS, processing event")
+    if (prisonService.getPrisonEnabledForDpsByCode(prisoner.prisonId)) {
+      LOG.info("Prisoner ${prisoner.prisonerId} is in ${prisoner.prisonId} which is enabled for DPS, processing event")
 
-      val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
       if (prisoner.convictedStatus == CONVICTED) {
         val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit)
 
