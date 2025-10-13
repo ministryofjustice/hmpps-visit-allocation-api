@@ -15,7 +15,7 @@ import org.hibernate.Hibernate
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 @Entity
 @Table(name = "change_log")
@@ -44,8 +44,23 @@ open class ChangeLog(
   @Column(nullable = false)
   var visitOrderBalance: Int,
 
+  @Column(nullable = true)
+  var visitOrderAccumulatedBalance: Int? = null,
+
+  @Column(nullable = true)
+  var visitOrderAvailableBalance: Int? = null,
+
+  @Column(nullable = true)
+  var visitOrderUsedBalance: Int? = null,
+
   @Column(nullable = false)
   var privilegedVisitOrderBalance: Int,
+
+  @Column(nullable = true)
+  var privilegedVisitOrderAvailableBalance: Int? = null,
+
+  @Column(nullable = true)
+  var privilegedVisitOrderUsedBalance: Int? = null,
 
   @ManyToOne
   @JoinColumn(name = "prisoner_id", nullable = false)
