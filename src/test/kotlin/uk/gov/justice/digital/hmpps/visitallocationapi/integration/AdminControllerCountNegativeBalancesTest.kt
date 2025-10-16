@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__ADMIN
-import uk.gov.justice.digital.hmpps.visitallocationapi.controller.admin.RESET_NEGATIVE_VO_BALANCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.admin.RESET_NEGATIVE_VO_BALANCE_COUNT
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.admin.PrisonNegativeBalanceCountDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
