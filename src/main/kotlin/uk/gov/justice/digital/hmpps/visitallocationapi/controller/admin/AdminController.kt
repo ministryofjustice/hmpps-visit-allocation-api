@@ -68,6 +68,11 @@ class AdminController(val adminService: AdminService) {
         description = "Incorrect permissions to get count.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
+      ApiResponse(
+        responseCode = "404",
+        description = "Prisoners not found for prison.",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
     ],
   )
   fun getPrisonNegativePrisonerBalanceCount(
