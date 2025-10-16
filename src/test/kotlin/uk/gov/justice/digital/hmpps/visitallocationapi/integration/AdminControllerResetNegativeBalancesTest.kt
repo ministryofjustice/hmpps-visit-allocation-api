@@ -24,7 +24,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDeta
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import java.time.LocalDate
 
-@DisplayName("Admin Controller tests - $RESET_NEGATIVE_VO_BALANCE")
+@DisplayName("Admin Controller reset tests - $RESET_NEGATIVE_VO_BALANCE")
 class AdminControllerResetNegativeBalancesTest : IntegrationTestBase() {
 
   @Test
