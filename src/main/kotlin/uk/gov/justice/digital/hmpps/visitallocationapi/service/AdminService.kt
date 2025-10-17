@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.admin.PrisonNegativeBalanceCountDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 
 @Service
 class AdminService(
@@ -13,6 +16,7 @@ class AdminService(
   private val processPrisonerService: ProcessPrisonerService,
   private val changeLogService: ChangeLogService,
   private val snsService: SnsService,
+  private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -38,5 +42,20 @@ class AdminService(
         }
       }
     }
+  }
+
+  @Transactional(propagation = Propagation.NOT_SUPPORTED, readOnly = true)
+  fun getPrisonPrisonerNegativeBalanceCount(prisonCode: String): PrisonNegativeBalanceCountDto {
+    LOG.info("Entered AdminService - getPrisonPrisonerNegativeBalanceCount for prison {}", prisonCode)
+
+    val prisoners = prisonerSearchClient.getAllPrisonersByPrisonId(prisonCode).content
+    if (prisoners.isEmpty()) {
+      LOG.info("No prisoners found for prison $prisonCode")
+      throw NotFoundException("AdminService getPrisonPrisonerNegativeBalanceCount failed to find any prisoners for prison $prisonCode")
+    }
+
+    val count = negativeVisitOrderRepository.countPrisonersWithNegativeVisitOrderBalance(prisoners.map { it.prisonerId })
+    LOG.info("Found $count prisoners with negative balance for prison $prisonCode")
+    return PrisonNegativeBalanceCountDto(prisonCode = prisonCode, count = count)
   }
 }
