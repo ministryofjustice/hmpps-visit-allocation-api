@@ -46,21 +46,23 @@ class NomisSyncService(
     LOG.info("Current loaded prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
 
     // If VO balance has changed, sync it
-    if (syncDto.oldVoBalance != null) {
+    if (syncDto.oldVoBalance != null && syncDto.changeToVoBalance != null) {
+      LOG.info("VO balance has changed, syncing with nomis for prisoner ${syncDto.prisonerId}")
       processSync(
         prisoner = dpsPrisoner,
         prisonerDpsBalance = dpsPrisoner.getVoBalance(),
-        balanceChange = syncDto.changeToVoBalance!!,
+        balanceChange = syncDto.changeToVoBalance,
         visitOrderType = VisitOrderType.VO,
       )
     }
 
     // If PVO balance has changed, sync it
-    if (syncDto.oldPvoBalance != null) {
+    if (syncDto.oldPvoBalance != null && syncDto.changeToPvoBalance != null) {
+      LOG.info("PVO balance has changed, syncing with nomis for prisoner ${syncDto.prisonerId}")
       processSync(
         prisoner = dpsPrisoner,
         prisonerDpsBalance = dpsPrisoner.getPvoBalance(),
-        balanceChange = syncDto.changeToPvoBalance!!,
+        balanceChange = syncDto.changeToPvoBalance,
         visitOrderType = VisitOrderType.PVO,
       )
     }
