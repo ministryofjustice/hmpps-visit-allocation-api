@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.snapshot
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaymentReason
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -212,6 +213,7 @@ class ProcessPrisonerService(
       .forEach {
         it.status = NegativeVisitOrderStatus.REPAID
         it.repaidDate = LocalDate.now()
+        it.repaidReason = NegativeRepaymentReason.PRISONER_RECEIVED_RESET
       }
 
     val changeLog = changeLogService.createLogPrisonerBalanceReset(dpsPrisonerDetails, reason)
@@ -246,6 +248,7 @@ class ProcessPrisonerService(
     used.forEach {
       it.status = NegativeVisitOrderStatus.REPAID
       it.repaidDate = LocalDate.now()
+      it.repaidReason = NegativeRepaymentReason.ADMIN_RESET
     }
 
     val changeLog = changeLogService.createLogPrisonerNegativeBalanceAdminReset(details)
@@ -394,11 +397,11 @@ class ProcessPrisonerService(
   }
 
   private fun updateLastAllocatedDates(dpsPrisoner: PrisonerDetails, visitOrders: MutableList<VisitOrder>) {
-    // Only update the lastVoAllocatedDate and lastPvoAllocatedDate if VOs and PVOs have been generated.
-    if (visitOrders.any { it.type == VisitOrderType.VO }) {
+    // Only update the lastVoAllocatedDate and lastPvoAllocatedDate if VOs and PVOs have been generated or repaid.
+    if (visitOrders.any { it.type == VisitOrderType.VO } || dpsPrisoner.negativeVisitOrders.any { it.type == VisitOrderType.VO && it.repaidDate == LocalDate.now() && it.repaidReason == NegativeRepaymentReason.ALLOCATION }) {
       dpsPrisoner.lastVoAllocatedDate = LocalDate.now()
     }
-    if (visitOrders.any { it.type == VisitOrderType.PVO }) {
+    if (visitOrders.any { it.type == VisitOrderType.PVO } || dpsPrisoner.negativeVisitOrders.any { it.type == VisitOrderType.PVO && it.repaidDate == LocalDate.now() && it.repaidReason == NegativeRepaymentReason.ALLOCATION }) {
       dpsPrisoner.lastPvoAllocatedDate = LocalDate.now()
     }
   }
@@ -475,6 +478,7 @@ class ProcessPrisonerService(
         .forEach {
           it.status = NegativeVisitOrderStatus.REPAID
           it.repaidDate = LocalDate.now()
+          it.repaidReason = NegativeRepaymentReason.ALLOCATION
         }
     } else {
       // If the incentive amount pushes the balance positive, repay all debt and generate the required amount of positive VO / PVOs.
@@ -483,6 +487,7 @@ class ProcessPrisonerService(
         .forEach {
           it.status = NegativeVisitOrderStatus.REPAID
           it.repaidDate = LocalDate.now()
+          it.repaidReason = NegativeRepaymentReason.ALLOCATION
         }
 
       val visitOrdersToCreate = incentiveAmount - negativeBalance
