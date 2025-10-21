@@ -213,7 +213,7 @@ class ProcessPrisonerService(
       .forEach {
         it.status = NegativeVisitOrderStatus.REPAID
         it.repaidDate = LocalDate.now()
-        it.repaidReason = NegativeRepaidReason.OTHER
+        it.repaidReason = NegativeRepaidReason.PRISONER_RECEIVED_RESET
       }
 
     val changeLog = changeLogService.createLogPrisonerBalanceReset(dpsPrisonerDetails, reason)

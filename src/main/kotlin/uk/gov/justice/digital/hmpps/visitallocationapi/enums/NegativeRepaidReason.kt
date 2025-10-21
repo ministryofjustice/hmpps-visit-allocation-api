@@ -4,5 +4,5 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.enums
 enum class NegativeRepaidReason {
   ALLOCATION,
   ADMIN_RESET,
-  OTHER,
+  PRISONER_RECEIVED_RESET,
 }
