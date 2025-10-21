@@ -43,6 +43,7 @@ open class NegativeVisitOrder(
   var visitReference: String? = null,
 
   @Column(nullable = true)
+  @Enumerated(EnumType.STRING)
   var repaidReason: NegativeRepaymentReason? = null,
 
   @ManyToOne
