@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaidReasons
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -325,18 +326,18 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // Prisoner1 should have 1 Negative_VO repaid, and the rest remain unchanged
     assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 0)
     assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.USED, 2)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.REPAID, 1)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.USED, 1)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.REPAID, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.USED, null, 2)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.REPAID, NegativeRepaidReasons.ALLOCATION, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.USED, null, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.REPAID, NegativeRepaidReasons.ALLOCATION, 1)
 
     // Prisoner2 should have all Negative_VOs / Negative_PVOs repaid, and 2 VOs and 1 PVO.
     assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 2)
     assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 1)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.USED, 0)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.USED, 0)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.REPAID, 1)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.REPAID, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.USED, null, 0)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.USED, null, 0)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.REPAID, NegativeRepaidReasons.ALLOCATION, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner2.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.REPAID, NegativeRepaidReasons.ALLOCATION, 1)
 
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateStartTimestamp(any(), any(), any())
     verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any())
@@ -944,8 +945,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.count { it.prisoner.prisonerId == prisonerId && it.type == type && it.status == status }).isEqualTo(total)
   }
 
-  private fun assertNegativeVisitOrdersAssignedBy(visitOrders: List<NegativeVisitOrder>, prisonerId: String, type: VisitOrderType, status: NegativeVisitOrderStatus, total: Int) {
-    assertThat(visitOrders.count { it.prisoner.prisonerId == prisonerId && it.type == type && it.status == status }).isEqualTo(total)
+  private fun assertNegativeVisitOrdersAssignedBy(visitOrders: List<NegativeVisitOrder>, prisonerId: String, type: VisitOrderType, status: NegativeVisitOrderStatus, repaidReason: NegativeRepaidReasons?, total: Int) {
+    assertThat(visitOrders.count { it.prisoner.prisonerId == prisonerId && it.type == type && it.status == status && it.repaidReason == repaidReason }).isEqualTo(total)
   }
 
   private fun assertVisitOrderAllocationPrisonJob(
