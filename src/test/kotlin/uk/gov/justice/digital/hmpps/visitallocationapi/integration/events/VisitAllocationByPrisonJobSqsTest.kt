@@ -155,6 +155,18 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
     await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any()) }
 
+    val prisonerDetailsList = prisonerDetailsRepository.findAll()
+    assertThat(prisonerDetailsList.size).isEqualTo(3)
+
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner1.prisonerId }.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner1.prisonerId }.lastPvoAllocatedDate).isNull()
+
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner2.prisonerId }.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner2.prisonerId }.lastPvoAllocatedDate).isEqualTo(LocalDate.now())
+
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner3.prisonerId }.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner3.prisonerId }.lastPvoAllocatedDate).isEqualTo(LocalDate.now())
+
     val visitOrders = visitOrderRepository.findAll()
 
     assertThat(visitOrders.size).isEqualTo(9)
@@ -248,7 +260,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
   /**
    * Scenario - Allocation with negative balances: Visit allocation job is run, and all prisoners with negative balances are repaid (VO / PVO).
-   * Prisoner1 - Start balance (VO=-2, PVO=-1) - Standard incentive, Gets 1 VO, 0 PVO. End balance (VO=-1, PVO=-1)
+   * Prisoner1 - Start balance (VO=-3, PVO=-2) - Standard incentive, Gets 1 VO, 0 PVO. End balance (VO=-2, PVO=-1)
    * Prisoner2 - Start balance (VO=-1, PVO=-1) - Enhanced2 incentive, Gets 3 VO, 2 PVOs. End balance (VO=2, PVO=1)
    */
   @Test
@@ -263,8 +275,8 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     // Negative balance for prisoner1
     entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner1.prisonerId, LocalDate.now().minusDays(14), null))
-    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, 2)
-    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.PVO, 1)
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.VO, 3)
+    entityHelper.createAndSaveNegativeVisitOrders(prisoner1.prisonerId, VisitOrderType.PVO, 2)
 
     // Negative balance for prisoner2
     entityHelper.createPrisonerDetails(PrisonerDetails(prisonerId = prisoner2.prisonerId, LocalDate.now().minusDays(14), null))
@@ -284,7 +296,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     incentivesMockServer.stubGetAllPrisonIncentiveLevels(
       prisonId = PRISON_CODE,
       listOf(
-        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 0, levelCode = "STD"),
+        PrisonIncentiveAmountsDto(visitOrders = 1, privilegedVisitOrders = 1, levelCode = "STD"),
         PrisonIncentiveAmountsDto(visitOrders = 3, privilegedVisitOrders = 2, levelCode = "ENH2"),
       ),
     )
@@ -296,6 +308,15 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitAllocationByPrisonJobListenerSpy, times(1)).processMessage(event) }
     await untilAsserted { verify(visitOrderAllocationPrisonJobRepository, times(1)).updateEndTimestampAndStats(any(), any(), any(), any(), any(), any()) }
 
+    val prisonerDetailsList = prisonerDetailsRepository.findAll()
+    assertThat(prisonerDetailsList.size).isEqualTo(2)
+
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner1.prisonerId }.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner1.prisonerId }.lastPvoAllocatedDate).isEqualTo(LocalDate.now())
+
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner2.prisonerId }.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerDetailsList.first { it.prisonerId == prisoner2.prisonerId }.lastPvoAllocatedDate).isEqualTo(LocalDate.now())
+
     val visitOrders = visitOrderRepository.findAll()
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
 
@@ -304,9 +325,10 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // Prisoner1 should have 1 Negative_VO repaid, and the rest remain unchanged
     assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 0)
     assertVisitOrdersAssignedBy(visitOrders, prisoner1.prisonerId, VisitOrderType.PVO, VisitOrderStatus.AVAILABLE, 0)
-    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.USED, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.USED, 2)
     assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.VO, NegativeVisitOrderStatus.REPAID, 1)
     assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.USED, 1)
+    assertNegativeVisitOrdersAssignedBy(negativeVisitOrders, prisoner1.prisonerId, VisitOrderType.PVO, NegativeVisitOrderStatus.REPAID, 1)
 
     // Prisoner2 should have all Negative_VOs / Negative_PVOs repaid, and 2 VOs and 1 PVO.
     assertVisitOrdersAssignedBy(visitOrders, prisoner2.prisonerId, VisitOrderType.VO, VisitOrderStatus.AVAILABLE, 2)
