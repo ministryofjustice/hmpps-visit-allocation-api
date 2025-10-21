@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.Transient
 import org.hibernate.Hibernate
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaidReasons
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaidReason
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import java.time.LocalDate
@@ -43,7 +43,7 @@ open class NegativeVisitOrder(
   var visitReference: String? = null,
 
   @Column(nullable = true)
-  var repaidReason: NegativeRepaidReasons? = null,
+  var repaidReason: NegativeRepaidReason? = null,
 
   @ManyToOne
   @JoinColumn(name = "prisoner_id", nullable = false)
