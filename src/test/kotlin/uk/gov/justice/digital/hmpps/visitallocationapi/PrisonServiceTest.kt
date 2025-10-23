@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi
 
-import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
@@ -36,8 +35,8 @@ class PrisonServiceTest {
   @Test
   fun `Given 2 active prisons then trigger allocation sends 2 SQS messages to the allocation job queue`() {
     // given - 2 prisons are active - ABC and XYZ
-    val activePrison1 = ServicePrisonDto("ABC", "A prison")
-    val activePrison2 = ServicePrisonDto("XYZ", "A prison")
+    val activePrison1 = ServicePrisonDto("ABC")
+    val activePrison2 = ServicePrisonDto("XYZ")
     val visitOrderAllocationJob = VisitOrderAllocationJob(totalPrisons = 2)
     val visitOrderAllocationJobReference = visitOrderAllocationJob.reference
 
@@ -46,7 +45,6 @@ class PrisonServiceTest {
       visitOrderAllocationJobRepository,
       visitOrderAllocationPrisonJobRepository,
       visitAllocationEventJobSqsService,
-      false,
     )
 
     // when
@@ -72,7 +70,6 @@ class PrisonServiceTest {
       visitOrderAllocationJobRepository,
       visitOrderAllocationPrisonJobRepository,
       visitAllocationEventJobSqsService,
-      false,
     )
 
     // when
@@ -89,8 +86,8 @@ class PrisonServiceTest {
   @Test
   fun `Given exception thrown when writing the first SQS message then trigger allocation ignores and still sends SQS message to the allocation job queue for the second prison`() {
     // given - 2 prisons are active - ABC and XYZ
-    val activePrison1 = ServicePrisonDto("ABC", "A prison")
-    val activePrison2 = ServicePrisonDto("XYZ", "A prison")
+    val activePrison1 = ServicePrisonDto("ABC")
+    val activePrison2 = ServicePrisonDto("XYZ")
     val visitOrderAllocationJob = VisitOrderAllocationJob(totalPrisons = 2)
     val visitOrderAllocationJobReference = visitOrderAllocationJob.reference
 
@@ -99,7 +96,6 @@ class PrisonServiceTest {
       visitOrderAllocationJobRepository,
       visitOrderAllocationPrisonJobRepository,
       visitAllocationEventJobSqsService,
-      false,
     )
 
     // when
@@ -116,45 +112,5 @@ class PrisonServiceTest {
     verify(visitAllocationEventJobSqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
     verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.agencyId)
     verify(visitAllocationEventJobSqsService, times(1)).sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison2.agencyId)
-  }
-
-  @Test
-  fun `Given a prisoner has a special prison code and feature is enabled, then DPS owns the special code`() {
-    // Given
-    val specialPrisonCode = "OUT"
-
-    prisonService = PrisonService(
-      prisonApiClient,
-      visitOrderAllocationJobRepository,
-      visitOrderAllocationPrisonJobRepository,
-      visitAllocationEventJobSqsService,
-      true, // Feature enabled
-    )
-
-    // Begin test
-    val response = prisonService.getPrisonEnabledForDpsByCode(specialPrisonCode)
-
-    // Then - True is returned, dps owns the special code
-    assertThat(response).isEqualTo(true)
-  }
-
-  @Test
-  fun `Given a prisoner has a special prison code and feature is disabled, then NOMIS owns the special code`() {
-    // Given
-    val specialPrisonCode = "OUT"
-
-    prisonService = PrisonService(
-      prisonApiClient,
-      visitOrderAllocationJobRepository,
-      visitOrderAllocationPrisonJobRepository,
-      visitAllocationEventJobSqsService,
-      false, // Feature disabled
-    )
-
-    // Begin test
-    val response = prisonService.getPrisonEnabledForDpsByCode(specialPrisonCode)
-
-    // Then - False is returned, nomis owns the special code
-    assertThat(response).isEqualTo(false)
   }
 }

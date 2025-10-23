@@ -6,7 +6,4 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class ServicePrisonDto(
   @Schema(description = "Prison Code", example = "MDI", required = true)
   val agencyId: String,
-
-  @Schema(description = "Prison name", example = "Moorland (HMP)", required = true)
-  val name: String,
 )

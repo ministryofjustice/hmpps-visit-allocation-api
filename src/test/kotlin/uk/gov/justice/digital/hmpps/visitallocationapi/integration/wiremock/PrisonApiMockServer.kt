@@ -81,6 +81,30 @@ class PrisonApiMockServer : WireMockServer(8096) {
         ),
     )
   }
+
+  fun stubGetAllActivePrisons(prisons: List<ServicePrisonDto>?, httpStatus: HttpStatus? = null) {
+    val responseBuilder = aResponse()
+      .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+
+    stubFor(
+      get("/api/agencies/prisons")
+        .willReturn(
+          if (prisons == null) {
+            if (httpStatus != null) {
+              responseBuilder
+                .withStatus(httpStatus.value())
+            } else {
+              responseBuilder
+                .withStatus(HttpStatus.NOT_FOUND.value())
+            }
+          } else {
+            responseBuilder
+              .withStatus(HttpStatus.OK.value())
+              .withBody(getJsonString(prisons))
+          },
+        ),
+    )
+  }
 }
 
 class PrisonApiMockExtension :

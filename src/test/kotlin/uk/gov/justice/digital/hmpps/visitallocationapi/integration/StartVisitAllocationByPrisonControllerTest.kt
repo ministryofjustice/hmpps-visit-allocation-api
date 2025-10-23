@@ -32,16 +32,41 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
 
   private val prisonCode1 = "ABC"
   private val prisonCode2 = "XYZ"
-  private val prisonCode3 = "TST"
+  private val allPrisonCode = "*ALL*"
 
   @Test
   fun `when allocation job started then sqs messages are sent for each active prison`() {
     // Given
-    val prison1Active = ServicePrisonDto(agencyId = prisonCode1, name = "A prison")
-    val prison2Active = ServicePrisonDto(agencyId = prisonCode2, name = "A prison")
+    val prison1Active = ServicePrisonDto(agencyId = prisonCode1)
+    val prison2Active = ServicePrisonDto(agencyId = prisonCode2)
 
     // When
     prisonApiMockServer.stubGetAllServicePrisonsEnabledForDps(listOf(prison1Active, prison2Active))
+    val responseSpec = startVisitAllocationByPrisonJob(webTestClient, startVisitAllocationJobRoleHttpHeaders)
+
+    // Then
+    responseSpec.expectStatus().isOk
+    val result = responseSpec.expectStatus().isOk.expectBody()
+    val visitAllocationEventJobDto = getVisitAllocationEventJobDto(result)
+    Assertions.assertThat(visitAllocationEventJobDto.totalActivePrisons).isEqualTo(2)
+    verify(sqsService, times(2)).sendVisitAllocationEventToAllocationJobQueue(any(), any())
+    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(visitAllocationEventJobDto.allocationJobReference, prison1Active.agencyId)
+    verify(sqsService).sendVisitAllocationEventToAllocationJobQueue(visitAllocationEventJobDto.allocationJobReference, prison2Active.agencyId)
+    verify(visitOrderAllocationJobRepository, times(1)).save(any())
+    verify(visitOrderAllocationPrisonJobRepository, times(2)).save(any())
+  }
+
+  @Test
+  fun `when allocation job started and ALL prison code is found, then sqs messages are sent for all active prison`() {
+    // Given
+    val allPrison = ServicePrisonDto(agencyId = allPrisonCode)
+    val prison1Active = ServicePrisonDto(agencyId = prisonCode1)
+    val prison2Active = ServicePrisonDto(agencyId = prisonCode2)
+
+    // When
+    prisonApiMockServer.stubGetAllServicePrisonsEnabledForDps(listOf(allPrison))
+    prisonApiMockServer.stubGetAllActivePrisons(listOf(prison1Active, prison2Active))
+
     val responseSpec = startVisitAllocationByPrisonJob(webTestClient, startVisitAllocationJobRoleHttpHeaders)
 
     // Then
