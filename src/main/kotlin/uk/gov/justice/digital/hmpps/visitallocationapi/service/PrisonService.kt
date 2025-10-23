@@ -2,13 +2,11 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.SpecialPrisonCodes
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
@@ -23,26 +21,23 @@ class PrisonService(
   private val visitOrderAllocationJobRepository: VisitOrderAllocationJobRepository,
   private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
   private val visitAllocationEventJobSqsService: VisitAllocationEventJobSqsService,
-  @Value("\${feature.dps-process-special-prison-codes.enabled}") val dpsProcessSpecialPrisonCodes: Boolean,
 ) {
   companion object {
     val log: Logger = LoggerFactory.getLogger(this::class.java)
+    const val ALL_PRISON_CODE = "*ALL*"
   }
 
-  fun getPrisonEnabledForDpsByCode(prisonCode: String): Boolean {
-    if (dpsProcessSpecialPrisonCodes && SpecialPrisonCodes.entries.any { it.name == prisonCode }) {
-      log.info("Special prison code $prisonCode found, feature is enabled, returning true for is enabled for DPS")
-      return true
-    } else {
-      return prisonApiClient.getPrisonEnabledForDps(prisonCode)
-    }
-  }
+  fun getPrisonEnabledForDpsByCode(prisonCode: String): Boolean = prisonApiClient.getPrisonEnabledForDps(prisonCode)
 
   fun triggerVisitAllocationForActivePrisons(): VisitAllocationEventJobDto {
     log.info("Trigger allocation by prison started")
-    val activePrisons = prisonApiClient.getAllServicePrisonsEnabledForDps()
-    val allocationJobReference = auditOrderAllocationJob(totalActivePrisons = activePrisons.size).reference
+    var activePrisons = prisonApiClient.getAllServicePrisonsEnabledForDps()
+    if (activePrisons.any { it.agencyId == ALL_PRISON_CODE }) {
+      activePrisons = prisonApiClient.getAllActivePrisons() // If ALL code is found, we get the full list of active prisons.
+    }
     log.info("Total active prisons for visit allocation job = ${activePrisons.size}")
+
+    val allocationJobReference = auditOrderAllocationJob(totalActivePrisons = activePrisons.size).reference
 
     activePrisons.forEach {
       val prisonCode = it.agencyId

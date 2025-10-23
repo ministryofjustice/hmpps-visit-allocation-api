@@ -41,6 +41,27 @@ class PrisonApiClient(
       .block()
   }
 
+  // Differs from the getAllServicePrisonsEnabledForDps, as it returns every prison, not just ones mapped to the VISIT_ALLOCATION agency switch.
+  fun getAllActivePrisons(): List<ServicePrisonDto> {
+    LOG.debug("Entered prison-api client - getAllActivePrisons")
+    val uri = "/api/agencies/prisons"
+
+    return webClient.get()
+      .uri(uri)
+      .retrieve()
+      .bodyToMono<List<ServicePrisonDto>>()
+      .onErrorResume { e ->
+        if (isNotFoundError(e)) {
+          LOG.warn("getAllActivePrisons returned 404, returning empty list for $uri")
+          Mono.just(emptyList())
+        } else {
+          LOG.error("getAllActivePrisons Failed get request $uri", e)
+          Mono.error(e)
+        }
+      }
+      .block() ?: throw IllegalStateException("timeout response from prison-api for getAllActivePrisons")
+  }
+
   fun getPrisonEnabledForDps(prisonId: String): Boolean {
     LOG.debug("Entered prison-api client - getPrisonEnabledForDps for prison $prisonId")
 

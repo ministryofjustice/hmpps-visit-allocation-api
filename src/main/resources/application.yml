@@ -96,5 +96,3 @@ feature:
   events:
     sns:
       enabled: true
-  dps-process-special-prison-codes:
-    enabled: ${FEATURE_DPS_PROCESS_SPECIAL_PRISON_CODES_ENABLED}

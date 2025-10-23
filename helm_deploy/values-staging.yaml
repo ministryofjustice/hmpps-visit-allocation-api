@@ -16,7 +16,6 @@ generic-service:
     VISIT-SCHEDULER_API_URL: "https://visit-scheduler-staging.prison.service.justice.gov.uk"
     SQS_DOMAIN_EVENT_PROCESSING_ENABLED: true
     FEATURE_EVENTS_SNS_ENABLED: false # A lot of DPS services don't have staging. Disabling.
-    FEATURE_DPS_PROCESS_SPECIAL_PRISON_CODES_ENABLED: false
 
   scheduledDowntime:
     enabled: true
