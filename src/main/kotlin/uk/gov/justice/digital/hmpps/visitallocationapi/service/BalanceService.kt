@@ -6,15 +6,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerDetailedBalanceDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus.USED
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus.ACCUMULATED
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus.AVAILABLE
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType.PVO
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType.VO
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
+import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 
 @Service
-class BalanceService(private val prisonerDetailsService: PrisonerDetailsService) {
+class BalanceService(
+  private val prisonerDetailsService: PrisonerDetailsService,
+  private val voBalancesUtil: VOBalancesUtil,
+) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
@@ -43,28 +41,9 @@ class BalanceService(private val prisonerDetailsService: PrisonerDetailsService)
       return null
     }
 
-    val detailedBalanceDto = PrisonerDetailedBalanceDto(
-      prisonerId = prisonerDetails.prisonerId,
-      availableVos = getAvailableVOBalance(prisonerDetails),
-      accumulatedVos = getAccumulatedVOBalance(prisonerDetails),
-      negativeVos = getNegativeVOBalance(prisonerDetails),
-      availablePvos = getAvailablePVOBalance(prisonerDetails),
-      negativePvos = getNegativePVOBalance(prisonerDetails),
-      lastVoAllocatedDate = prisonerDetails.lastVoAllocatedDate,
-      lastPvoAllocatedDate = prisonerDetails.lastPvoAllocatedDate,
-    )
+    val detailedBalanceDto = voBalancesUtil.getPrisonersDetailedBalance(prisonerDetails)
 
     LOG.info("detailed VO and PVO balance for prisoner $prisonerId - $detailedBalanceDto")
     return detailedBalanceDto
   }
-
-  private fun getAvailableVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.visitOrders.count { it.type == VO && it.status == AVAILABLE }
-
-  private fun getAccumulatedVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.visitOrders.count { it.type == VO && it.status == ACCUMULATED }
-
-  private fun getNegativeVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.negativeVisitOrders.count { it.type == VO && it.status == USED }
-
-  private fun getAvailablePVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.visitOrders.count { it.type == PVO && it.status == AVAILABLE }
-
-  private fun getNegativePVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.negativeVisitOrders.count { it.type == PVO && it.status == USED }
 }

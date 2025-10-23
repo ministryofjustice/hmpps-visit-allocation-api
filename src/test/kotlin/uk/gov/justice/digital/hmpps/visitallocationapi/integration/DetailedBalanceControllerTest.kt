@@ -51,11 +51,50 @@ class DetailedBalanceControllerTest : IntegrationTestBase() {
     assertThat(prisonerBalance.availableVos).isEqualTo(2)
     assertThat(prisonerBalance.accumulatedVos).isEqualTo(1)
     assertThat(prisonerBalance.negativeVos).isEqualTo(1)
+    assertThat(prisonerBalance.voBalance).isEqualTo(2)
 
     assertThat(prisonerBalance.availablePvos).isEqualTo(0)
     assertThat(prisonerBalance.negativePvos).isEqualTo(1)
+    assertThat(prisonerBalance.pvoBalance).isEqualTo(-1)
     assertThat(prisonerBalance.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerBalance.nextVoAllocationDate).isEqualTo(LocalDate.now().plusDays(14))
     assertThat(prisonerBalance.lastPvoAllocatedDate).isNull()
+    assertThat(prisonerBalance.nextPvoAllocationDate).isNull()
+  }
+
+  @Test
+  fun `when request to get existing prisoner with only VO balance, then return detailed prisoner balance`() {
+    // Given
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null))
+
+    // prisoner has 0 VOs - only 1 expired VO
+    // prisoner has 2 available PVOs and 1 negative PVO
+    visitOrderRepository.save(VisitOrder(type = VisitOrderType.VO, status = VisitOrderStatus.EXPIRED, prisoner = prisoner))
+    negativeVisitOrderRepository.save(NegativeVisitOrder(type = VisitOrderType.VO, status = NegativeVisitOrderStatus.USED, prisoner = prisoner))
+    negativeVisitOrderRepository.save(NegativeVisitOrder(type = VisitOrderType.VO, status = NegativeVisitOrderStatus.USED, prisoner = prisoner))
+
+    // When
+    val responseSpec = callVisitAllocationPrisonerBalanceDetailedEndpoint(PRISONER_ID, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
+
+    // Then
+    responseSpec.expectStatus().isOk
+
+    val prisonerBalance = getDetailedVoBalanceResponse(responseSpec)
+
+    assertThat(prisonerBalance.prisonerId).isEqualTo(PRISONER_ID)
+    assertThat(prisonerBalance.availableVos).isEqualTo(0)
+    assertThat(prisonerBalance.accumulatedVos).isEqualTo(0)
+    assertThat(prisonerBalance.negativeVos).isEqualTo(2)
+    assertThat(prisonerBalance.voBalance).isEqualTo(-2)
+
+    assertThat(prisonerBalance.availablePvos).isEqualTo(0)
+    assertThat(prisonerBalance.negativePvos).isEqualTo(0)
+    assertThat(prisonerBalance.pvoBalance).isEqualTo(0)
+
+    assertThat(prisonerBalance.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerBalance.nextVoAllocationDate).isEqualTo(LocalDate.now().plusDays(14))
+    assertThat(prisonerBalance.lastPvoAllocatedDate).isNull()
+    assertThat(prisonerBalance.nextPvoAllocationDate).isNull()
   }
 
   @Test
@@ -83,11 +122,16 @@ class DetailedBalanceControllerTest : IntegrationTestBase() {
     assertThat(prisonerBalance.availableVos).isEqualTo(0)
     assertThat(prisonerBalance.accumulatedVos).isEqualTo(0)
     assertThat(prisonerBalance.negativeVos).isEqualTo(2)
+    assertThat(prisonerBalance.voBalance).isEqualTo(-2)
 
     assertThat(prisonerBalance.availablePvos).isEqualTo(1)
     assertThat(prisonerBalance.negativePvos).isEqualTo(1)
+    assertThat(prisonerBalance.pvoBalance).isEqualTo(0)
+
     assertThat(prisonerBalance.lastVoAllocatedDate).isEqualTo(LocalDate.now())
+    assertThat(prisonerBalance.nextVoAllocationDate).isEqualTo(LocalDate.now().plusDays(14))
     assertThat(prisonerBalance.lastPvoAllocatedDate).isEqualTo(LocalDate.now().minusDays(1))
+    assertThat(prisonerBalance.nextPvoAllocationDate).isEqualTo(LocalDate.now().plusDays(27))
   }
 
   @Test
