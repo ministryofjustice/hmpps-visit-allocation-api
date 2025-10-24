@@ -59,7 +59,7 @@ class DetailedBalanceControllerTest : IntegrationTestBase() {
     assertThat(prisonerBalance.lastVoAllocatedDate).isEqualTo(LocalDate.now())
     assertThat(prisonerBalance.nextVoAllocationDate).isEqualTo(LocalDate.now().plusDays(14))
     assertThat(prisonerBalance.lastPvoAllocatedDate).isNull()
-    assertThat(prisonerBalance.nextPvoAllocationDate).isNull()
+    assertThat(prisonerBalance.nextPvoAllocationDate).isEqualTo(prisonerBalance.nextVoAllocationDate)
   }
 
   @Test
@@ -94,7 +94,7 @@ class DetailedBalanceControllerTest : IntegrationTestBase() {
     assertThat(prisonerBalance.lastVoAllocatedDate).isEqualTo(LocalDate.now())
     assertThat(prisonerBalance.nextVoAllocationDate).isEqualTo(LocalDate.now().plusDays(14))
     assertThat(prisonerBalance.lastPvoAllocatedDate).isNull()
-    assertThat(prisonerBalance.nextPvoAllocationDate).isNull()
+    assertThat(prisonerBalance.nextPvoAllocationDate).isEqualTo(prisonerBalance.nextVoAllocationDate)
   }
 
   @Test

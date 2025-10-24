@@ -24,20 +24,24 @@ class VOBalancesUtil {
     pvoBalance = getPvoBalance(prisonerDetails),
   )
 
-  fun getPrisonersDetailedBalance(prisonerDetails: PrisonerDetails): PrisonerDetailedBalanceDto = PrisonerDetailedBalanceDto(
-    prisonerId = prisonerDetails.prisonerId,
-    availableVos = getAvailableVOBalance(prisonerDetails),
-    accumulatedVos = getAccumulatedVOBalance(prisonerDetails),
-    negativeVos = getNegativeVOBalance(prisonerDetails),
-    voBalance = getVoBalance(prisonerDetails),
-    availablePvos = getAvailablePVOBalance(prisonerDetails),
-    negativePvos = getNegativePVOBalance(prisonerDetails),
-    pvoBalance = getPvoBalance(prisonerDetails),
-    lastVoAllocatedDate = prisonerDetails.lastVoAllocatedDate,
-    nextVoAllocationDate = getNextVOAllocationDate(prisonerDetails.lastVoAllocatedDate),
-    lastPvoAllocatedDate = prisonerDetails.lastPvoAllocatedDate,
-    nextPvoAllocationDate = getNextPvoAllocationDate(prisonerDetails.lastPvoAllocatedDate),
-  )
+  fun getPrisonersDetailedBalance(prisonerDetails: PrisonerDetails): PrisonerDetailedBalanceDto {
+    val nextVOAllocationDate = getNextVOAllocationDate(prisonerDetails.lastVoAllocatedDate)
+
+    return PrisonerDetailedBalanceDto(
+      prisonerId = prisonerDetails.prisonerId,
+      availableVos = getAvailableVOBalance(prisonerDetails),
+      accumulatedVos = getAccumulatedVOBalance(prisonerDetails),
+      negativeVos = getNegativeVOBalance(prisonerDetails),
+      voBalance = getVoBalance(prisonerDetails),
+      availablePvos = getAvailablePVOBalance(prisonerDetails),
+      negativePvos = getNegativePVOBalance(prisonerDetails),
+      pvoBalance = getPvoBalance(prisonerDetails),
+      lastVoAllocatedDate = prisonerDetails.lastVoAllocatedDate,
+      nextVoAllocationDate = nextVOAllocationDate,
+      lastPvoAllocatedDate = prisonerDetails.lastPvoAllocatedDate,
+      nextPvoAllocationDate = getNextPvoAllocationDate(prisonerDetails.lastPvoAllocatedDate, nextVOAllocationDate),
+    )
+  }
 
   private fun getAvailableVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.visitOrders.count { it.type == VO && it.status == AVAILABLE }
 
@@ -69,17 +73,22 @@ class VOBalancesUtil {
     return nextVoAllocationDate
   }
 
-  private fun getNextPvoAllocationDate(lastPvoAllocatedDate: LocalDate?): LocalDate? {
-    var nextPvoAllocationDate = lastPvoAllocatedDate?.plusDays(PVO_ALLOCATION_DAYS)
-
-    // if the next allocation date is in the past - set the next allocation date to tomorrow
-    if (nextPvoAllocationDate != null && nextPvoAllocationDate <= LocalDate.now()) {
-      nextPvoAllocationDate = LocalDate.now().plusDays(1)
+  private fun getNextPvoAllocationDate(lastPvoAllocatedDate: LocalDate?, nextVOAllocationDate: LocalDate): LocalDate? {
+    // if the lastVoAllocatedDate is in the future (bad data scenario), return last allocation date
+    if (lastPvoAllocatedDate != null && lastPvoAllocatedDate > LocalDate.now()) {
+      return lastPvoAllocatedDate
     }
 
-    // if the lastVoAllocatedDate is in the future (bad data scenario), set it to the same as the last allocation date
-    if (lastPvoAllocatedDate != null && lastPvoAllocatedDate > LocalDate.now()) {
-      nextPvoAllocationDate = lastPvoAllocatedDate
+    var nextPvoAllocationDate = lastPvoAllocatedDate?.plusDays(PVO_ALLOCATION_DAYS)
+
+    // if the calculated next allocation date is null or in the in the past - set the next allocation date to nextVOAllocationDate
+    if (nextPvoAllocationDate == null || nextPvoAllocationDate <= LocalDate.now()) {
+      nextPvoAllocationDate = nextVOAllocationDate
+    } // if the nextPvoAllocationDate is in the future but nextPvoAllocationDate is before nextVOAllocationDate set it to nextVOAllocationDate
+    else if (nextPvoAllocationDate > LocalDate.now()) {
+      if (nextPvoAllocationDate.isBefore(nextVOAllocationDate)) {
+        nextPvoAllocationDate = nextVOAllocationDate
+      }
     }
 
     return nextPvoAllocationDate
