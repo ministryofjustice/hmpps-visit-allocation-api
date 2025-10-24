@@ -28,7 +28,7 @@ class BalanceService(
         return null
       }
 
-    return prisonerDetails.getBalance()
+    return voBalancesUtil.getPrisonerBalance(prisonerDetails)
   }
 
   @Transactional(readOnly = true)

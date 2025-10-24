@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.utils
 
 import org.springframework.stereotype.Component
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerDetailedBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus.USED
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus.ACCUMULATED
@@ -17,28 +18,26 @@ class VOBalancesUtil {
     const val PVO_ALLOCATION_DAYS = 28L
   }
 
-  fun getPrisonersDetailedBalance(prisonerDetails: PrisonerDetails): PrisonerDetailedBalanceDto {
-    val availableVos = getAvailableVOBalance(prisonerDetails)
-    val accumulatedVos = getAccumulatedVOBalance(prisonerDetails)
-    val negativeVos = getNegativeVOBalance(prisonerDetails)
-    val availablePvos = getAvailablePVOBalance(prisonerDetails)
-    val negativePvos = getNegativePVOBalance(prisonerDetails)
+  fun getPrisonerBalance(prisonerDetails: PrisonerDetails): PrisonerBalanceDto = PrisonerBalanceDto(
+    prisonerId = prisonerDetails.prisonerId,
+    voBalance = getVoBalance(prisonerDetails),
+    pvoBalance = getPvoBalance(prisonerDetails),
+  )
 
-    return PrisonerDetailedBalanceDto(
-      prisonerId = prisonerDetails.prisonerId,
-      availableVos = availableVos,
-      accumulatedVos = accumulatedVos,
-      negativeVos = negativeVos,
-      voBalance = prisonerDetails.getVoBalance(),
-      availablePvos = availablePvos,
-      negativePvos = negativePvos,
-      pvoBalance = prisonerDetails.getPvoBalance(),
-      lastVoAllocatedDate = prisonerDetails.lastVoAllocatedDate,
-      nextVoAllocationDate = getNextVOAllocationDate(prisonerDetails.lastVoAllocatedDate),
-      lastPvoAllocatedDate = prisonerDetails.lastPvoAllocatedDate,
-      nextPvoAllocationDate = getNextPvoAllocationDate(prisonerDetails.lastPvoAllocatedDate),
-    )
-  }
+  fun getPrisonersDetailedBalance(prisonerDetails: PrisonerDetails): PrisonerDetailedBalanceDto = PrisonerDetailedBalanceDto(
+    prisonerId = prisonerDetails.prisonerId,
+    availableVos = getAvailableVOBalance(prisonerDetails),
+    accumulatedVos = getAccumulatedVOBalance(prisonerDetails),
+    negativeVos = getNegativeVOBalance(prisonerDetails),
+    voBalance = getVoBalance(prisonerDetails),
+    availablePvos = getAvailablePVOBalance(prisonerDetails),
+    negativePvos = getNegativePVOBalance(prisonerDetails),
+    pvoBalance = getPvoBalance(prisonerDetails),
+    lastVoAllocatedDate = prisonerDetails.lastVoAllocatedDate,
+    nextVoAllocationDate = getNextVOAllocationDate(prisonerDetails.lastVoAllocatedDate),
+    lastPvoAllocatedDate = prisonerDetails.lastPvoAllocatedDate,
+    nextPvoAllocationDate = getNextPvoAllocationDate(prisonerDetails.lastPvoAllocatedDate),
+  )
 
   private fun getAvailableVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.visitOrders.count { it.type == VO && it.status == AVAILABLE }
 
@@ -49,6 +48,10 @@ class VOBalancesUtil {
   private fun getAvailablePVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.visitOrders.count { it.type == PVO && it.status == AVAILABLE }
 
   private fun getNegativePVOBalance(prisonerDetails: PrisonerDetails) = prisonerDetails.negativeVisitOrders.count { it.type == PVO && it.status == USED }
+
+  private fun getVoBalance(prisonerDetails: PrisonerDetails): Int = ((getAvailableVOBalance(prisonerDetails) + getAccumulatedVOBalance(prisonerDetails)) - getNegativeVOBalance(prisonerDetails))
+
+  private fun getPvoBalance(prisonerDetails: PrisonerDetails): Int = (getAvailablePVOBalance(prisonerDetails) - getNegativePVOBalance(prisonerDetails))
 
   private fun getNextVOAllocationDate(lastVoAllocatedDate: LocalDate): LocalDate {
     var nextVoAllocationDate = lastVoAllocatedDate.plusDays(VO_ALLOCATION_DAYS)
