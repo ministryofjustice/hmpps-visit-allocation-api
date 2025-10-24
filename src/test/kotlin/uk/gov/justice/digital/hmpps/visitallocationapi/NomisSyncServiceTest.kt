@@ -17,18 +17,14 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.AdjustmentReasonCode
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
+import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 import java.time.LocalDate
 
 @ExtendWith(MockitoExtension::class)
@@ -50,6 +46,9 @@ class NomisSyncServiceTest {
   @Mock
   private lateinit var prisonApiClient: PrisonApiClient
 
+  @Mock
+  private lateinit var voBalancesUtil: VOBalancesUtil
+
   @InjectMocks
   private lateinit var nomisSyncService: NomisSyncService
 
@@ -64,11 +63,11 @@ class NomisSyncServiceTest {
     val prisonerId = PRISONER_ID
     val syncDto = createSyncRequest(prisonerId = prisonerId, oldVoBalance = 2, changeToVoBalance = 2, oldPvoBalance = 1, changeToPvoBalance = 1)
     val existingPrisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), lastPvoAllocatedDate = null)
-    existingPrisonerDetails.visitOrders.addAll(createVisitOrders(existingPrisonerDetails, VisitOrderType.VO, 2))
-    existingPrisonerDetails.visitOrders.addAll(createVisitOrders(existingPrisonerDetails, VisitOrderType.PVO, 1))
+    val prisonerBalance = PrisonerBalanceDto(prisonerId = prisonerId, voBalance = 2, pvoBalance = 1)
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(voBalancesUtil.getPrisonerBalance(existingPrisonerDetails)).thenReturn(prisonerBalance)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -100,8 +99,8 @@ class NomisSyncServiceTest {
       pvoBalance = 1,
     )
     doReturn(existingPrisonerBalance)
-      .whenever(spyDetails)
-      .getBalance()
+      .whenever(voBalancesUtil)
+      .getPrisonerBalance(spyDetails)
 
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId))
       .thenReturn(spyDetails)
@@ -124,11 +123,11 @@ class NomisSyncServiceTest {
     val prisonerId = PRISONER_ID
     val syncDto = createSyncRequest(prisonerId = prisonerId, oldVoBalance = 2, changeToVoBalance = -3, oldPvoBalance = 1, changeToPvoBalance = -2)
     val existingPrisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), lastPvoAllocatedDate = null)
-    existingPrisonerDetails.visitOrders.addAll(createVisitOrders(existingPrisonerDetails, VisitOrderType.VO, 2))
-    existingPrisonerDetails.visitOrders.addAll(createVisitOrders(existingPrisonerDetails, VisitOrderType.PVO, 1))
+    val prisonerBalance = PrisonerBalanceDto(prisonerId = prisonerId, voBalance = 2, pvoBalance = 1)
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(voBalancesUtil.getPrisonerBalance(existingPrisonerDetails)).thenReturn(prisonerBalance)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -168,8 +167,8 @@ class NomisSyncServiceTest {
       pvoBalance = -1,
     )
     doReturn(existingPrisonerBalance)
-      .whenever(spyDetails)
-      .getBalance()
+      .whenever(voBalancesUtil)
+      .getPrisonerBalance(spyDetails)
 
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId))
       .thenReturn(spyDetails)
@@ -204,8 +203,8 @@ class NomisSyncServiceTest {
       pvoBalance = -1,
     )
     doReturn(existingPrisonerBalance)
-      .whenever(spyDetails)
-      .getBalance()
+      .whenever(voBalancesUtil)
+      .getPrisonerBalance(spyDetails)
 
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId))
       .thenReturn(spyDetails)
@@ -228,11 +227,11 @@ class NomisSyncServiceTest {
     val prisonerId = PRISONER_ID
     val syncDto = createSyncRequest(prisonerId = prisonerId, oldVoBalance = -2, changeToVoBalance = 3, oldPvoBalance = -1, changeToPvoBalance = 2)
     val existingPrisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), lastPvoAllocatedDate = null)
-    existingPrisonerDetails.negativeVisitOrders.addAll(createNegativeVisitOrders(existingPrisonerDetails, VisitOrderType.VO, 2))
-    existingPrisonerDetails.negativeVisitOrders.addAll(createNegativeVisitOrders(existingPrisonerDetails, VisitOrderType.PVO, 1))
+    val prisonerBalance = PrisonerBalanceDto(prisonerId = prisonerId, voBalance = -2, pvoBalance = -1)
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(voBalancesUtil.getPrisonerBalance(existingPrisonerDetails)).thenReturn(prisonerBalance)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -253,9 +252,11 @@ class NomisSyncServiceTest {
     val prisonerId = PRISONER_ID
     val syncDto = createSyncRequest(prisonerId = prisonerId, oldVoBalance = 0, changeToVoBalance = 2, oldPvoBalance = 0, changeToPvoBalance = 1)
     val existingPrisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), lastPvoAllocatedDate = null)
+    val prisonerBalance = PrisonerBalanceDto(prisonerId = prisonerId, voBalance = 0, pvoBalance = 0)
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(voBalancesUtil.getPrisonerBalance(existingPrisonerDetails)).thenReturn(prisonerBalance)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -274,9 +275,11 @@ class NomisSyncServiceTest {
     val prisonerId = PRISONER_ID
     val syncDto = createSyncRequest(prisonerId = prisonerId, oldVoBalance = 0, changeToVoBalance = -2, oldPvoBalance = 0, changeToPvoBalance = -1)
     val existingPrisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), lastPvoAllocatedDate = null)
+    val prisonerBalance = PrisonerBalanceDto(prisonerId = prisonerId, voBalance = 0, pvoBalance = 0)
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(voBalancesUtil.getPrisonerBalance(existingPrisonerDetails)).thenReturn(prisonerBalance)
 
     // WHEN
     nomisSyncService.syncPrisonerAdjustmentChanges(syncDto)
@@ -296,14 +299,14 @@ class NomisSyncServiceTest {
     // GIVEN
     val prisonerId = PRISONER_ID
     val existingPrisonerDetails = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now().minusDays(1), lastPvoAllocatedDate = null)
-    existingPrisonerDetails.visitOrders.addAll(createVisitOrders(existingPrisonerDetails, VisitOrderType.VO, 2))
-    existingPrisonerDetails.visitOrders.addAll(createVisitOrders(existingPrisonerDetails, VisitOrderType.PVO, 1))
+    val prisonerBalance = PrisonerBalanceDto(prisonerId = prisonerId, voBalance = 2, pvoBalance = 1)
 
     val existingNomisBalance = VisitBalancesDto(remainingVo = 3, remainingPvo = 2, latestIepAdjustDate = LocalDate.now().minusDays(1), latestPrivIepAdjustDate = LocalDate.now().minusDays(1))
 
     // WHEN
     whenever(prisonApiClient.getBookingVisitBalances(prisonerId)).thenReturn(existingNomisBalance)
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
+    whenever(voBalancesUtil.getPrisonerBalance(existingPrisonerDetails)).thenReturn(prisonerBalance)
 
     // WHEN
     nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE)
@@ -334,32 +337,4 @@ class NomisSyncServiceTest {
     changeLogSource,
     comment,
   )
-
-  private fun createVisitOrders(prisoner: PrisonerDetails, visitOrderType: VisitOrderType, amountToCreate: Int): List<VisitOrder> {
-    val visitOrders = mutableListOf<VisitOrder>()
-    repeat(amountToCreate) {
-      visitOrders.add(
-        VisitOrder(
-          type = visitOrderType,
-          status = VisitOrderStatus.AVAILABLE,
-          prisoner = prisoner,
-        ),
-      )
-    }
-    return visitOrders
-  }
-
-  private fun createNegativeVisitOrders(prisoner: PrisonerDetails, visitOrderType: VisitOrderType, amountToCreate: Int): List<NegativeVisitOrder> {
-    val negativeVisitOrder = mutableListOf<NegativeVisitOrder>()
-    repeat(amountToCreate) {
-      negativeVisitOrder.add(
-        NegativeVisitOrder(
-          type = visitOrderType,
-          status = NegativeVisitOrderStatus.USED,
-          prisoner = prisoner,
-        ),
-      )
-    }
-    return negativeVisitOrder
-  }
 }

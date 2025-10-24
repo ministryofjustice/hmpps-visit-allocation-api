@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequ
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 import java.time.LocalDate
 import kotlin.math.abs
 
@@ -28,6 +29,7 @@ class NomisSyncService(
   private val telemetryService: TelemetryClientService,
   private val changeLogService: ChangeLogService,
   private val prisonApiClient: PrisonApiClient,
+  private val voBalancesUtil: VOBalancesUtil,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -40,8 +42,9 @@ class NomisSyncService(
 
     val dpsPrisoner = prisonerDetailsService.getPrisonerDetailsWithLock(syncDto.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(syncDto.prisonerId, syncDto.createdDate, null)
+    val prisonerBalance = voBalancesUtil.getPrisonerBalance(dpsPrisoner)
 
-    compareBalanceBeforeSync(syncDto, dpsPrisoner.getBalance())
+    compareBalanceBeforeSync(syncDto, prisonerBalance)
 
     LOG.info("Current loaded prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
 
@@ -50,7 +53,7 @@ class NomisSyncService(
       LOG.info("VO balance has changed, syncing with nomis for prisoner ${syncDto.prisonerId}")
       processSync(
         prisoner = dpsPrisoner,
-        prisonerDpsBalance = dpsPrisoner.getVoBalance(),
+        prisonerDpsBalance = prisonerBalance.voBalance,
         balanceChange = syncDto.changeToVoBalance,
         visitOrderType = VisitOrderType.VO,
       )
@@ -61,7 +64,7 @@ class NomisSyncService(
       LOG.info("PVO balance has changed, syncing with nomis for prisoner ${syncDto.prisonerId}")
       processSync(
         prisoner = dpsPrisoner,
-        prisonerDpsBalance = dpsPrisoner.getPvoBalance(),
+        prisonerDpsBalance = prisonerBalance.pvoBalance,
         balanceChange = syncDto.changeToPvoBalance,
         visitOrderType = VisitOrderType.PVO,
       )
@@ -99,19 +102,20 @@ class NomisSyncService(
 
     val dpsPrisoner = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    val prisonerBalance = voBalancesUtil.getPrisonerBalance(dpsPrisoner)
 
-    val voBalanceChange = (prisonerNomisBalance.remainingVo - dpsPrisoner.getVoBalance())
+    val voBalanceChange = (prisonerNomisBalance.remainingVo - prisonerBalance.voBalance)
     processSync(
       prisoner = dpsPrisoner,
-      prisonerDpsBalance = dpsPrisoner.getVoBalance(),
+      prisonerDpsBalance = prisonerBalance.voBalance,
       balanceChange = voBalanceChange,
       visitOrderType = VisitOrderType.VO,
     )
 
-    val pvoBalanceChange = (prisonerNomisBalance.remainingPvo - dpsPrisoner.getPvoBalance())
+    val pvoBalanceChange = (prisonerNomisBalance.remainingPvo - prisonerBalance.pvoBalance)
     processSync(
       prisoner = dpsPrisoner,
-      prisonerDpsBalance = dpsPrisoner.getPvoBalance(),
+      prisonerDpsBalance = prisonerBalance.pvoBalance,
       balanceChange = pvoBalanceChange,
       visitOrderType = VisitOrderType.PVO,
     )

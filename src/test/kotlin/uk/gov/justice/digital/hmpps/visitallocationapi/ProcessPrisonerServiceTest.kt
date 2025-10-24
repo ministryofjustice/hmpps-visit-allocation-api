@@ -18,18 +18,16 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Priso
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
+import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 import java.time.LocalDate
 import java.util.*
 
@@ -52,6 +50,9 @@ class ProcessPrisonerServiceTest {
   private lateinit var changeLogService: ChangeLogService
 
   @Mock
+  private lateinit var voBalancesUtil: VOBalancesUtil
+
+  @Mock
   private lateinit var telemetryClientService: TelemetryClientService
 
   private lateinit var processPrisonerService: ProcessPrisonerService
@@ -65,6 +66,7 @@ class ProcessPrisonerServiceTest {
       prisonerRetryService,
       changeLogService,
       telemetryClientService,
+      voBalancesUtil,
       26,
     )
   }
@@ -87,8 +89,8 @@ class ProcessPrisonerServiceTest {
       userId = "SYSTEM",
       comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
       prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      visitOrderBalance = 0,
+      privilegedVisitOrderBalance = 0,
       reference = UUID.randomUUID(),
     )
 
@@ -127,8 +129,8 @@ class ProcessPrisonerServiceTest {
       userId = "SYSTEM",
       comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
       prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      visitOrderBalance = 0,
+      privilegedVisitOrderBalance = 0,
       reference = UUID.randomUUID(),
     )
 
@@ -166,8 +168,8 @@ class ProcessPrisonerServiceTest {
       userId = "SYSTEM",
       comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
       prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      visitOrderBalance = 0,
+      privilegedVisitOrderBalance = 0,
       reference = UUID.randomUUID(),
     )
 
@@ -235,8 +237,8 @@ class ProcessPrisonerServiceTest {
       userId = "SYSTEM",
       comment = "batch process run for prisoner ${dpsPrisoner.prisonerId}",
       prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      visitOrderBalance = 0,
+      privilegedVisitOrderBalance = 0,
       reference = UUID.randomUUID(),
     )
 
@@ -268,7 +270,6 @@ class ProcessPrisonerServiceTest {
     val prisonId = "HEI"
     val visit = createVisitDto(visitReference, prisonerId, prisonId)
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    dpsPrisoner.visitOrders.add(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, prisoner = dpsPrisoner))
 
     val changeLog = ChangeLog(
       changeType = ChangeLogType.ALLOCATION_USED_BY_VISIT,
@@ -276,8 +277,8 @@ class ProcessPrisonerServiceTest {
       userId = "SYSTEM",
       comment = "allocated to $visitReference",
       prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      visitOrderBalance = 0,
+      privilegedVisitOrderBalance = 1,
       reference = UUID.randomUUID(),
     )
 
@@ -306,7 +307,6 @@ class ProcessPrisonerServiceTest {
     val prisonId = "HEI"
     val visit = createVisitDto(visitReference, prisonerId, prisonId)
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    dpsPrisoner.visitOrders.add(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisoner = dpsPrisoner))
 
     val changeLog = ChangeLog(
       changeType = ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
@@ -314,8 +314,8 @@ class ProcessPrisonerServiceTest {
       userId = "SYSTEM",
       comment = "allocated to $visitReference",
       prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      visitOrderBalance = 0,
+      privilegedVisitOrderBalance = 1,
       reference = UUID.randomUUID(),
     )
 
@@ -343,7 +343,6 @@ class ProcessPrisonerServiceTest {
     val prisonerId = "AA123456"
 
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    dpsPrisoner.visitOrders.add(VisitOrder(type = VisitOrderType.PVO, status = VisitOrderStatus.AVAILABLE, visitReference = visitReference, prisoner = dpsPrisoner))
 
     val changeLog = ChangeLog(
       changeType = ChangeLogType.PRISONER_BALANCE_RESET,
@@ -351,8 +350,8 @@ class ProcessPrisonerServiceTest {
       userId = "SYSTEM",
       comment = "prisoner balance reset for reason NEW_ADMISSION",
       prisoner = dpsPrisoner,
-      visitOrderBalance = dpsPrisoner.getVoBalance(),
-      privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
+      visitOrderBalance = 0,
+      privilegedVisitOrderBalance = 1,
       reference = UUID.randomUUID(),
     )
 
