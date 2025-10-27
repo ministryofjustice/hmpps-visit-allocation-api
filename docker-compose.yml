@@ -1,7 +1,7 @@
 version: "3"
 services:
   visit-allocation-db:
-    image: postgres:15.7
+    image: postgres:15.14
     networks:
       - hmpps
     container_name: visit-allocation-db
