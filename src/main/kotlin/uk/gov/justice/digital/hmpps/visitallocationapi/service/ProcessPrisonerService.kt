@@ -23,6 +23,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisi
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.PrisonerChangeTrackingUtil
+import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -36,6 +37,7 @@ class ProcessPrisonerService(
   private val prisonerRetryService: PrisonerRetryService,
   private val changeLogService: ChangeLogService,
   private val telemetryClientService: TelemetryClientService,
+  private val voBalancesUtil: VOBalancesUtil,
   @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
@@ -145,12 +147,15 @@ class ProcessPrisonerService(
     LOG.info("processPrisonerMerge with newPrisonerId - $newPrisonerId and removedPrisonerId - $removedPrisonerId")
     val newPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(newPrisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(newPrisonerId, LocalDate.now().minusDays(14), null)
+    val newPrisonerVoBalance = voBalancesUtil.getPrisonerBalance(newPrisonerDetails)
 
     val removedPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(removedPrisonerId)
 
     if (removedPrisonerDetails != null) {
+      val removedPrisonerBalance = voBalancesUtil.getPrisonerBalance(removedPrisonerDetails)
+
       // create VOs - if the VO balance of the new prisoner is less than the removed prisoner's VO balance
-      visitOrdersToBeCreated = removedPrisonerDetails.getVoBalance() - newPrisonerDetails.getVoBalance()
+      visitOrdersToBeCreated = removedPrisonerBalance.voBalance - newPrisonerVoBalance.voBalance
       if (visitOrdersToBeCreated > 0) {
         LOG.info("Creating $visitOrdersToBeCreated new VOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
         repeat(visitOrdersToBeCreated) {
@@ -160,7 +165,7 @@ class ProcessPrisonerService(
       }
 
       // create PVOs - if the PVO balance of the new prisoner is less than the removed prisoner's PVO balance
-      privilegedVisitOrdersToBeCreated = removedPrisonerDetails.getPvoBalance() - newPrisonerDetails.getPvoBalance()
+      privilegedVisitOrdersToBeCreated = removedPrisonerBalance.pvoBalance - newPrisonerVoBalance.pvoBalance
       if (privilegedVisitOrdersToBeCreated > 0) {
         LOG.info("Creating $privilegedVisitOrdersToBeCreated new PVOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
         repeat(privilegedVisitOrdersToBeCreated) {

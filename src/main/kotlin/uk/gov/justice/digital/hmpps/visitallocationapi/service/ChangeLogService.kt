@@ -8,19 +8,20 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocation
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 import java.util.*
 
 @Service
-class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
+class ChangeLogService(
+  private val changeLogRepository: ChangeLogRepository,
+  private val voBalancesUtil: VOBalancesUtil,
+) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
     const val CHANGE_LOG_SYSTEM_USER_ID = "SYSTEM"
@@ -151,19 +152,22 @@ class ChangeLogService(private val changeLogRepository: ChangeLogRepository) {
     changeLogSource: ChangeLogSource,
     userId: String,
     comment: String,
-  ) = ChangeLog(
-    changeType = changeLogType,
-    changeSource = changeLogSource,
-    userId = userId,
-    comment = comment,
-    prisoner = dpsPrisoner,
-    visitOrderBalance = dpsPrisoner.getVoBalance(),
-    visitOrderAvailableBalance = dpsPrisoner.visitOrders.count { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.AVAILABLE },
-    visitOrderAccumulatedBalance = dpsPrisoner.visitOrders.count { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.ACCUMULATED },
-    visitOrderUsedBalance = dpsPrisoner.negativeVisitOrders.count { it.type == VisitOrderType.VO && it.status == NegativeVisitOrderStatus.USED },
-    privilegedVisitOrderBalance = dpsPrisoner.getPvoBalance(),
-    privilegedVisitOrderAvailableBalance = dpsPrisoner.visitOrders.count { it.type == VisitOrderType.PVO && it.status == VisitOrderStatus.AVAILABLE },
-    privilegedVisitOrderUsedBalance = dpsPrisoner.negativeVisitOrders.count { it.type == VisitOrderType.PVO && it.status == NegativeVisitOrderStatus.USED },
-    reference = UUID.randomUUID(),
-  )
+  ): ChangeLog {
+    val prisonerDetailedBalance = voBalancesUtil.getPrisonersDetailedBalance(dpsPrisoner)
+    return ChangeLog(
+      changeType = changeLogType,
+      changeSource = changeLogSource,
+      userId = userId,
+      comment = comment,
+      prisoner = dpsPrisoner,
+      visitOrderBalance = prisonerDetailedBalance.voBalance,
+      visitOrderAvailableBalance = prisonerDetailedBalance.availableVos,
+      visitOrderAccumulatedBalance = prisonerDetailedBalance.accumulatedVos,
+      visitOrderUsedBalance = prisonerDetailedBalance.negativeVos,
+      privilegedVisitOrderBalance = prisonerDetailedBalance.pvoBalance,
+      privilegedVisitOrderAvailableBalance = prisonerDetailedBalance.availablePvos,
+      privilegedVisitOrderUsedBalance = prisonerDetailedBalance.negativePvos,
+      reference = UUID.randomUUID(),
+    )
+  }
 }

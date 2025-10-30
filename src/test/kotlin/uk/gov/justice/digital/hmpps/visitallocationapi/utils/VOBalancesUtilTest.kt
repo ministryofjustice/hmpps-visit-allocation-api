@@ -89,8 +89,6 @@ class VOBalancesUtilTest {
     whenever(prisoner.visitOrders).thenReturn(visitOrders)
     whenever(prisoner.negativeVisitOrders).thenReturn(negativeVisitOrders)
     whenever(prisoner.negativeVisitOrders).thenReturn(negativeVisitOrders)
-    whenever(prisoner.getVoBalance()).thenReturn(-1)
-    whenever(prisoner.getPvoBalance()).thenReturn(2)
     whenever(prisoner.lastVoAllocatedDate).thenReturn(LocalDate.now())
     whenever(prisoner.lastPvoAllocatedDate).thenReturn(null)
     whenever(prisoner.prisonerId).thenReturn("test")
@@ -121,8 +119,6 @@ class VOBalancesUtilTest {
 
     whenever(prisoner.visitOrders).thenReturn(visitOrders)
     whenever(prisoner.negativeVisitOrders).thenReturn(negativeVisitOrders)
-    whenever(prisoner.getVoBalance()).thenReturn(6)
-    whenever(prisoner.getPvoBalance()).thenReturn(3)
     whenever(prisoner.lastVoAllocatedDate).thenReturn(LocalDate.now())
     whenever(prisoner.lastPvoAllocatedDate).thenReturn(null)
     whenever(prisoner.prisonerId).thenReturn("test")
