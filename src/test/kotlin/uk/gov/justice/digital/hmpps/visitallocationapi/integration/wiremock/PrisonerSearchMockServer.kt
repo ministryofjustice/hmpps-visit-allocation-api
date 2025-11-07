@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.RestPage
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.AttributeSearchPrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.MockUtils.Companion.createJsonResponseBuilder
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.MockUtils.Companion.getJsonString
@@ -51,6 +52,29 @@ class PrisonerSearchMockServer : WireMockServer(8094) {
             responseBuilder
               .withStatus(HttpStatus.OK.value())
               .withBody(getJsonString(RestPage(content = convictedPrisoners, size = convictedPrisoners.size, total = convictedPrisoners.size.toLong(), page = 0)))
+          },
+        ),
+    )
+  }
+
+  fun stubFindMergedPrisonerByIdentifierTypeMerged(
+    mergedPrisonerId: String,
+    mergedPrisonerSearchResults: List<AttributeSearchPrisonerDto>?,
+    httpStatus: HttpStatus = HttpStatus.NOT_FOUND,
+  ) {
+    val responseBuilder = createJsonResponseBuilder()
+    stubFor(
+      post(urlPathEqualTo("/attribute-search"))
+        .withQueryParam("size", containing("5000"))
+        .withQueryParam("responseFields", containing("prisonerNumber"))
+        .willReturn(
+          if (mergedPrisonerSearchResults == null) {
+            responseBuilder
+              .withStatus(httpStatus.value())
+          } else {
+            responseBuilder
+              .withStatus(HttpStatus.OK.value())
+              .withBody(getJsonString(RestPage(content = mergedPrisonerSearchResults, size = mergedPrisonerSearchResults.size, total = mergedPrisonerSearchResults.size.toLong(), page = 0)))
           },
         ),
     )

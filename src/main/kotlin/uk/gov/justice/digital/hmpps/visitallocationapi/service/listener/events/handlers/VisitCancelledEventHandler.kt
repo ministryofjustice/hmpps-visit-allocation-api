@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
@@ -35,7 +37,10 @@ class VisitCancelledEventHandler(
 
     LOG.info("Getting visit using reference - ${additionalInfo.reference}")
     val visit = visitSchedulerClient.getVisitByReference(additionalInfo.reference)
-    val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
+    val prisoner = getPrisonerOrHandleMergedPrisoner(visit.prisonerId)
+    if (prisoner == null) {
+      return
+    }
 
     if (prisonService.getPrisonEnabledForDpsByCode(prisoner.prisonId)) {
       LOG.info("Prisoner ${prisoner.prisonerId} is in ${prisoner.prisonId} which is enabled for DPS, processing event")
@@ -54,6 +59,27 @@ class VisitCancelledEventHandler(
       }
     } else {
       LOG.info("Prison ${prisoner.prisonId} is not enabled for DPS, skipping processing")
+    }
+  }
+
+  private fun getPrisonerOrHandleMergedPrisoner(prisonerId: String): PrisonerDto? {
+    try {
+      return prisonerSearchClient.getPrisonerById(prisonerId)
+    } catch (e: WebClientResponseException) {
+      if (e.statusCode.value() != 404) {
+        throw e
+      }
+
+      LOG.info("Prisoner $prisonerId not found in prisoner search, checking for merged prisoner")
+
+      val mergedPrisoner = prisonerSearchClient.findMergedPrisonerByIdentifierTypeMerged(prisonerId)
+      if (!(mergedPrisoner.content.isNullOrEmpty())) {
+        LOG.info("Merged prisoner found for $prisonerId, prisoner-search returned ${mergedPrisoner.content}, skipping processing event")
+        return null
+      } else {
+        LOG.info("No merged prisoner found for $prisonerId, reached illegal state - throwing exception")
+        throw IllegalStateException("No merged prisoner found for $prisonerId")
+      }
     }
   }
 }
