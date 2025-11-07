@@ -11,6 +11,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.AttributeSearchPrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
@@ -438,6 +439,8 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val prisonId = "HEI"
     val prisonerId = "AA123456"
 
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+
     val domainEvent = createDomainEventJson(
       DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value,
       createVisitBookedAdditionalInformationJson(visitReference),
@@ -445,13 +448,13 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value, domainEvent)
 
     // And
-    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN", convictedStatus = "Convicted"))
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN", convictedStatus = "Remand"))
     prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
 
     // When
     awsSnsClient.publish(publishRequest).get()
 
-    // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
     await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any()) }
@@ -462,5 +465,68 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(0)
+  }
+
+  @Test
+  fun `when domain event visit cancelled is found, but prisoner is a merged prisoner, no processing occurs`() {
+    // Given
+    val visitReference = "ab-cd-ef-gh"
+    val prisonId = "HEI"
+    val prisonerId = "AA123456"
+
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson(visitReference),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
+    prisonerSearchMockServer.stubFindMergedPrisonerByIdentifierTypeMerged(prisonerId, listOf(AttributeSearchPrisonerDto("AA123456")), HttpStatus.OK)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
+    await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.size).isEqualTo(0)
+  }
+
+  @Test
+  fun `when domain event visit cancelled is found, and prisoner cannot be found (normal search or merged search), message ends up on DLQ`() {
+    // Given
+    val visitReference = "ab-cd-ef-gh"
+    val prisonId = "HEI"
+    val prisonerId = "AA123456"
+
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson(visitReference),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, null, HttpStatus.NOT_FOUND)
+    prisonerSearchMockServer.stubFindMergedPrisonerByIdentifierTypeMerged(prisonerId, null, HttpStatus.NOT_FOUND)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
   }
 }

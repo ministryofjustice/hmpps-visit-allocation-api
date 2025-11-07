@@ -78,6 +78,29 @@ class PrisonerSearchClient(
       .bodyToMono<RestPage<AttributeSearchPrisonerDto>>()
       .block() ?: throw TimeoutException("Request timed out while fetching all prisoners from prison $prisonId")
   }
+
+  fun findMergedPrisonerByIdentifierTypeMerged(mergedPrisonerId: String): RestPage<AttributeSearchPrisonerDto> {
+    LOG.info("Calling prisoner-search to check if prisoner with ID $mergedPrisonerId is merged")
+    val requestBody = AttributeSearch(
+      queries = listOf(
+        AttributeQuery(
+          matchers = listOf(
+            Matcher(attribute = "identifiers.type", condition = "IS", searchTerm = "MERGED"),
+            Matcher(attribute = "identifiers.value", condition = "IS", searchTerm = mergedPrisonerId),
+          ),
+        ),
+      ),
+    )
+
+    return webClient
+      .post()
+      .uri("/attribute-search?size=$DEFAULT_PAGE_SIZE&responseFields=$RESPONSE_FIELD")
+      .bodyValue(requestBody)
+      .accept(MediaType.APPLICATION_JSON)
+      .retrieve()
+      .bodyToMono<RestPage<AttributeSearchPrisonerDto>>()
+      .block() ?: throw TimeoutException("Request timed out while fetching merged prisoner with ID $mergedPrisonerId")
+  }
 }
 
 data class AttributeSearch(
