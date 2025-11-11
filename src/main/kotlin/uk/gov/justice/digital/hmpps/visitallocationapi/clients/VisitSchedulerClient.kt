@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundExcepti
 
 @Component
 class VisitSchedulerClient(
-  @Qualifier("visitSchedulerWebClient") private val webClient: WebClient,
+  @param:Qualifier("visitSchedulerWebClient") private val webClient: WebClient,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)

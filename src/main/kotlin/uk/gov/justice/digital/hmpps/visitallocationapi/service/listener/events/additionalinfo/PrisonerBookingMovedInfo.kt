@@ -3,9 +3,9 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.
 import jakarta.validation.constraints.NotBlank
 
 data class PrisonerBookingMovedInfo(
-  @NotBlank
+  @field:NotBlank
   val movedFromNomsNumber: String,
 
-  @NotBlank
+  @field:NotBlank
   val movedToNomsNumber: String,
 )

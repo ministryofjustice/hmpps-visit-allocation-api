@@ -14,7 +14,7 @@ import java.util.concurrent.TimeoutException
 
 @Component
 class PrisonerSearchClient(
-  @Qualifier("prisonerSearchWebClient") private val webClient: WebClient,
+  @param:Qualifier("prisonerSearchWebClient") private val webClient: WebClient,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)

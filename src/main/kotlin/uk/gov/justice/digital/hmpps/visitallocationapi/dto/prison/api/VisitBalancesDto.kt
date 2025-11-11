@@ -5,15 +5,15 @@ import java.time.LocalDate
 
 @Schema(description = "Balances of visit orders and privilege visit orders")
 data class VisitBalancesDto(
-  @Schema(required = true, description = "Balance of visit orders remaining")
+  @param:Schema(required = true, description = "Balance of visit orders remaining")
   val remainingVo: Int,
 
-  @Schema(required = true, description = "Balance of privilege visit orders remaining")
+  @param:Schema(required = true, description = "Balance of privilege visit orders remaining")
   val remainingPvo: Int,
 
-  @Schema(required = false, description = "Date of last IEP allocation")
+  @param:Schema(required = false, description = "Date of last IEP allocation")
   val latestIepAdjustDate: LocalDate?,
 
-  @Schema(required = false, description = "Date of last Priv IEP allocation")
+  @param:Schema(required = false, description = "Date of last Priv IEP allocation")
   val latestPrivIepAdjustDate: LocalDate?,
 )

@@ -17,7 +17,7 @@ class PrisonerRetryService(
   private val visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService,
   private val incentivesClient: IncentivesClient,
   private val prisonerSearchClient: PrisonerSearchClient,
-  @Lazy
+  @param:Lazy
   private val processPrisonerService: ProcessPrisonerService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,

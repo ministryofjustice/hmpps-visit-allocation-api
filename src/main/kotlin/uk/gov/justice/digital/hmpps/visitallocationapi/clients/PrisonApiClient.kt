@@ -15,7 +15,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalan
 
 @Component
 class PrisonApiClient(
-  @Qualifier("prisonApiWebClient") private val webClient: WebClient,
+  @param:Qualifier("prisonApiWebClient") private val webClient: WebClient,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)

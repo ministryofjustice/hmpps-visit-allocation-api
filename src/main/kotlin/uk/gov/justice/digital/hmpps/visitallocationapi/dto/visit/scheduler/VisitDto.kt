@@ -8,12 +8,12 @@ import io.swagger.v3.oas.annotations.media.Schema
 @Schema(description = "Visit")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class VisitDto(
-  @Schema(description = "Visit Reference", example = "v9-d7-ed-7u", required = true)
+  @param:Schema(description = "Visit Reference", example = "v9-d7-ed-7u", required = true)
   val reference: String,
-  @Schema(description = "Prisoner Id", example = "AF34567G", required = true)
+  @param:Schema(description = "Prisoner Id", example = "AF34567G", required = true)
   val prisonerId: String,
-  @JsonProperty("prisonId")
-  @JsonAlias("prisonCode")
-  @Schema(description = "Prison Id", example = "MDI", required = true)
+  @param:JsonProperty("prisonId")
+  @param:JsonAlias("prisonCode")
+  @param:Schema(description = "Prison Id", example = "MDI", required = true)
   val prisonCode: String,
 )

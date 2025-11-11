@@ -11,14 +11,14 @@ import java.time.Duration
 
 @Configuration
 class WebClientConfiguration(
-  @Value("\${hmpps-auth.url}") val hmppsAuthBaseUri: String,
-  @Value("\${prisoner.search.url}") private val prisonSearchBaseUrl: String,
-  @Value("\${incentives.api.url}") private val incentivesBaseUrl: String,
-  @Value("\${prison.api.url}") private val prisonApiBaseUrl: String,
-  @Value("\${visit-scheduler.api.url}") private val visitSchedulerBaseUrl: String,
+  @param:Value("\${hmpps-auth.url}") val hmppsAuthBaseUri: String,
+  @param:Value("\${prisoner.search.url}") private val prisonSearchBaseUrl: String,
+  @param:Value("\${incentives.api.url}") private val incentivesBaseUrl: String,
+  @param:Value("\${prison.api.url}") private val prisonApiBaseUrl: String,
+  @param:Value("\${visit-scheduler.api.url}") private val visitSchedulerBaseUrl: String,
 
-  @Value("\${api.timeout:10s}") private val apiTimeout: Duration,
-  @Value("\${api.health-timeout:2s}") val healthTimeout: Duration,
+  @param:Value("\${api.timeout:10s}") private val apiTimeout: Duration,
+  @param:Value("\${api.health-timeout:2s}") val healthTimeout: Duration,
 ) {
   private enum class HmppsAuthClientRegistrationId(val clientRegistrationId: String) {
     VISIT_SCHEDULER("other-hmpps-apis"),
