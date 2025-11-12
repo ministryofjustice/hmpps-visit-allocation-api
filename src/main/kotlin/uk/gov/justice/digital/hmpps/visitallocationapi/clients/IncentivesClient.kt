@@ -16,7 +16,7 @@ import java.util.concurrent.TimeoutException
 
 @Component
 class IncentivesClient(
-  @Qualifier("incentivesWebClient") private val webClient: WebClient,
+  @param:Qualifier("incentivesWebClient") private val webClient: WebClient,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)

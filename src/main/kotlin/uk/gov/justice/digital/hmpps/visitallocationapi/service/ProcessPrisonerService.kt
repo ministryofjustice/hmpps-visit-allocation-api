@@ -38,7 +38,7 @@ class ProcessPrisonerService(
   private val changeLogService: ChangeLogService,
   private val telemetryClientService: TelemetryClientService,
   private val voBalancesUtil: VOBalancesUtil,
-  @Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
+  @param:Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)

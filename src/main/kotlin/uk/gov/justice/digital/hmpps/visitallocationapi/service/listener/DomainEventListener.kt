@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture
 class DomainEventListener(
   private val domainEventListenerService: DomainEventListenerService,
   private val objectMapper: ObjectMapper,
-  @Value("\${domain-event-processing.enabled}") val domainEventProcessingEnabled: Boolean,
+  @param:Value("\${domain-event-processing.enabled}") val domainEventProcessingEnabled: Boolean,
 ) {
   companion object {
     const val PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY = "prisonvisitsallocationevents"
