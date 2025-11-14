@@ -3,7 +3,7 @@ plugins {
   kotlin("plugin.spring") version "2.2.21"
   kotlin("plugin.jpa") version "2.2.21"
   kotlin("plugin.allopen") version "2.2.21"
-  id("org.owasp.dependencycheck") version "12.1.8"
+  id("org.owasp.dependencycheck") version "12.1.9"
 }
 
 configurations {
@@ -26,7 +26,7 @@ dependencies {
   runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:1.8.1")
-  testImplementation("org.wiremock:wiremock-standalone:3.13.1")
+  testImplementation("org.wiremock:wiremock-standalone:3.13.2")
   testImplementation("io.swagger.parser.v3:swagger-parser:2.1.35") {
     exclude(group = "io.swagger.core.v3")
   }
