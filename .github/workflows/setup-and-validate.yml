@@ -32,7 +32,7 @@ jobs:
           - 4566:4566
           - 4571:4571
       postgres:
-        image: postgres:17.6
+        image: postgres:17.7
         env:
           POSTGRES_USER: visit_allocation
           POSTGRES_PASSWORD: visit_allocation
