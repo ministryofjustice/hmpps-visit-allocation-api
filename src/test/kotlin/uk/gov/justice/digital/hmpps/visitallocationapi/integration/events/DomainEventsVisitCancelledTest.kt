@@ -101,7 +101,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
   }
 
   @Test
-  fun `when domain event visit cancelled is found, if negative VO used, then negative VO is removed`() {
+  fun `when domain event visit cancelled is found, if negative VO used, then negative VO is repaid`() {
     // Given
     val visitReference = "ab-cd-ef-gh"
     val prisonId = "HEI"
@@ -162,7 +162,84 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.size).isEqualTo(0)
 
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
-    assertThat(negativeVisitOrders.size).isEqualTo(0)
+    assertThat(negativeVisitOrders.size).isEqualTo(1)
+
+    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
+    assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+  }
+
+  @Test
+  fun `when domain event visit cancelled is found, if negative VO already repaid, but prisoner has negative balance, then negative VO is removed`() {
+    // Given
+    val visitReference = "ab-cd-ef-gh"
+    val prisonId = "HEI"
+    val prisonerId = "AA123456"
+
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+
+    val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    dpsPrisoner.negativeVisitOrders.add(
+      NegativeVisitOrder(
+        type = VisitOrderType.VO,
+        status = NegativeVisitOrderStatus.REPAID,
+        createdTimestamp = LocalDateTime.now().minusDays(1),
+        visitReference = visitReference,
+        prisoner = dpsPrisoner,
+      ),
+    )
+    dpsPrisoner.negativeVisitOrders.add(
+      NegativeVisitOrder(
+        type = VisitOrderType.VO,
+        status = NegativeVisitOrderStatus.USED,
+        createdTimestamp = LocalDateTime.now().minusDays(1),
+        visitReference = null,
+        prisoner = dpsPrisoner,
+      ),
+    )
+
+    dpsPrisoner.changeLogs.add(
+      ChangeLog(
+        changeTimestamp = LocalDateTime.now().minusSeconds(1),
+        changeType = ChangeLogType.BATCH_PROCESS,
+        changeSource = ChangeLogSource.SYSTEM,
+        userId = "SYSTEM",
+        comment = "Random existing changeLog",
+        prisoner = dpsPrisoner,
+        visitOrderBalance = 2,
+        privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
+      ),
+    )
+    prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson(visitReference),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN", convictedStatus = "Convicted"))
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
+    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
+    await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.size).isEqualTo(0)
+
+    val negativeVisitOrders = negativeVisitOrderRepository.findAll()
+    assertThat(negativeVisitOrders.size).isEqualTo(2)
 
     val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
