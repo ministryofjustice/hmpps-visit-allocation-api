@@ -41,7 +41,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.MIGRATION,
       userName = SYSTEM_USER_ID,
-      description = "migrated prisoner from nomis to dps",
       attributes = emptyMap(),
     )
   }
@@ -53,7 +52,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.SYNC_FROM_NOMIS,
       userName = SYSTEM_USER_ID,
-      description = "synced prisoner with adjustment code ${syncDto.adjustmentReasonCode.name}",
       attributes = emptyMap(),
     )
   }
@@ -65,7 +63,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.SYNC_FROM_NOMIS,
       userName = SYSTEM_USER_ID,
-      description = "synced prisoner with domain event ${domainEventType.value}",
       attributes = emptyMap(),
     )
   }
@@ -84,7 +81,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = visitOrderHistoryType,
       userName = SYSTEM_USER_ID,
-      description = "changed via nightly batch process",
       attributes = attributes,
     )
   }
@@ -97,7 +93,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT,
       userName = SYSTEM_USER_ID,
-      description = "allocated to $visitReference",
       attributes = attributes,
     )
   }
@@ -110,7 +105,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
       userName = SYSTEM_USER_ID,
-      description = "allocated refunded as $visitReference cancelled",
       attributes = attributes,
     )
   }
@@ -122,7 +116,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE,
       userName = SYSTEM_USER_ID,
-      description = "allocation added as a result of prisoner $removedPrisonerId being merged into $newPrisonerId",
       attributes = mapOf(
         VisitOrderHistoryAttributeType.NEW_PRISONER_ID.name to newPrisonerId,
         VisitOrderHistoryAttributeType.OLD_PRISONER_ID.name to removedPrisonerId,
@@ -136,7 +129,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.PRISONER_BALANCE_RESET,
       userName = SYSTEM_USER_ID,
-      description = "prisoner balance reset for reason ${reason.name}",
       attributes = emptyMap(),
     )
   }
@@ -147,7 +139,6 @@ class VisitOrderHistoryService(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.ADMIN_RESET_NEGATIVE_BALANCE,
       userName = SYSTEM_USER_ID,
-      description = "prisoners negative balance reset by admin",
       attributes = emptyMap(),
     )
   }
@@ -172,7 +163,6 @@ class VisitOrderHistoryService(
     dpsPrisoner: PrisonerDetails,
     visitOrderHistoryType: VisitOrderHistoryType,
     userName: String,
-    description: String? = null,
     comment: String? = null,
     attributes: Map<String, String>,
   ): VisitOrderHistory {
@@ -184,7 +174,6 @@ class VisitOrderHistoryService(
       prisoner = dpsPrisoner,
       voBalance = prisonerDetailedBalance.voBalance,
       pvoBalance = prisonerDetailedBalance.pvoBalance,
-      description = description,
       comment = comment,
     )
 

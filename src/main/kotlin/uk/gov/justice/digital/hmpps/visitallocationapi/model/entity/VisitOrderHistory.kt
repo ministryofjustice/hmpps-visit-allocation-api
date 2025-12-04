@@ -46,9 +46,6 @@ class VisitOrderHistory(
   @Column
   var comment: String? = null,
 
-  @Column
-  var description: String? = null,
-
   @OneToMany(mappedBy = "visitOrderHistory", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   val visitOrderHistoryAttributes: MutableList<VisitOrderHistoryAttributes> = mutableListOf(),
 )

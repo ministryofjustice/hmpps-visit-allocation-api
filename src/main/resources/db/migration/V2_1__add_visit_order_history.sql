@@ -7,8 +7,7 @@ CREATE TABLE visit_order_history
     vo_balance              integer          NOT NULL,
     pvo_balance             integer          NOT NULL,
     user_name                VARCHAR(50)      NOT NULL,
-    comment                 text,
-    description             text
+    comment                 text
 );
 
 CREATE INDEX idx_visit_order_history_prisoner_id ON visit_order_history (prisoner_id);
