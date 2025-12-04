@@ -450,7 +450,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     assertThat(visitOrderHistoryList.size).isEqualTo(4)
     assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
     assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ACCUMULATION, attributes = emptyMap())
-    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 4, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH"))
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 4, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH"))
     assertVisitOrderHistory(visitOrderHistoryList[3], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 5, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
   }
 

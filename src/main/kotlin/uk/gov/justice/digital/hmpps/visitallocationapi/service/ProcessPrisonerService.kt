@@ -324,11 +324,13 @@ class ProcessPrisonerService(
       processPrisonerAccumulation(dpsPrisonerDetails, prisonIncentiveAmounts)
       logAccumulationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsBefore)
 
+      val dpsPrisonerDetailsAfterAccumulation = dpsPrisonerDetails.snapshot()
       processPrisonerAllocation(dpsPrisonerDetails, prisonIncentiveAmounts)
-      logAllocationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsBefore, prisonerIncentive.iepCode)
+      logAllocationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsAfterAccumulation, prisonerIncentive.iepCode)
 
+      val dpsPrisonerDetailsAfterAllocation = dpsPrisonerDetails.snapshot()
       processPrisonerExpiration(dpsPrisonerDetails)
-      logExpirationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsBefore)
+      logExpirationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsAfterAllocation)
 
       val changeLog: ChangeLog? = if (PrisonerChangeTrackingUtil.hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
         changeLogService.createLogBatchProcess(dpsPrisonerDetails).also {
@@ -551,6 +553,12 @@ class ProcessPrisonerService(
     if (PrisonerChangeTrackingUtil.hasAccumulationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)) {
       LOG.debug("logging accumulation batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
       visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.ACCUMULATION, setOf(VisitOrderType.VO))
+    }
+
+    // we also tend to expire VOs (not PVOs) when we accumulate, so adding an expiry entry
+    if (PrisonerChangeTrackingUtil.hasVoExpirationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)) {
+      LOG.debug("logging expiration (in accumulation) batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+      visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.EXPIRATION, setOf(VisitOrderType.VO))
     }
   }
 

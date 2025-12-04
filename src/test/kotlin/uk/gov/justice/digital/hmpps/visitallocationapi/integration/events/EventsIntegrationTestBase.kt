@@ -55,6 +55,7 @@ import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsTopic
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -270,14 +271,21 @@ abstract class EventsIntegrationTestBase {
     }
   }
 
-  protected fun createVisitOrders(visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails): List<VisitOrder> {
+  protected fun createVisitOrders(
+    visitOrderType: VisitOrderType,
+    amountToCreate: Int,
+    prisoner: PrisonerDetails,
+    status: VisitOrderStatus = VisitOrderStatus.AVAILABLE,
+    createdTimeStamp: LocalDateTime = LocalDateTime.now(),
+  ): List<VisitOrder> {
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
           type = visitOrderType,
-          status = VisitOrderStatus.AVAILABLE,
+          status = status,
           prisoner = prisoner,
+          createdTimestamp = createdTimeStamp,
         ),
       )
     }
