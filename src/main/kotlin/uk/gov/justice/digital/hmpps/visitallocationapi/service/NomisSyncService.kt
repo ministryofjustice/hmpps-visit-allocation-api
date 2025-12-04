@@ -193,7 +193,7 @@ class NomisSyncService(
       } else {
         val positiveVosToCreate = prisonerDpsBalance + balanceChange
         LOG.info("Balance increased and is positive for prisoner ${prisoner.prisonerId}, repaying all $visitOrderType and creating $positiveVosToCreate $visitOrderType")
-        prisoner.negativeVisitOrders.filter { it.type == visitOrderType }.forEach { visitOrder ->
+        prisoner.negativeVisitOrders.filter { it.type == visitOrderType && it.status == NegativeVisitOrderStatus.USED }.forEach { visitOrder ->
           visitOrder.status = NegativeVisitOrderStatus.REPAID
           visitOrder.repaidDate = LocalDate.now()
         }
