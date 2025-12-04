@@ -20,6 +20,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIn
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaymentReason
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
@@ -108,6 +109,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(3)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH"))
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
   }
 
   /**
@@ -190,6 +197,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(3)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH"))
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
   }
 
   /**
@@ -257,6 +270,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(3)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH"))
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
   }
 
   /**
@@ -345,6 +364,11 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 2, processedPrisoners = 2, failedOrSkippedPrisoners = 0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(2)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = -2, pvoBalance = -1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
   }
 
   /**
@@ -422,6 +446,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
         verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
       }
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(4)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ACCUMULATION, attributes = emptyMap())
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 4, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH"))
+    assertVisitOrderHistory(visitOrderHistoryList[3], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 5, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
   }
 
   /**
@@ -502,6 +532,13 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
         verify(snsService, times(3)).sendPrisonAllocationAdjustmentCreatedEvent(any())
       }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(4)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 26, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_EXPIRATION, attributes = emptyMap())
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 3, pvoBalance = 4, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
+    assertVisitOrderHistory(visitOrderHistoryList[3], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.PVO_EXPIRATION, attributes = emptyMap())
   }
 
   /**
@@ -579,6 +616,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedOrSkippedPrisoners = 1)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(3)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner4.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
   }
 
   /**
@@ -656,6 +699,12 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
 
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 4, processedPrisoners = 3, failedOrSkippedPrisoners = 1)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(3)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner4.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH2"))
   }
 
   /**
@@ -807,6 +856,9 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
       processedPrisoners = 1,
       failedOrSkippedPrisoners = 0,
     )
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isNotEqualTo(0)
   }
 
   /**
@@ -833,6 +885,9 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
       assertThat(visitOrders.size).isEqualTo(0)
       val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
       assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get convicted prisoners by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
+
+      val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+      assertThat(visitOrderHistoryList.size).isEqualTo(0)
     }
   }
 
@@ -861,6 +916,9 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
       assertThat(visitOrders.size).isEqualTo(0)
       val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
       assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get incentive levels by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
+
+      val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+      assertThat(visitOrderHistoryList.size).isEqualTo(0)
     }
   }
 
@@ -890,6 +948,9 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
       assertThat(visitOrders.size).isEqualTo(0)
       val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
       assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], failureMessage = "failed to get incentive levels by prisonId - $PRISON_CODE", convictedPrisoners = null, processedPrisoners = null, failedOrSkippedPrisoners = null)
+
+      val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+      assertThat(visitOrderHistoryList.size).isEqualTo(0)
     }
   }
 
@@ -939,6 +1000,9 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     verifyNoInteractions(snsService)
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 1, processedPrisoners = 0, failedOrSkippedPrisoners = 1)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   private fun assertVisitOrdersAssignedBy(visitOrders: List<VisitOrder>, prisonerId: String, type: VisitOrderType, status: VisitOrderStatus, total: Int) {

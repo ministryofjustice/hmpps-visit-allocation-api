@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitOrderHistoryService
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 import java.time.LocalDate
 
@@ -42,6 +43,9 @@ class NomisSyncServiceTest {
 
   @Mock
   private lateinit var changeLogService: ChangeLogService
+
+  @Mock
+  private lateinit var visitOrderHistoryService: VisitOrderHistoryService
 
   @Mock
   private lateinit var prisonApiClient: PrisonApiClient

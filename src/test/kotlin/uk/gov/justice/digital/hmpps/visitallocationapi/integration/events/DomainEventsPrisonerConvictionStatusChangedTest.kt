@@ -1,5 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
+import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
@@ -49,6 +50,9 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     // Then
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -82,5 +86,7 @@ class DomainEventsPrisonerConvictionStatusChangedTest : EventsIntegrationTestBas
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     verifyNoInteractions(nomisSyncService)
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 }

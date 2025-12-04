@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
 import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.awaitility.kotlin.await
 import org.awaitility.kotlin.matches
 import org.awaitility.kotlin.untilAsserted
@@ -15,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -58,6 +60,10 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
 
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(1) //  STD level = 1 VO & 0 PVO
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
   }
 
   @Test
@@ -90,6 +96,9 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitOrderRepository, times(0)).saveAll(any<List<VisitOrder>>()) }
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -122,6 +131,9 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitOrderRepository, times(0)).saveAll(any<List<VisitOrder>>()) }
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -154,6 +166,9 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitOrderRepository, times(0)).saveAll(any<List<VisitOrder>>()) }
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -186,6 +201,9 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitOrderRepository, times(0)).saveAll(any<List<VisitOrder>>()) }
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -217,6 +235,9 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitOrderRepository, times(0)).saveAll(any<List<VisitOrder>>()) }
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -248,5 +269,8 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(visitOrderRepository, times(0)).saveAll(any<List<VisitOrder>>()) }
     val visitOrders = visitOrderRepository.findAll()
     Assertions.assertThat(visitOrders.size).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 }

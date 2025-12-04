@@ -13,7 +13,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import java.time.LocalDateTime
 
 @Entity
@@ -29,7 +29,7 @@ class VisitOrderHistory(
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  val type: ChangeLogType,
+  val type: VisitOrderHistoryType,
 
   @Column(nullable = false)
   var createdTimestamp: LocalDateTime = LocalDateTime.now(),
@@ -46,6 +46,9 @@ class VisitOrderHistory(
   @Column
   var comment: String? = null,
 
-  @OneToMany(mappedBy = "visitOrderHistory", fetch = FetchType.LAZY, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
+  @Column
+  var description: String? = null,
+
+  @OneToMany(mappedBy = "visitOrderHistory", fetch = FetchType.EAGER, cascade = [CascadeType.ALL], orphanRemoval = true)
   val visitOrderHistoryAttributes: MutableList<VisitOrderHistoryAttributes> = mutableListOf(),
 )
