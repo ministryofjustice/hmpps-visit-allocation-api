@@ -15,6 +15,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Attri
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.VISIT_REFERENCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -102,7 +103,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf("VISIT_REFERENCE" to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -173,7 +174,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf("VISIT_REFERENCE" to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -254,7 +255,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf("VISIT_REFERENCE" to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -300,7 +301,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf("VISIT_REFERENCE" to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test

@@ -8,6 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType
 
 @Entity
 @Table(name = "visit_order_history_attributes")
@@ -21,7 +22,7 @@ open class VisitOrderHistoryAttributes(
   var visitOrderHistory: VisitOrderHistory,
 
   @Column(nullable = false)
-  val attributeType: String,
+  val attributeType: VisitOrderHistoryAttributeType,
 
   @Column(nullable = false)
   val attributeValue: String,

@@ -13,6 +13,8 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.NEW_PRISONER_ID
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.OLD_PRISONER_ID
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -224,7 +226,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 5, pvoBalance = 8, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE, attributes = mapOf("OLD_PRISONER_ID" to removedPrisonerId, "NEW_PRISONER_ID" to prisonerId))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 5, pvoBalance = 8, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE, attributes = mapOf(OLD_PRISONER_ID to removedPrisonerId, NEW_PRISONER_ID to prisonerId))
   }
 
   @Test
@@ -316,7 +318,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 3, pvoBalance = 5, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE, attributes = mapOf("OLD_PRISONER_ID" to removedPrisonerId, "NEW_PRISONER_ID" to prisonerId))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 3, pvoBalance = 5, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE, attributes = mapOf(OLD_PRISONER_ID to removedPrisonerId, NEW_PRISONER_ID to prisonerId))
   }
 
   @Test

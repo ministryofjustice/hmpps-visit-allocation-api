@@ -13,6 +13,7 @@ import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.VISIT_REFERENCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -90,7 +91,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf("VISIT_REFERENCE" to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -151,7 +152,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf("VISIT_REFERENCE" to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -214,7 +215,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf("VISIT_REFERENCE" to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test

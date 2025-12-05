@@ -68,7 +68,6 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(3)
 
-    // TODO Q - should there be an entry against movedToPrisonerId as well?
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
     assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = movedFromPrisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
@@ -116,7 +115,6 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     assertThat(movedToPrisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(14))
     assertThat(movedToPrisonerDetails.lastPvoAllocatedDate).isNull()
 
-    // TODO Q - should there be an entry against movedToPrisonerId as well?
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
     assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = movedToPrisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())

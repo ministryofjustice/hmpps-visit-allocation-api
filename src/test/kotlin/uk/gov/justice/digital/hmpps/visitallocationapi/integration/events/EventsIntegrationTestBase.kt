@@ -19,6 +19,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalan
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
@@ -314,7 +315,7 @@ abstract class EventsIntegrationTestBase {
     pvoBalance: Int,
     userName: String,
     type: VisitOrderHistoryType,
-    attributes: Map<String, String>,
+    attributes: Map<VisitOrderHistoryAttributeType, String>,
   ) {
     assertThat(visitOrderHistory.prisoner.prisonerId).isEqualTo(prisonerId)
     assertThat(visitOrderHistory.comment).isEqualTo(comment)
@@ -322,7 +323,7 @@ abstract class EventsIntegrationTestBase {
     assertThat(visitOrderHistory.pvoBalance).isEqualTo(pvoBalance)
     assertThat(visitOrderHistory.userName).isEqualTo(userName)
     assertThat(visitOrderHistory.type).isEqualTo(type)
-    val visitHistoryAttributes = mutableMapOf<String, String>()
+    val visitHistoryAttributes = mutableMapOf<VisitOrderHistoryAttributeType, String>()
     visitOrderHistory.visitOrderHistoryAttributes.forEach { visitHistoryAttributes.put(it.attributeType, it.attributeValue) }
     assertThat(visitHistoryAttributes.size).isEqualTo(attributes.size)
     visitHistoryAttributes.forEach {
