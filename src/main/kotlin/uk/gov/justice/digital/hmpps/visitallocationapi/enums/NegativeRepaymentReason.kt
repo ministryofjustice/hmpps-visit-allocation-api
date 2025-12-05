@@ -5,4 +5,5 @@ enum class NegativeRepaymentReason {
   ALLOCATION,
   ADMIN_RESET,
   PRISONER_RECEIVED_RESET,
+  VISIT_ORDER_REFUND,
 }

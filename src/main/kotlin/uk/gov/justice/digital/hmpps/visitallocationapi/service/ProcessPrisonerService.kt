@@ -100,7 +100,8 @@ class ProcessPrisonerService(
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
     // Find the VO used by the visit.
-    val voUsedForVisit = dpsPrisonerDetails.visitOrders.firstOrNull { it.visitReference == visit.reference }
+    val voUsedForVisit = dpsPrisonerDetails.visitOrders
+      .firstOrNull { it.visitReference == visit.reference }
 
     if (voUsedForVisit != null) {
       if (voUsedForVisit.type == VisitOrderType.VO && hasPrisonerReachedVoCap(dpsPrisonerDetails)) {
@@ -108,21 +109,44 @@ class ProcessPrisonerService(
         return null
       }
 
-      voUsedForVisit.status = VisitOrderStatus.AVAILABLE
-      voUsedForVisit.visitReference = null
+      voUsedForVisit.apply {
+        status = VisitOrderStatus.AVAILABLE
+        visitReference = null
+      }
     } else {
-      // If none are found, find the negative VO used for the visit, and remove it, as it was never used.
+      // If none are found, find the negative VO used for the visit.
       val negativeVoUsedForVisit = dpsPrisonerDetails.negativeVisitOrders.firstOrNull { it.visitReference == visit.reference }
-      if (negativeVoUsedForVisit != null) {
-        dpsPrisonerDetails.negativeVisitOrders.remove(negativeVoUsedForVisit)
-      } else {
-        if (hasPrisonerReachedVoCap(dpsPrisonerDetails)) {
+
+      when {
+        // Aim to repay the original negative VO which was used by the visit.
+        negativeVoUsedForVisit != null && negativeVoUsedForVisit.status == NegativeVisitOrderStatus.USED -> {
+          LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} - refunding VO by removing negative VO")
+          negativeVoUsedForVisit.apply {
+            status = NegativeVisitOrderStatus.REPAID
+            repaidDate = LocalDate.now()
+            repaidReason = NegativeRepaymentReason.VISIT_ORDER_REFUND
+          }
+        }
+
+        // If the original negative VO has already been repaid by something else (such as allocation),
+        // find any negative USED VO, repay the first one.
+        dpsPrisonerDetails.negativeVisitOrders.any { it.status == NegativeVisitOrderStatus.USED } -> {
+          dpsPrisonerDetails.negativeVisitOrders.first().apply {
+            status = NegativeVisitOrderStatus.REPAID
+            repaidDate = LocalDate.now()
+            repaidReason = NegativeRepaymentReason.VISIT_ORDER_REFUND
+          }
+        }
+
+        hasPrisonerReachedVoCap(dpsPrisonerDetails) -> {
           LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} already has the maximum number of VOs. Refund for visit ${visit.reference} will not be processed.")
           return null
         }
 
-        LOG.warn("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on visit allocation api. Creating VO.")
-        dpsPrisonerDetails.visitOrders.add(createVisitOrder(dpsPrisonerDetails, VisitOrderType.VO))
+        else -> {
+          LOG.warn("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on visit allocation api. Creating VO.")
+          dpsPrisonerDetails.visitOrders.add(createVisitOrder(dpsPrisonerDetails, VisitOrderType.VO))
+        }
       }
     }
 
