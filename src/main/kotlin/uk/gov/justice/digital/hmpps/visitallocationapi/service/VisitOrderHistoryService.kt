@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.VisitOrderHistoryDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType
@@ -22,6 +23,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHi
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHistoryAttributes
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderHistoryRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -33,6 +35,8 @@ class VisitOrderHistoryService(
     val logger: Logger = LoggerFactory.getLogger(this::class.java)
     const val SYSTEM_USER_ID = "SYSTEM"
   }
+
+  fun getVisitOrderHistoryForPrisoner(prisonerId: String, fromDate: LocalDate): List<VisitOrderHistoryDto> = visitOrderHistoryRepository.findVisitOrderHistoryByPrisonerIdAfterFromDateOrderByIdAsc(prisonerId, fromDate).map { VisitOrderHistoryDto(it) }
 
   fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): VisitOrderHistory {
     logger.info("Logging migration to visit_order_history table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
@@ -75,7 +79,7 @@ class VisitOrderHistoryService(
   ): VisitOrderHistory {
     logger.info("Logging sync to visit_order_history table for prisoner ${dpsPrisoner.prisonerId}, allocation batch process $allocationBatchProcessType - logBatchProcess")
     val visitOrderHistoryType = getVisitHistoryType(allocationBatchProcessType, visitOrderTypes)
-    val attributes = prisonerIncentiveLevel?.let { mapOf(VisitOrderHistoryAttributeType.INCENTIVE_LEVEL.name to prisonerIncentiveLevel) } ?: emptyMap()
+    val attributes = prisonerIncentiveLevel?.let { mapOf(VisitOrderHistoryAttributeType.INCENTIVE_LEVEL to prisonerIncentiveLevel) } ?: emptyMap()
 
     return createVisitOrderHistory(
       dpsPrisoner = dpsPrisoner,
@@ -87,7 +91,7 @@ class VisitOrderHistoryService(
 
   fun logAllocationUsedByVisit(dpsPrisoner: PrisonerDetails, visitReference: String): VisitOrderHistory {
     logger.info("Logging to visit_order_history table for prisoner ${dpsPrisoner.prisonerId} - logAllocationUsedByVisit")
-    val attributes = mapOf(VisitOrderHistoryAttributeType.VISIT_REFERENCE.name to visitReference)
+    val attributes = mapOf(VisitOrderHistoryAttributeType.VISIT_REFERENCE to visitReference)
 
     return createVisitOrderHistory(
       dpsPrisoner = dpsPrisoner,
@@ -99,7 +103,7 @@ class VisitOrderHistoryService(
 
   fun logAllocationRefundedByVisitCancelled(dpsPrisoner: PrisonerDetails, visitReference: String): VisitOrderHistory {
     logger.info("Logging to visit_order_history table for prisoner ${dpsPrisoner.prisonerId} - logAllocationRefundedByVisitCancelled")
-    val attributes = mapOf(VisitOrderHistoryAttributeType.VISIT_REFERENCE.name to visitReference)
+    val attributes = mapOf(VisitOrderHistoryAttributeType.VISIT_REFERENCE to visitReference)
 
     return createVisitOrderHistory(
       dpsPrisoner = dpsPrisoner,
@@ -117,8 +121,8 @@ class VisitOrderHistoryService(
       visitOrderHistoryType = VisitOrderHistoryType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE,
       userName = SYSTEM_USER_ID,
       attributes = mapOf(
-        VisitOrderHistoryAttributeType.NEW_PRISONER_ID.name to newPrisonerId,
-        VisitOrderHistoryAttributeType.OLD_PRISONER_ID.name to removedPrisonerId,
+        VisitOrderHistoryAttributeType.NEW_PRISONER_ID to newPrisonerId,
+        VisitOrderHistoryAttributeType.OLD_PRISONER_ID to removedPrisonerId,
       ),
     )
   }
@@ -164,7 +168,7 @@ class VisitOrderHistoryService(
     visitOrderHistoryType: VisitOrderHistoryType,
     userName: String,
     comment: String? = null,
-    attributes: Map<String, String>,
+    attributes: Map<VisitOrderHistoryAttributeType, String>,
   ): VisitOrderHistory {
     val prisonerDetailedBalance = voBalancesUtil.getPrisonersDetailedBalance(dpsPrisoner)
 
@@ -181,7 +185,7 @@ class VisitOrderHistoryService(
       visitOrderHistory.visitOrderHistoryAttributes.add(
         VisitOrderHistoryAttributes(
           visitOrderHistory = visitOrderHistory,
-          attributeType = attribute.key,
+          attributeType = attribute.key.name,
           attributeValue = attribute.value,
         ),
       )
