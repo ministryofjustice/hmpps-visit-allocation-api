@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.INCENTIVE_LEVEL
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
@@ -86,8 +87,8 @@ class AllocationVisitOrderHistoryTest : EventsIntegrationTestBase() {
     assertThat(visitOrderHistoryList.size).isEqualTo(5)
     assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 25, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ACCUMULATION, attributes = emptyMap())
     assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 25, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_EXPIRATION, attributes = emptyMap())
-    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 26, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
-    assertVisitOrderHistory(visitOrderHistoryList[3], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 23, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "ENH"))
+    assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 26, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf(INCENTIVE_LEVEL to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[3], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 23, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf(INCENTIVE_LEVEL to "ENH"))
     assertVisitOrderHistory(visitOrderHistoryList[4], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 13, userName = "SYSTEM", type = VisitOrderHistoryType.PVO_EXPIRATION, attributes = emptyMap())
   }
 
@@ -134,6 +135,6 @@ class AllocationVisitOrderHistoryTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 0, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf("INCENTIVE_LEVEL" to "STD"))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 0, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf(INCENTIVE_LEVEL to "STD"))
   }
 }

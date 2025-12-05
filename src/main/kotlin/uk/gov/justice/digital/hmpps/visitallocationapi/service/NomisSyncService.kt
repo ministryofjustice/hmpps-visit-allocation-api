@@ -47,8 +47,10 @@ class NomisSyncService(
 
     compareBalanceBeforeSync(syncDto, prisonerBalance)
 
-    // TODO - change below log to use voBalancesUtil for VO and NVO count?
+    val detailedBalance = voBalancesUtil.getPrisonersDetailedBalance(dpsPrisoner)
     LOG.info("Current loaded prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
+
+    LOG.info("Prisoner detailed balance - ${dpsPrisoner.prisonerId}, detailed balance - $detailedBalance")
 
     // If VO balance has changed, sync it
     if (syncDto.oldVoBalance != null && syncDto.changeToVoBalance != null) {
@@ -124,7 +126,6 @@ class NomisSyncService(
     )
 
     if (voBalanceChange != 0 || pvoBalanceChange != 0) {
-      // TODO does this need adding to visit order history even when balances have not changed?
       visitOrderHistoryService.logSyncEventChange(dpsPrisoner, domainEventType)
       LOG.info("Balance has changed as a result of sync for prisoner $prisonerId, for domain event ${domainEventType.value}")
       dpsPrisoner.changeLogs.add(changeLogService.createLogSyncEventChange(dpsPrisoner, domainEventType))

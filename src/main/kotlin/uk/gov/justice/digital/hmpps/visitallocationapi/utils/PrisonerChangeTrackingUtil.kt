@@ -23,14 +23,12 @@ class PrisonerChangeTrackingUtil {
       return changedVos(before.vos, after.vos) || changedNvos(before.nvos, after.nvos)
     }
 
-    // TODO - should we check this on DetailedBalanceDto?
     fun hasAccumulationOccurred(before: PrisonerSnap, afterEntity: PrisonerDetails): Boolean {
       val beforeAccumulatedVosCount = before.vos.count { it.type == VO && it.status == ACCUMULATED }
       val afterAccumulatedVosCount = afterEntity.visitOrders.count { it.type == VO && it.status == ACCUMULATED }
       return beforeAccumulatedVosCount != afterAccumulatedVosCount
     }
 
-    // TODO - should we check this on DetailedBalanceDto?
     fun hasVoAllocationOccurred(before: PrisonerSnap, afterEntity: PrisonerDetails): Boolean {
       val beforeAvailableVosCount = before.vos.count { it.type == VO && it.status == AVAILABLE }
       val afterAvailableVosCount = afterEntity.visitOrders.count { it.type == VO && it.status == AVAILABLE }

@@ -1,8 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.enums
 
 enum class VisitOrderHistoryType {
-  // TODO -added this if we decide to migrate from change_log
-  INITIAL_MIGRATION,
   MIGRATION,
   VO_ACCUMULATION,
   VO_ALLOCATION,
