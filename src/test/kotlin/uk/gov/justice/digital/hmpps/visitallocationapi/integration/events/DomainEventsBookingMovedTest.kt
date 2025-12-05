@@ -12,6 +12,7 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
@@ -66,6 +67,10 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(3)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = movedFromPrisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -109,6 +114,10 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     val movedToPrisonerDetails = prisonerDetailsRepository.findById(movedToPrisonerId).get()
     assertThat(movedToPrisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(14))
     assertThat(movedToPrisonerDetails.lastPvoAllocatedDate).isNull()
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = movedToPrisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -143,6 +152,8 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -187,6 +198,10 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     val prisoner = prisonerDetailsRepository.findById(movedFromPrisonerId).get()
     assertThat(prisoner.visitOrders.count()).isEqualTo(0)
     assertThat(prisoner.visitOrders.count { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = movedFromPrisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -220,5 +235,8 @@ class DomainEventsBookingMovedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 }

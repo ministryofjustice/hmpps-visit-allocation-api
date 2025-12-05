@@ -10,8 +10,10 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.PrisonerSnap
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.snapshot
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaymentReason
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
@@ -37,6 +39,7 @@ class ProcessPrisonerService(
   private val prisonerRetryService: PrisonerRetryService,
   private val changeLogService: ChangeLogService,
   private val telemetryClientService: TelemetryClientService,
+  private val visitOrderHistoryService: VisitOrderHistoryService,
   private val voBalancesUtil: VOBalancesUtil,
   @param:Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
@@ -80,6 +83,7 @@ class ProcessPrisonerService(
       dpsPrisonerDetails.negativeVisitOrders.add(negativeVo)
     }
 
+    visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
     val changeLog = changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
     dpsPrisonerDetails.changeLogs.add(changeLog)
 
@@ -150,6 +154,7 @@ class ProcessPrisonerService(
       }
     }
 
+    visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference)
     val changeLog = changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference)
     dpsPrisonerDetails.changeLogs.add(changeLog)
 
@@ -202,6 +207,8 @@ class ProcessPrisonerService(
     }
 
     return if (visitOrdersToBeCreated > 0 || privilegedVisitOrdersToBeCreated > 0) {
+      visitOrderHistoryService.logAllocationForPrisonerMerge(dpsPrisoner = newPrisonerDetails, newPrisonerId = newPrisonerId, removedPrisonerId = removedPrisonerId)
+
       // add a changelog entry if new VO / PVOs have been added
       val changeLog = changeLogService.createLogAllocationForPrisonerMerge(
         dpsPrisoner = newPrisonerDetails,
@@ -245,6 +252,7 @@ class ProcessPrisonerService(
         it.repaidReason = NegativeRepaymentReason.PRISONER_RECEIVED_RESET
       }
 
+    visitOrderHistoryService.logPrisonerBalanceReset(dpsPrisonerDetails, reason)
     val changeLog = changeLogService.createLogPrisonerBalanceReset(dpsPrisonerDetails, reason)
     dpsPrisonerDetails.changeLogs.add(changeLog)
 
@@ -280,6 +288,7 @@ class ProcessPrisonerService(
       it.repaidReason = NegativeRepaymentReason.ADMIN_RESET
     }
 
+    visitOrderHistoryService.logPrisonerNegativeBalanceAdminReset(details)
     val changeLog = changeLogService.createLogPrisonerNegativeBalanceAdminReset(details)
     details.changeLogs.add(changeLog)
 
@@ -313,8 +322,15 @@ class ProcessPrisonerService(
       val dpsPrisonerDetailsBefore = dpsPrisonerDetails.snapshot()
 
       processPrisonerAccumulation(dpsPrisonerDetails, prisonIncentiveAmounts)
+      logAccumulationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsBefore)
+
+      val dpsPrisonerDetailsAfterAccumulation = dpsPrisonerDetails.snapshot()
       processPrisonerAllocation(dpsPrisonerDetails, prisonIncentiveAmounts)
+      logAllocationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsAfterAccumulation, prisonerIncentive.iepCode)
+
+      val dpsPrisonerDetailsAfterAllocation = dpsPrisonerDetails.snapshot()
       processPrisonerExpiration(dpsPrisonerDetails)
+      logExpirationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsAfterAllocation)
 
       val changeLog: ChangeLog? = if (PrisonerChangeTrackingUtil.hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
         changeLogService.createLogBatchProcess(dpsPrisonerDetails).also {
@@ -528,4 +544,58 @@ class ProcessPrisonerService(
   }
 
   private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }
+
+  private fun logAccumulationBatchProcess(
+    dpsPrisonerDetailsAfter: PrisonerDetails,
+    dpsPrisonerDetailsBefore: PrisonerSnap,
+  ) {
+    LOG.debug("entered logAccumulationBatchProcess for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+    if (PrisonerChangeTrackingUtil.hasAccumulationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)) {
+      LOG.debug("logging accumulation batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+      visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.ACCUMULATION, setOf(VisitOrderType.VO))
+    }
+
+    // we also tend to expire VOs (not PVOs) when we accumulate, so adding an expiry entry
+    if (PrisonerChangeTrackingUtil.hasVoExpirationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)) {
+      LOG.debug("logging expiration (in accumulation) batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+      visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.EXPIRATION, setOf(VisitOrderType.VO))
+    }
+  }
+
+  private fun logAllocationBatchProcess(
+    dpsPrisonerDetailsAfter: PrisonerDetails,
+    dpsPrisonerDetailsBefore: PrisonerSnap,
+    prisonIncentiveLevel: String,
+  ) {
+    LOG.debug("entered logAllocationBatchProcess for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+    val vosAllocated = PrisonerChangeTrackingUtil.hasVoAllocationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)
+    val pVOsAllocated = PrisonerChangeTrackingUtil.hasPVoAllocationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)
+    val allocatedVisitOrderTypes = mutableSetOf<VisitOrderType>()
+
+    if (vosAllocated) allocatedVisitOrderTypes.add(VisitOrderType.VO)
+    if (pVOsAllocated) allocatedVisitOrderTypes.add(VisitOrderType.PVO)
+
+    if (allocatedVisitOrderTypes.isNotEmpty()) {
+      LOG.debug("logging allocation batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+      visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.ALLOCATION, allocatedVisitOrderTypes, prisonIncentiveLevel)
+    }
+  }
+
+  private fun logExpirationBatchProcess(
+    dpsPrisonerDetailsAfter: PrisonerDetails,
+    dpsPrisonerDetailsBefore: PrisonerSnap,
+  ) {
+    LOG.debug("entered logExpirationBatchProcess for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+    val vosExpired = PrisonerChangeTrackingUtil.hasVoExpirationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)
+    val pVOsExpired = PrisonerChangeTrackingUtil.hasPVoExpirationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)
+    val expiredVisitOrderTypes = mutableSetOf<VisitOrderType>()
+
+    if (vosExpired) expiredVisitOrderTypes.add(VisitOrderType.VO)
+    if (pVOsExpired) expiredVisitOrderTypes.add(VisitOrderType.PVO)
+
+    if (expiredVisitOrderTypes.isNotEmpty()) {
+      LOG.debug("logging expiration batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+      visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.EXPIRATION, expiredVisitOrderTypes)
+    }
+  }
 }

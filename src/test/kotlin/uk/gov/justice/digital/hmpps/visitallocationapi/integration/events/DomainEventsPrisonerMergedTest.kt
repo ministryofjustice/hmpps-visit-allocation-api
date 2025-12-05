@@ -13,6 +13,9 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.NEW_PRISONER_ID
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.OLD_PRISONER_ID
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
@@ -63,6 +66,10 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     val prisonerDetails = prisonerDetailsRepository.findAll()
     assertThat(prisonerDetails.size).isEqualTo(1)
     assertThat(prisonerDetails[0].prisonerId).isEqualTo(prisonerId)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -94,6 +101,8 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -125,6 +134,9 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -164,6 +176,9 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(prisonerDetails[0].prisonerId).isEqualTo(prisonerId)
     assertThat(prisonerDetails[0].lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(14))
     assertThat(prisonerDetails[0].lastPvoAllocatedDate).isNull()
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -209,6 +224,9 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(5)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(8)
     verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 5, pvoBalance = 8, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE, attributes = mapOf(OLD_PRISONER_ID to removedPrisonerId, NEW_PRISONER_ID to prisonerId))
   }
 
   @Test
@@ -254,6 +272,8 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(3)
     verify(changeLogService, times(0)).createLogAllocationForPrisonerMerge(any(), any(), any())
     verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -296,6 +316,9 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(3)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(5)
     verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 3, pvoBalance = 5, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_ADDED_AFTER_PRISONER_MERGE, attributes = mapOf(OLD_PRISONER_ID to removedPrisonerId, NEW_PRISONER_ID to prisonerId))
   }
 
   @Test
@@ -332,6 +355,8 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(0)
     verify(changeLogService, times(0)).createLogAllocationForPrisonerMerge(any(), any(), any())
     verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -363,5 +388,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 }

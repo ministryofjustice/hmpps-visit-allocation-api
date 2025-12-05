@@ -15,6 +15,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Attri
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.VISIT_REFERENCE
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
@@ -98,6 +100,10 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -166,6 +172,9 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -243,6 +252,10 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -285,6 +298,10 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
   }
 
   @Test
@@ -337,6 +354,9 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -391,6 +411,9 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -450,6 +473,9 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -507,6 +533,9 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val changLogCount = changeLogRepository.findAll().count { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changLogCount).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -542,6 +571,9 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -577,6 +609,9 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.size).isEqualTo(0)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -605,5 +640,8 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 }

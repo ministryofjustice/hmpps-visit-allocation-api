@@ -79,6 +79,7 @@ abstract class IntegrationTestBase {
     scopes: List<String> = listOf("read"),
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisationHeader(username = username, scope = scopes, roles = roles)
 
+  @BeforeEach
   @AfterEach
   fun deleteAll() {
     entityHelper.deleteAll()

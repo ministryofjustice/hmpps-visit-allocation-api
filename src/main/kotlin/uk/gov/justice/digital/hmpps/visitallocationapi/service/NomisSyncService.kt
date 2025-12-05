@@ -28,6 +28,7 @@ class NomisSyncService(
   private val prisonerDetailsService: PrisonerDetailsService,
   private val telemetryService: TelemetryClientService,
   private val changeLogService: ChangeLogService,
+  private val visitOrderHistoryService: VisitOrderHistoryService,
   private val prisonApiClient: PrisonApiClient,
   private val voBalancesUtil: VOBalancesUtil,
 ) {
@@ -46,7 +47,10 @@ class NomisSyncService(
 
     compareBalanceBeforeSync(syncDto, prisonerBalance)
 
+    val detailedBalance = voBalancesUtil.getPrisonersDetailedBalance(dpsPrisoner)
     LOG.info("Current loaded prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
+
+    LOG.info("Prisoner detailed balance - ${dpsPrisoner.prisonerId}, detailed balance - $detailedBalance")
 
     // If VO balance has changed, sync it
     if (syncDto.oldVoBalance != null && syncDto.changeToVoBalance != null) {
@@ -76,6 +80,7 @@ class NomisSyncService(
       dpsPrisoner.lastVoAllocatedDate = syncDto.createdDate
     }
 
+    visitOrderHistoryService.logSyncAdjustmentChange(syncDto, dpsPrisoner)
     dpsPrisoner.changeLogs.add(changeLogService.createLogSyncAdjustmentChange(syncDto, dpsPrisoner))
 
     LOG.info("Saving prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
@@ -121,6 +126,7 @@ class NomisSyncService(
     )
 
     if (voBalanceChange != 0 || pvoBalanceChange != 0) {
+      visitOrderHistoryService.logSyncEventChange(dpsPrisoner, domainEventType)
       LOG.info("Balance has changed as a result of sync for prisoner $prisonerId, for domain event ${domainEventType.value}")
       dpsPrisoner.changeLogs.add(changeLogService.createLogSyncEventChange(dpsPrisoner, domainEventType))
     }
@@ -233,6 +239,7 @@ class NomisSyncService(
         it.repaidDate = LocalDate.now()
       }
 
+    visitOrderHistoryService.logSyncEventChange(dpsPrisoner, domainEventType)
     dpsPrisoner.changeLogs.add(changeLogService.createLogSyncEventChange(dpsPrisoner, domainEventType))
   }
 
