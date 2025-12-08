@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType.PVO
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType.VO
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHistory
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHistoryAttributes
@@ -30,13 +31,17 @@ import java.time.LocalDate
 class VisitOrderHistoryService(
   private val visitOrderHistoryRepository: VisitOrderHistoryRepository,
   private val voBalancesUtil: VOBalancesUtil,
+  private val prisonerDetailsService: PrisonerDetailsService,
 ) {
   companion object {
     val logger: Logger = LoggerFactory.getLogger(this::class.java)
     const val SYSTEM_USER_ID = "SYSTEM"
   }
 
-  fun getVisitOrderHistoryForPrisoner(prisonerId: String, fromDate: LocalDate): List<VisitOrderHistoryDto> = visitOrderHistoryRepository.findVisitOrderHistoryByPrisonerIdAfterFromDateOrderByIdAsc(prisonerId, fromDate).map { VisitOrderHistoryDto(it) }
+  fun getVisitOrderHistoryForPrisoner(prisonerId: String, fromDate: LocalDate): List<VisitOrderHistoryDto> {
+    prisonerDetailsService.getPrisonerDetails(prisonerId) ?: throw NotFoundException("Prisoner not found for prisoner ID - $prisonerId")
+    return visitOrderHistoryRepository.findVisitOrderHistoryByPrisonerIdAfterFromDateOrderByIdAsc(prisonerId, fromDate.atStartOfDay()).map { VisitOrderHistoryDto(it) }
+  }
 
   fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): VisitOrderHistory {
     logger.info("Logging migration to visit_order_history table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
@@ -185,7 +190,7 @@ class VisitOrderHistoryService(
       visitOrderHistory.visitOrderHistoryAttributes.add(
         VisitOrderHistoryAttributes(
           visitOrderHistory = visitOrderHistory,
-          attributeType = attribute.key.name,
+          attributeType = attribute.key,
           attributeValue = attribute.value,
         ),
       )

@@ -7,20 +7,20 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.VisitOrderHistoryDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.VisitOrderHistoryRequestDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitOrderHistoryService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
+import java.time.LocalDate
 
-const val VISIT_ORDER_HISTORY = "$PRISONER_ID_PATH/visit-order-history"
+const val GET_VISIT_ORDER_HISTORY = "$PRISONER_ID_PATH/visit-order-history"
 
 @RestController
 class VisitOrderHistoryController(val visitOrderHistoryService: VisitOrderHistoryService) {
   @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API')")
-  @GetMapping(VISIT_ORDER_HISTORY)
+  @GetMapping(GET_VISIT_ORDER_HISTORY)
   @Operation(
     summary = "Endpoint to get visit order history for a prisoner.",
     description = "Takes a prisoner id and returns their visit order history, if from date supplied returns history from that date onwards, otherwise returns all history up to today.",
@@ -50,7 +50,7 @@ class VisitOrderHistoryController(val visitOrderHistoryService: VisitOrderHistor
     @Schema(description = "prisonerId", example = "AA123456", required = true)
     @PathVariable
     prisonerId: String,
-    @RequestBody
-    visitOrderHistoryRequest: VisitOrderHistoryRequestDto,
-  ): List<VisitOrderHistoryDto> = visitOrderHistoryService.getVisitOrderHistoryForPrisoner(prisonerId, visitOrderHistoryRequest.fromDate)
+    @RequestParam
+    fromDate: LocalDate,
+  ): List<VisitOrderHistoryDto> = visitOrderHistoryService.getVisitOrderHistoryForPrisoner(prisonerId, fromDate)
 }
