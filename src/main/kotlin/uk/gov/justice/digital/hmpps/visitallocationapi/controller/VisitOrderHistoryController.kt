@@ -23,11 +23,11 @@ class VisitOrderHistoryController(val visitOrderHistoryService: VisitOrderHistor
   @GetMapping(GET_VISIT_ORDER_HISTORY)
   @Operation(
     summary = "Endpoint to get visit order history for a prisoner.",
-    description = "Takes a prisoner id and returns their visit order history, if from date supplied returns history from that date onwards, otherwise returns all history up to today.",
+    description = "Returns visit order history for a prisoner on or after supplied fromDate.",
     responses = [
       ApiResponse(
         responseCode = "200",
-        description = "Prisoner visit order history returned, empty list if no history.",
+        description = "Prisoner visit order history returned from the date supplied, empty list if no history.",
       ),
       ApiResponse(
         responseCode = "401",
@@ -37,11 +37,6 @@ class VisitOrderHistoryController(val visitOrderHistoryService: VisitOrderHistor
       ApiResponse(
         responseCode = "403",
         description = "Incorrect permissions to get prisoner balance.",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
-      ),
-      ApiResponse(
-        responseCode = "404",
-        description = "Prisoner not found",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
     ],

@@ -84,18 +84,20 @@ class GetVisitOrderHistoryTest : IntegrationTestBase() {
     responseSpec.expectStatus().isOk
 
     val visitOrderHistoryList = getVisitOrderHistoryUrlResponse(responseSpec)
-
     assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
-  fun `when request to get an unknown prisoner, then status 404 NOT_FOUND is returned`() {
+  fun `when request to get an unknown prisoner, then empty list is returned`() {
     // Given
     // When
     val responseSpec = callVisitHistoryEndpoint(PRISONER_ID, LocalDate.now(), webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
 
     // Then
-    responseSpec.expectStatus().isNotFound
+    responseSpec.expectStatus().isOk
+
+    val visitOrderHistoryList = getVisitOrderHistoryUrlResponse(responseSpec)
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
