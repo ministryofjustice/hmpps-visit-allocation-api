@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.VisitOrderHistoryDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType
@@ -22,6 +23,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHi
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHistoryAttributes
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderHistoryRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
+import java.time.LocalDate
 
 @Service
 @Transactional
@@ -33,6 +35,8 @@ class VisitOrderHistoryService(
     val logger: Logger = LoggerFactory.getLogger(this::class.java)
     const val SYSTEM_USER_ID = "SYSTEM"
   }
+
+  fun getVisitOrderHistoryForPrisoner(prisonerId: String, fromDate: LocalDate): List<VisitOrderHistoryDto> = visitOrderHistoryRepository.findVisitOrderHistoryByPrisonerIdAfterFromDateOrderByIdAsc(prisonerId, fromDate.atStartOfDay()).map { VisitOrderHistoryDto(it) }
 
   fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): VisitOrderHistory {
     logger.info("Logging migration to visit_order_history table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")

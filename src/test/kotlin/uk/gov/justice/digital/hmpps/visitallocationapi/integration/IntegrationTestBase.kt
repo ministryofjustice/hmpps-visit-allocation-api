@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderHistoryRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
@@ -61,6 +62,9 @@ abstract class IntegrationTestBase {
 
   @MockitoSpyBean
   lateinit var changeLogRepository: ChangeLogRepository
+
+  @MockitoSpyBean
+  lateinit var visitOrderHistoryRepository: VisitOrderHistoryRepository
 
   @MockitoSpyBean
   lateinit var telemetryClientService: TelemetryClientService

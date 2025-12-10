@@ -16,7 +16,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundExcepti
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.BalanceService
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
-const val VO_BALANCE = "/visits/allocation/prisoner/{prisonerId}/balance"
+const val PRISONER_ID_PATH = "/visits/allocation/prisoner/{prisonerId}"
+const val VO_BALANCE = "$PRISONER_ID_PATH/balance"
 const val VO_BALANCE_DETAILED = "$VO_BALANCE/detailed"
 
 @RestController
