@@ -208,7 +208,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // prisoner should end up wth 5 VOs and 8 PVOs
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(5)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(8)
-    verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    verify(snsService, times(1)).sendPrisonAllocationPrisonerBalanceResetEvent(any())
   }
 
   @Test
@@ -253,7 +253,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(2)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(3)
     verify(changeLogService, times(0)).createLogAllocationForPrisonerMerge(any(), any(), any())
-    verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    verify(snsService, times(0)).sendPrisonAllocationPrisonerBalanceResetEvent(any())
   }
 
   @Test
@@ -295,7 +295,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // prisoner should end up wth 3 VOs and 5 PVOs
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(3)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(5)
-    verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    verify(snsService, times(1)).sendPrisonAllocationPrisonerBalanceResetEvent(any())
   }
 
   @Test
@@ -331,7 +331,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.VO }.size).isEqualTo(0)
     assertThat(availableVisitOrdersForPrisoner.filter { it.type == VisitOrderType.PVO }.size).isEqualTo(0)
     verify(changeLogService, times(0)).createLogAllocationForPrisonerMerge(any(), any(), any())
-    verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any())
+    verify(snsService, times(0)).sendPrisonAllocationPrisonerBalanceResetEvent(any())
   }
 
   @Test
