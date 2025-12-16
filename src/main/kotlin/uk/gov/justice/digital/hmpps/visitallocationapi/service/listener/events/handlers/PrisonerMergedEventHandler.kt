@@ -54,7 +54,7 @@ class PrisonerMergedEventHandler(
     if (changeLogReference != null) {
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)
       if (changeLog != null) {
-        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+        snsService.sendPrisonAllocationPrisonerBalanceResetEvent(changeLog.prisonerId)
       }
     } else {
       LOG.info("No change log generated for merge event - $info")
