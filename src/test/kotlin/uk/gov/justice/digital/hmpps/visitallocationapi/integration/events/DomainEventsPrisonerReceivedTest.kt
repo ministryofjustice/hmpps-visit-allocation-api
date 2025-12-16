@@ -13,6 +13,7 @@ import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
@@ -60,6 +61,9 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
 
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(5)
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -101,6 +105,10 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     val changeLogs = changeLogRepository.findAll()
     assertThat(changeLogs.size).isEqualTo(1)
     assertThat(changeLogs.first().changeType).isEqualTo(ChangeLogType.PRISONER_BALANCE_RESET)
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.PRISONER_BALANCE_RESET, attributes = emptyMap())
   }
 
   @Test
@@ -130,6 +138,8 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test
@@ -158,6 +168,10 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 0 }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -194,6 +208,10 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     val prisonerDetails = prisonerDetailsRepository.findById(prisonerId).get()
     assertThat(prisonerDetails.lastVoAllocatedDate).isEqualTo(LocalDate.now().minusDays(14))
     assertThat(prisonerDetails.lastPvoAllocatedDate).isNull()
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.SYNC_FROM_NOMIS, attributes = emptyMap())
   }
 
   @Test
@@ -224,5 +242,8 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 }

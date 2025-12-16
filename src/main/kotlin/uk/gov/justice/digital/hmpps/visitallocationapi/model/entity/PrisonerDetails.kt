@@ -34,6 +34,9 @@ open class PrisonerDetails(
   @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
   val changeLogs: MutableList<ChangeLog> = mutableListOf()
 
+  @OneToMany(mappedBy = "prisoner", fetch = FetchType.LAZY, cascade = [CascadeType.PERSIST, CascadeType.MERGE], orphanRemoval = true)
+  val visitOrderHistory: MutableList<VisitOrderHistory> = mutableListOf()
+
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false

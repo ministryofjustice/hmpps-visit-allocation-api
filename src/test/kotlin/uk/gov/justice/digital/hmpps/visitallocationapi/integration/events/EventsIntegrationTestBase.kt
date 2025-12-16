@@ -2,6 +2,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -18,6 +19,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalan
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
@@ -31,10 +34,12 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.Visi
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
+import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHistory
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderHistoryRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
@@ -51,6 +56,7 @@ import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.HmppsTopic
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -128,6 +134,9 @@ abstract class EventsIntegrationTestBase {
   lateinit var negativeVisitOrderRepository: NegativeVisitOrderRepository
 
   @MockitoSpyBean
+  lateinit var visitOrderHistoryRepository: VisitOrderHistoryRepository
+
+  @MockitoSpyBean
   lateinit var nomisSyncService: NomisSyncService
 
   @MockitoSpyBean
@@ -159,6 +168,7 @@ abstract class EventsIntegrationTestBase {
   @BeforeEach
   fun setup() {
     visitOrderAllocationPrisonJobRepository.deleteAll()
+    visitOrderHistoryRepository.deleteAll()
     visitOrderRepository.deleteAll()
     negativeVisitOrderRepository.deleteAll()
     prisonerDetailsRepository.deleteAll()
@@ -167,6 +177,7 @@ abstract class EventsIntegrationTestBase {
   @AfterEach
   fun cleanUp() {
     visitOrderAllocationPrisonJobRepository.deleteAll()
+    visitOrderHistoryRepository.deleteAll()
     visitOrderRepository.deleteAll()
     negativeVisitOrderRepository.deleteAll()
     prisonerDetailsRepository.deleteAll()
@@ -261,14 +272,21 @@ abstract class EventsIntegrationTestBase {
     }
   }
 
-  protected fun createVisitOrders(visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails): List<VisitOrder> {
+  protected fun createVisitOrders(
+    visitOrderType: VisitOrderType,
+    amountToCreate: Int,
+    prisoner: PrisonerDetails,
+    status: VisitOrderStatus = VisitOrderStatus.AVAILABLE,
+    createdTimeStamp: LocalDateTime = LocalDateTime.now(),
+  ): List<VisitOrder> {
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
           type = visitOrderType,
-          status = VisitOrderStatus.AVAILABLE,
+          status = status,
           prisoner = prisoner,
+          createdTimestamp = createdTimeStamp,
         ),
       )
     }
@@ -287,5 +305,29 @@ abstract class EventsIntegrationTestBase {
       )
     }
     return negativeVisitOrder
+  }
+
+  fun assertVisitOrderHistory(
+    visitOrderHistory: VisitOrderHistory,
+    prisonerId: String,
+    comment: String?,
+    voBalance: Int,
+    pvoBalance: Int,
+    userName: String,
+    type: VisitOrderHistoryType,
+    attributes: Map<VisitOrderHistoryAttributeType, String>,
+  ) {
+    assertThat(visitOrderHistory.prisoner.prisonerId).isEqualTo(prisonerId)
+    assertThat(visitOrderHistory.comment).isEqualTo(comment)
+    assertThat(visitOrderHistory.voBalance).isEqualTo(voBalance)
+    assertThat(visitOrderHistory.pvoBalance).isEqualTo(pvoBalance)
+    assertThat(visitOrderHistory.userName).isEqualTo(userName)
+    assertThat(visitOrderHistory.type).isEqualTo(type)
+    val visitHistoryAttributes = mutableMapOf<VisitOrderHistoryAttributeType, String>()
+    visitOrderHistory.visitOrderHistoryAttributes.forEach { visitHistoryAttributes.put(it.attributeType, it.attributeValue) }
+    assertThat(visitHistoryAttributes.size).isEqualTo(attributes.size)
+    visitHistoryAttributes.forEach {
+      assertThat(attributes).contains(it)
+    }
   }
 }

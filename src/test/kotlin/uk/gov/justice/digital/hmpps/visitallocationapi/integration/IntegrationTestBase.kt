@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderHistoryRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
@@ -63,6 +64,9 @@ abstract class IntegrationTestBase {
   lateinit var changeLogRepository: ChangeLogRepository
 
   @MockitoSpyBean
+  lateinit var visitOrderHistoryRepository: VisitOrderHistoryRepository
+
+  @MockitoSpyBean
   lateinit var telemetryClientService: TelemetryClientService
 
   protected lateinit var startVisitAllocationJobRoleHttpHeaders: (HttpHeaders) -> Unit
@@ -79,6 +83,7 @@ abstract class IntegrationTestBase {
     scopes: List<String> = listOf("read"),
   ): (HttpHeaders) -> Unit = jwtAuthHelper.setAuthorisationHeader(username = username, scope = scopes, roles = roles)
 
+  @BeforeEach
   @AfterEach
   fun deleteAll() {
     entityHelper.deleteAll()

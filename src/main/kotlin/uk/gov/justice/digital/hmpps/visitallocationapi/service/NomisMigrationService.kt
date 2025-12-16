@@ -20,6 +20,7 @@ import kotlin.math.abs
 class NomisMigrationService(
   private val changeLogService: ChangeLogService,
   private val prisonerDetailsService: PrisonerDetailsService,
+  private val visitOrderHistoryService: VisitOrderHistoryService,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
@@ -45,6 +46,7 @@ class NomisMigrationService(
     migrateBalance(migrationDto, VisitOrderType.VO, dpsPrisoner)
     migrateBalance(migrationDto, VisitOrderType.PVO, dpsPrisoner)
 
+    visitOrderHistoryService.logMigrationChange(migrationDto, dpsPrisoner)
     dpsPrisoner.changeLogs.add(changeLogService.createLogMigrationChange(migrationDto, dpsPrisoner))
 
     LOG.info("Finished NomisMigrationService - migratePrisoner ${migrationDto.prisonerId} successfully")
