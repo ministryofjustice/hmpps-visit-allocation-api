@@ -156,8 +156,8 @@ class GetVisitOrderHistoryTest : IntegrationTestBase() {
   ) {
     assertThat(visitOrderHistoryDto.attributes.size).isEqualTo(visitOrderHistoryAttributes.size)
     visitOrderHistoryAttributes.forEachIndexed { i, visitOrderHistoryAttribute ->
-      assertThat(visitOrderHistoryDto.attributes.toList()[i].first).isEqualTo(visitOrderHistoryAttribute.attributeType)
-      assertThat(visitOrderHistoryDto.attributes.toList()[i].second).isEqualTo(visitOrderHistoryAttribute.attributeValue)
+      assertThat(visitOrderHistoryDto.attributes[i].attributeType).isEqualTo(visitOrderHistoryAttribute.attributeType)
+      assertThat(visitOrderHistoryDto.attributes[i].attributeValue).isEqualTo(visitOrderHistoryAttribute.attributeValue)
     }
   }
 
