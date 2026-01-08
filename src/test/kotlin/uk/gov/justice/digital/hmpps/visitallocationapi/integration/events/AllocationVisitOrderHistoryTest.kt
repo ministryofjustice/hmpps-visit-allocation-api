@@ -85,7 +85,7 @@ class AllocationVisitOrderHistoryTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(5)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 25, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ACCUMULATION, attributes = emptyMap())
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 33, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ACCUMULATION, attributes = emptyMap())
     assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 25, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_EXPIRATION, attributes = emptyMap())
     assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 26, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf(INCENTIVE_LEVEL to "STD"))
     assertVisitOrderHistory(visitOrderHistoryList[3], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 23, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf(INCENTIVE_LEVEL to "ENH"))
