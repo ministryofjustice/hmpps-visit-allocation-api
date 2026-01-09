@@ -321,8 +321,7 @@ class ProcessPrisonerService(
       // Capture the before details, used at the end to track if changes have been made. If so, a change_log entry will be generated.
       val dpsPrisonerDetailsBefore = dpsPrisonerDetails.snapshot()
 
-      processPrisonerAccumulation(dpsPrisonerDetails, prisonIncentiveAmounts)
-      logAccumulationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsBefore)
+      processPrisonerAccumulation(dpsPrisonerDetails, dpsPrisonerDetailsBefore, prisonIncentiveAmounts)
 
       val dpsPrisonerDetailsAfterAccumulation = dpsPrisonerDetails.snapshot()
       processPrisonerAllocation(dpsPrisonerDetails, prisonIncentiveAmounts)
@@ -378,19 +377,25 @@ class ProcessPrisonerService(
     LOG.info("Successfully generated ${visitOrders.size} visit orders for prisoner ${dpsPrisoner.prisonerId}: " + "${visitOrders.count { it.type == VisitOrderType.PVO }} PVOs and ${visitOrders.count { it.type == VisitOrderType.VO }} VOs")
   }
 
-  private fun processPrisonerAccumulation(dpsPrisoner: PrisonerDetails, prisonIncentiveAmounts: PrisonIncentiveAmountsDto) {
-    LOG.info("Entered ProcessPrisonerService - processPrisonerAccumulation with prisonerId: ${dpsPrisoner.prisonerId}")
+  private fun processPrisonerAccumulation(dpsPrisonerDetailsAfter: PrisonerDetails, dpsPrisonerDetailsBefore: PrisonerSnap, prisonIncentiveAmounts: PrisonIncentiveAmountsDto) {
+    LOG.info("Entered ProcessPrisonerService - processPrisonerAccumulation with prisonerId: ${dpsPrisonerDetailsAfter.prisonerId}")
 
     // Move any VOs in status of 'AVAILABLE' older than 28 days, to 'ACCUMULATED'.
-    dpsPrisoner.visitOrders.filter { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.AVAILABLE && it.createdTimestamp.isBefore(LocalDateTime.now().minusDays(28)) }.forEach { it.status = VisitOrderStatus.ACCUMULATED }
+    dpsPrisonerDetailsAfter.visitOrders.filter { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.AVAILABLE && it.createdTimestamp.isBefore(LocalDateTime.now().minusDays(28)) }.forEach { it.status = VisitOrderStatus.ACCUMULATED }
 
-    if (isDueVO(dpsPrisoner)) {
+    if (PrisonerChangeTrackingUtil.hasAccumulationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)) {
+      LOG.debug("logging accumulation batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+      visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.ACCUMULATION, setOf(VisitOrderType.VO))
+    }
+
+    if (isDueVO(dpsPrisonerDetailsAfter)) {
       // Capture all 'AVAILABLE' and 'ACCUMULATED' VOs, we will use these to check if 'ACCUMULATED' VOs need expiring to make room for new 'AVAILABLE' VOs during allocation
-      val currentVOs = dpsPrisoner.visitOrders.filter {
+      val currentVOs = dpsPrisonerDetailsAfter.visitOrders.filter {
         it.type == VisitOrderType.VO && (it.status == VisitOrderStatus.AVAILABLE || it.status == VisitOrderStatus.ACCUMULATED)
       }
 
       if (currentVOs.size + prisonIncentiveAmounts.visitOrders >= maxAccumulatedVisitOrders) {
+        val dpsPrisonerDetailsBeforeExpiration = dpsPrisonerDetailsAfter.snapshot()
         val amountToRotate = (currentVOs.size + prisonIncentiveAmounts.visitOrders) - maxAccumulatedVisitOrders
 
         currentVOs.filter { it.status == VisitOrderStatus.ACCUMULATED }
@@ -400,9 +405,15 @@ class ProcessPrisonerService(
             accumulatedVo.status = VisitOrderStatus.EXPIRED
             accumulatedVo.expiryDate = LocalDate.now()
           }
+
+        // we also tend to expire VOs (not PVOs) when we accumulate, so adding an expiry entry
+        if (PrisonerChangeTrackingUtil.hasVoExpirationOccurred(dpsPrisonerDetailsBeforeExpiration, dpsPrisonerDetailsAfter)) {
+          LOG.debug("logging expiration (in accumulation) batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
+          visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.EXPIRATION, setOf(VisitOrderType.VO))
+        }
       }
 
-      LOG.info("Completed accumulation for ${dpsPrisoner.prisonerId}")
+      LOG.info("Completed accumulation for ${dpsPrisonerDetailsAfter.prisonerId}")
     }
   }
 
@@ -544,23 +555,6 @@ class ProcessPrisonerService(
   }
 
   private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }
-
-  private fun logAccumulationBatchProcess(
-    dpsPrisonerDetailsAfter: PrisonerDetails,
-    dpsPrisonerDetailsBefore: PrisonerSnap,
-  ) {
-    LOG.debug("entered logAccumulationBatchProcess for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
-    if (PrisonerChangeTrackingUtil.hasAccumulationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)) {
-      LOG.debug("logging accumulation batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
-      visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.ACCUMULATION, setOf(VisitOrderType.VO))
-    }
-
-    // we also tend to expire VOs (not PVOs) when we accumulate, so adding an expiry entry
-    if (PrisonerChangeTrackingUtil.hasVoExpirationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)) {
-      LOG.debug("logging expiration (in accumulation) batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
-      visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.EXPIRATION, setOf(VisitOrderType.VO))
-    }
-  }
 
   private fun logAllocationBatchProcess(
     dpsPrisonerDetailsAfter: PrisonerDetails,
