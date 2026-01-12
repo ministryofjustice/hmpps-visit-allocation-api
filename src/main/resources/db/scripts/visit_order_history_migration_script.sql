@@ -1,5 +1,10 @@
 BEGIN;
 
+-- First clear the table, before running the migration script.
+DELETE FROM visit_order_history_attributes;
+DELETE FROM visit_order_history;
+
+-- Run migration
 INSERT INTO visit_order_history (
     prisoner_id,
     type,
