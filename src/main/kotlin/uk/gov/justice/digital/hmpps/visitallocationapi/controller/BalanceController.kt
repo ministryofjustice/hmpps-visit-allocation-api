@@ -22,7 +22,7 @@ const val VO_BALANCE_DETAILED = "$VO_BALANCE/detailed"
 
 @RestController
 class BalanceController(val balanceService: BalanceService) {
-  @PreAuthorize("hasRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API')")
+  @PreAuthorize("hasAnyRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API', '$ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API')")
   @GetMapping(VO_BALANCE)
   @Operation(
     summary = "Endpoint to get a prisoners current balance.",
