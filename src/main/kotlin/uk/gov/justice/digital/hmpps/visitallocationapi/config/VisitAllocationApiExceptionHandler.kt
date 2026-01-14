@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.config
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.PublishEventException
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.VoBalanceAdjustmentException
 import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 
 @RestControllerAdvice
@@ -123,5 +125,19 @@ class VisitAllocationApiExceptionHandler(private val telemetryClient: TelemetryC
     )
 
     return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(error)
+  }
+
+  @ExceptionHandler(VoBalanceAdjustmentException::class)
+  fun handleVoBalanceAdjustmentException(e: VoBalanceAdjustmentException): ResponseEntity<ErrorResponse?>? {
+    log.error("Validation exception", e)
+    return ResponseEntity
+      .status(HttpStatus.UNPROCESSABLE_ENTITY)
+      .body(
+        ErrorResponse(
+          status = HttpStatus.UNPROCESSABLE_ENTITY,
+          userMessage = "Validation for balance adjustment failed",
+          developerMessage = "Validation for balance adjustment failed: ${e.messages.joinToString()}",
+        ),
+      )
   }
 }

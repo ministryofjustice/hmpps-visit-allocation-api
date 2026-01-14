@@ -5,4 +5,5 @@ enum class VisitOrderHistoryAttributeType {
   INCENTIVE_LEVEL,
   OLD_PRISONER_ID,
   NEW_PRISONER_ID,
+  ADJUSTMENT_REASON_TYPE,
 }

@@ -8,4 +8,5 @@ enum class TelemetryEventType(val telemetryEventName: String) {
   VO_ADDED_POST_MERGE("allocation-api-vo-added-post-merge"),
   VO_PRISONER_BALANCE_RESET("allocation-api-vo-prisoner-balance-reset"),
   VO_PRISONER_NEGATIVE_BALANCE_ADMIN_RESET("allocation-api-vo-prisoner-negative-balance-admin-reset"),
+  MANUAL_PRISONER_BALANCE_ADJUSTMENT("allocation-api-vo-prisoner-balance-adjustment"),
 }

@@ -93,13 +93,13 @@ abstract class IntegrationTestBase {
     hmppsAuth.stubHealthPing(status)
   }
 
-  protected fun createVisitOrders(visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails): List<VisitOrder> {
+  protected fun createVisitOrders(visitOrderType: VisitOrderType, amountToCreate: Int, prisoner: PrisonerDetails, visitOrderStatus: VisitOrderStatus = VisitOrderStatus.AVAILABLE): List<VisitOrder> {
     val visitOrders = mutableListOf<VisitOrder>()
     repeat(amountToCreate) {
       visitOrders.add(
         VisitOrder(
           type = visitOrderType,
-          status = VisitOrderStatus.AVAILABLE,
+          status = visitOrderStatus,
           prisoner = prisoner,
         ),
       )

@@ -28,3 +28,13 @@ fun callGet(
 ) = webTestClient.get().uri(url)
   .headers(authHttpHeaders)
   .exchange()
+
+fun callPut(
+  bodyValue: Any,
+  webTestClient: WebTestClient,
+  url: String,
+  authHttpHeaders: (HttpHeaders) -> Unit,
+): ResponseSpec = webTestClient.put().uri(url)
+  .headers(authHttpHeaders)
+  .body(BodyInserters.fromValue(bodyValue))
+  .exchange()
