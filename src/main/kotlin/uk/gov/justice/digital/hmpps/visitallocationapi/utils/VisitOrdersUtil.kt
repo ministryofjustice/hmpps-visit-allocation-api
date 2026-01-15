@@ -13,25 +13,25 @@ import java.time.LocalDateTime
 
 @Component
 class VisitOrdersUtil {
-  fun handleNegativeBalanceRepayment(incentiveAmount: Int, negativeBalance: Int, prisoner: PrisonerDetails, type: VisitOrderType, visitOrders: MutableList<VisitOrder>, negativePaymentReason: NegativeRepaymentReason) {
-    if (incentiveAmount < negativeBalance) {
-      // If the incentive amount doesn't fully cover debt, then only repay what is possible.
+  fun handleNegativeBalanceRepayment(totalVosToAdd: Int, negativeBalance: Int, prisoner: PrisonerDetails, type: VisitOrderType, visitOrders: MutableList<VisitOrder>, negativePaymentReason: NegativeRepaymentReason) {
+    if (totalVosToAdd < negativeBalance) {
+      // If the totalVosToAdd doesn't fully cover debt, then only repay what is possible.
       prisoner.negativeVisitOrders
         .filter { it.type == type && it.status == NegativeVisitOrderStatus.USED }
         .sortedBy { it.createdTimestamp }
-        .take(incentiveAmount)
+        .take(totalVosToAdd)
         .forEach { negativeVisitOrder ->
           markNegativeVOAsRepaid(negativeVisitOrder, negativePaymentReason)
         }
     } else {
-      // If the incentive amount pushes the balance positive, repay all debt and generate the required amount of positive VO / PVOs.
+      // If the totalVosToAdd pushes the balance positive, repay all debt and generate the required amount of positive VO / PVOs.
       prisoner.negativeVisitOrders
         .filter { it.type == type && it.status == NegativeVisitOrderStatus.USED }
         .forEach { negativeVisitOrder ->
           markNegativeVOAsRepaid(negativeVisitOrder, negativePaymentReason)
         }
 
-      val visitOrdersToCreate = incentiveAmount - negativeBalance
+      val visitOrdersToCreate = totalVosToAdd - negativeBalance
 
       repeat(visitOrdersToCreate) {
         visitOrders.add(createAvailableVisitOrder(prisoner, type))

@@ -112,6 +112,11 @@ class BalanceController(val balanceService: BalanceService) {
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
       ),
       ApiResponse(
+        responseCode = "404",
+        description = "Prisoner balance not found",
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+      ),
+      ApiResponse(
         responseCode = "422",
         description = "Adjust prisoner balance validation failed.",
         content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
@@ -124,8 +129,8 @@ class BalanceController(val balanceService: BalanceService) {
     prisonerId: String,
     @RequestBody
     balanceAdjustmentDto: PrisonerBalanceAdjustmentDto,
-  ): PrisonerBalanceDto? {
+  ): PrisonerBalanceDto {
     balanceService.adjustPrisonerBalance(prisonerId, balanceAdjustmentDto)
-    return balanceService.getPrisonerBalance(prisonerId)
+    return balanceService.getPrisonerBalance(prisonerId) ?: throw NotFoundException("Prisoner $prisonerId not found")
   }
 }
