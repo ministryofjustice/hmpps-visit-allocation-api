@@ -522,8 +522,8 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
     val errorResponse = getValidationErrorResponse(responseSpec)
     assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
-    assertThat(errorResponse.validationErrorCodes.size).isEqualTo(1)
-    assertThat(errorResponse.validationErrorCodes).containsAll(listOf(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX))
+    assertThat(errorResponse.validationErrors.size).isEqualTo(1)
+    assertThat(errorResponse.validationErrors).containsAll(listOf(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
     assertThat(errorResponse.developerMessage).isEqualTo("Validation for balance adjustment failed: VO count after adjustment will take it past max allowed")
   }
@@ -549,8 +549,8 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
     val errorResponse = getValidationErrorResponse(responseSpec)
     assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
-    assertThat(errorResponse.validationErrorCodes.size).isEqualTo(1)
-    assertThat(errorResponse.validationErrorCodes).containsAll(listOf(PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO))
+    assertThat(errorResponse.validationErrors.size).isEqualTo(1)
+    assertThat(errorResponse.validationErrors).containsAll(listOf(PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
     assertThat(errorResponse.developerMessage).isEqualTo("Validation for balance adjustment failed: PVO count after adjustment will take it below zero")
   }
@@ -577,8 +577,8 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
     val errorResponse = getValidationErrorResponse(responseSpec)
     assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
-    assertThat(errorResponse.validationErrorCodes.size).isEqualTo(2)
-    assertThat(errorResponse.validationErrorCodes).containsAll(listOf(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX, PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO))
+    assertThat(errorResponse.validationErrors.size).isEqualTo(2)
+    assertThat(errorResponse.validationErrors).containsAll(listOf(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX, PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
     assertThat(errorResponse.developerMessage).isEqualTo("Validation for balance adjustment failed: VO count after adjustment will take it past max allowed, PVO count after adjustment will take it below zero")
   }
