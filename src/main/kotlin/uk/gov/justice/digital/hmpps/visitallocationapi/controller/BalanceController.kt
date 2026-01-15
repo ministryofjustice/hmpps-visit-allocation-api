@@ -131,6 +131,6 @@ class BalanceController(val balanceService: BalanceService) {
     balanceAdjustmentDto: PrisonerBalanceAdjustmentDto,
   ): PrisonerBalanceDto {
     balanceService.adjustPrisonerBalance(prisonerId, balanceAdjustmentDto)
-    return balanceService.getPrisonerBalance(prisonerId) ?: throw NotFoundException("Prisoner $prisonerId not found")
+    return balanceService.getPrisonerBalance(prisonerId) ?: throw IllegalStateException("Failed to to get updated balance for $prisonerId")
   }
 }
