@@ -124,5 +124,8 @@ class BalanceController(val balanceService: BalanceService) {
     prisonerId: String,
     @RequestBody
     balanceAdjustmentDto: PrisonerBalanceAdjustmentDto,
-  ) = balanceService.adjustPrisonerBalance(prisonerId, balanceAdjustmentDto)
+  ): PrisonerBalanceDto? {
+    balanceService.adjustPrisonerBalance(prisonerId, balanceAdjustmentDto)
+    return balanceService.getPrisonerBalance(prisonerId)
+  }
 }

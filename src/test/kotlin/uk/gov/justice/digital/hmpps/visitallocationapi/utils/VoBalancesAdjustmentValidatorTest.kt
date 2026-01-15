@@ -7,6 +7,11 @@ import org.junit.jupiter.api.assertThrows
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceAdjustmentDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerDetailedBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AdjustmentReasonType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.PVO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.VO_OR_PVO_NOT_SUPPLIED
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.VO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.VoBalanceAdjustmentException
 import java.time.LocalDate
 
@@ -26,9 +31,8 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("Either voAmount or pvoAmount must be provided")
-    assertThat(exception.messages.size).isEqualTo(1)
-    assertThat(exception.messages[0]).isEqualTo("Either voAmount or pvoAmount must be provided")
+    assertThat(exception.errorCodes.size).isEqualTo(1)
+    assertThat(exception.errorCodes[0]).isEqualTo(VO_OR_PVO_NOT_SUPPLIED)
   }
 
   @Test
@@ -44,9 +48,8 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("Either voAmount or pvoAmount must be provided")
-    assertThat(exception.messages.size).isEqualTo(1)
-    assertThat(exception.messages[0]).isEqualTo("Either voAmount or pvoAmount must be provided")
+    assertThat(exception.errorCodes.size).isEqualTo(1)
+    assertThat(exception.errorCodes[0]).isEqualTo(VO_OR_PVO_NOT_SUPPLIED)
   }
 
   @Test
@@ -62,9 +65,8 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("VO count after adjustment will take it past max allowed")
-    assertThat(exception.messages.size).isEqualTo(1)
-    assertThat(exception.messages[0]).isEqualTo("VO count after adjustment will take it past max allowed")
+    assertThat(exception.errorCodes.size).isEqualTo(1)
+    assertThat(exception.errorCodes[0]).isEqualTo(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX)
   }
 
   @Test
@@ -75,6 +77,70 @@ class VoBalancesAdjustmentValidatorTest {
     val balanceAdjustmentDto = createPrisonerBalanceAdjustmentDto(
       voAmount = 4,
       pvoAmount = 0,
+    )
+
+    assertDoesNotThrow {
+      voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
+    }
+  }
+
+  @Test
+  fun `when VO balance is already below 0 and Vos are reduced an exception is thrown`() {
+    // Given
+    val prisonerDetailedBalance = createPrisonerDetailedBalance(voBalance = -1, pvoBalance = 4)
+
+    val balanceAdjustmentDto = createPrisonerBalanceAdjustmentDto(
+      voAmount = -2,
+      pvoAmount = 0,
+    )
+
+    val exception = assertThrows<VoBalanceAdjustmentException> {
+      voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
+    }
+    assertThat(exception.errorCodes.size).isEqualTo(1)
+    assertThat(exception.errorCodes[0]).isEqualTo(VO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
+  }
+
+  @Test
+  fun `when PVO balance is already below 0 and Pvos are reduced an exception is thrown`() {
+    // Given
+    val prisonerDetailedBalance = createPrisonerDetailedBalance(voBalance = 11, pvoBalance = -4)
+
+    val balanceAdjustmentDto = createPrisonerBalanceAdjustmentDto(
+      voAmount = -2,
+      pvoAmount = -2,
+    )
+
+    val exception = assertThrows<VoBalanceAdjustmentException> {
+      voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
+    }
+    assertThat(exception.errorCodes.size).isEqualTo(1)
+    assertThat(exception.errorCodes[0]).isEqualTo(PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
+  }
+
+  @Test
+  fun `when VO balance is already below 0 and adding VOs still keeps VO count below 0 an exception is not thrown`() {
+    // Given
+    val prisonerDetailedBalance = createPrisonerDetailedBalance(voBalance = -14, pvoBalance = 4)
+
+    val balanceAdjustmentDto = createPrisonerBalanceAdjustmentDto(
+      voAmount = 4,
+      pvoAmount = 0,
+    )
+
+    assertDoesNotThrow {
+      voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
+    }
+  }
+
+  @Test
+  fun `when PVO balance is already below 0 and adding PVOs still keeps PVO count below 0 an exception is not thrown`() {
+    // Given
+    val prisonerDetailedBalance = createPrisonerDetailedBalance(voBalance = -14, pvoBalance = -4)
+
+    val balanceAdjustmentDto = createPrisonerBalanceAdjustmentDto(
+      voAmount = 4,
+      pvoAmount = 2,
     )
 
     assertDoesNotThrow {
@@ -95,9 +161,8 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("VO count after adjustment will take it below zero")
-    assertThat(exception.messages.size).isEqualTo(1)
-    assertThat(exception.messages[0]).isEqualTo("VO count after adjustment will take it below zero")
+    assertThat(exception.errorCodes.size).isEqualTo(1)
+    assertThat(exception.errorCodes[0]).isEqualTo(VO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
   }
 
   @Test
@@ -128,9 +193,8 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("PVO count after adjustment will take it past max allowed")
-    assertThat(exception.messages.size).isEqualTo(1)
-    assertThat(exception.messages[0]).isEqualTo("PVO count after adjustment will take it past max allowed")
+    assertThat(exception.errorCodes.size).isEqualTo(1)
+    assertThat(exception.errorCodes[0]).isEqualTo(PVO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX)
   }
 
   @Test
@@ -161,9 +225,8 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("PVO count after adjustment will take it below zero")
-    assertThat(exception.messages.size).isEqualTo(1)
-    assertThat(exception.messages[0]).isEqualTo("PVO count after adjustment will take it below zero")
+    assertThat(exception.errorCodes.size).isEqualTo(1)
+    assertThat(exception.errorCodes[0]).isEqualTo(PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
   }
 
   @Test
@@ -182,7 +245,7 @@ class VoBalancesAdjustmentValidatorTest {
   }
 
   @Test
-  fun `when VO and PVO adjustment takes VO and PVO limit above max value an exception is thrown with multiple messages`() {
+  fun `when VO and PVO adjustment takes VO and PVO limit above max value an exception is thrown with multiple errorCodes`() {
     // Given
     val prisonerDetailedBalance = createPrisonerDetailedBalance(voBalance = 23, pvoBalance = 22)
 
@@ -194,14 +257,13 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("VO count after adjustment will take it past max allowed, PVO count after adjustment will take it past max allowed")
-    assertThat(exception.messages.size).isEqualTo(2)
-    assertThat(exception.messages[0]).isEqualTo("VO count after adjustment will take it past max allowed")
-    assertThat(exception.messages[1]).isEqualTo("PVO count after adjustment will take it past max allowed")
+    assertThat(exception.errorCodes.size).isEqualTo(2)
+    assertThat(exception.errorCodes[0]).isEqualTo(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX)
+    assertThat(exception.errorCodes[1]).isEqualTo(PVO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX)
   }
 
   @Test
-  fun `when VO and PVO adjustment takes VO and PVO limit below min value an exception is thrown with multiple messages`() {
+  fun `when VO and PVO adjustment takes VO and PVO limit below min value an exception is thrown with multiple errorCodes`() {
     // Given
     val prisonerDetailedBalance = createPrisonerDetailedBalance(voBalance = 2, pvoBalance = 4)
 
@@ -213,14 +275,13 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("VO count after adjustment will take it below zero, PVO count after adjustment will take it below zero")
-    assertThat(exception.messages.size).isEqualTo(2)
-    assertThat(exception.messages[0]).isEqualTo("VO count after adjustment will take it below zero")
-    assertThat(exception.messages[1]).isEqualTo("PVO count after adjustment will take it below zero")
+    assertThat(exception.errorCodes.size).isEqualTo(2)
+    assertThat(exception.errorCodes[0]).isEqualTo(VO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
+    assertThat(exception.errorCodes[1]).isEqualTo(PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
   }
 
   @Test
-  fun `when VO and PVO adjustment takes VO above max and PVO limit below min value an exception is thrown with multiple messages`() {
+  fun `when VO and PVO adjustment takes VO above max and PVO limit below min value an exception is thrown with multiple errorCodes`() {
     // Given
     val prisonerDetailedBalance = createPrisonerDetailedBalance(voBalance = 24, pvoBalance = 4)
 
@@ -232,10 +293,9 @@ class VoBalancesAdjustmentValidatorTest {
     val exception = assertThrows<VoBalanceAdjustmentException> {
       voBalancesAdjustmentValidator.validate(prisonerDetailedBalance, balanceAdjustmentDto)
     }
-    assertThat(exception.message).isEqualTo("VO count after adjustment will take it past max allowed, PVO count after adjustment will take it below zero")
-    assertThat(exception.messages.size).isEqualTo(2)
-    assertThat(exception.messages[0]).isEqualTo("VO count after adjustment will take it past max allowed")
-    assertThat(exception.messages[1]).isEqualTo("PVO count after adjustment will take it below zero")
+    assertThat(exception.errorCodes.size).isEqualTo(2)
+    assertThat(exception.errorCodes[0]).isEqualTo(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX)
+    assertThat(exception.errorCodes[1]).isEqualTo(PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
   }
 
   private fun createPrisonerDetailedBalance(

@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceAdjustmentDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerDetailedBalanceDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.VoBalanceAdjustmentException
 import kotlin.math.absoluteValue
 
@@ -11,28 +12,22 @@ import kotlin.math.absoluteValue
 class VoBalancesAdjustmentValidator(
   @param:Value("\${max.visit-orders:26}") val maxVisitOrders: Int,
 ) {
-/*
-TODO - should we just set it to 26 instead of above?
-  companion object {
-    private const val MAX_VISIT_ORDERS = 26
-  }
-*/
   fun validate(prisonerDetailedBalance: PrisonerDetailedBalanceDto, balanceAdjustmentDto: PrisonerBalanceAdjustmentDto) {
-    val validationErrors = mutableListOf<String>()
+    val validationErrors = mutableListOf<PrisonerBalanceAdjustmentValidationErrorCodes>()
 
     if (isVoOrPvoBalanceNotUpdated(balanceAdjustmentDto)) {
-      validationErrors.add("Either voAmount or pvoAmount must be provided")
+      validationErrors.add(PrisonerBalanceAdjustmentValidationErrorCodes.VO_OR_PVO_NOT_SUPPLIED)
     } else {
       if (isVOCountAfterAdjustmentAboveMaxLevel(prisonerDetailedBalance.voBalance, balanceAdjustmentDto.voAmount)) {
-        validationErrors.add("VO count after adjustment will take it past max allowed")
+        validationErrors.add(PrisonerBalanceAdjustmentValidationErrorCodes.VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX)
       } else if (isVOCountAfterAdjustmentBelowMinLevel(prisonerDetailedBalance.voBalance, balanceAdjustmentDto.voAmount)) {
-        validationErrors.add("VO count after adjustment will take it below zero")
+        validationErrors.add(PrisonerBalanceAdjustmentValidationErrorCodes.VO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
       }
 
       if (isVOCountAfterAdjustmentAboveMaxLevel(prisonerDetailedBalance.pvoBalance, balanceAdjustmentDto.pvoAmount)) {
-        validationErrors.add("PVO count after adjustment will take it past max allowed")
+        validationErrors.add(PrisonerBalanceAdjustmentValidationErrorCodes.PVO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX)
       } else if (isVOCountAfterAdjustmentBelowMinLevel(prisonerDetailedBalance.pvoBalance, balanceAdjustmentDto.pvoAmount)) {
-        validationErrors.add("PVO count after adjustment will take it below zero")
+        validationErrors.add(PrisonerBalanceAdjustmentValidationErrorCodes.PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO)
       }
     }
 

@@ -7,12 +7,16 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ManualBalanceAdjustmentValidationErrorResponse
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceAdjustmentDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AdjustmentReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus.ACCUMULATED
@@ -22,7 +26,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType.PVO
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType.VO
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPut
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
-import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
 import java.time.LocalDate
 
 @DisplayName("Balance Controller tests to update a prisoner's VO and / or PVO balance - PUT $VO_BALANCE")
@@ -266,6 +269,112 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `when balance adjustment adds VOs and PVOs negative VOs are repaid first and then available Vos are added`() {
+    // Given
+    val lastVoAllocationDate = LocalDate.now().minusDays(7)
+    val lastPvoAllocationDate = LocalDate.now().minusDays(14)
+
+    // prisoner has 5 available VOs, 3 accumulated PVOs and 3 -ve PVOs
+    // adding VOs should first repay -ve VOs before creating new ones
+    val prisoner = PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = lastVoAllocationDate, lastPvoAllocatedDate = lastPvoAllocationDate)
+    prisoner.visitOrders.addAll(createVisitOrders(VO, 5, prisoner, AVAILABLE))
+    prisoner.visitOrders.addAll(createVisitOrders(VO, 3, prisoner, ACCUMULATED))
+    prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(VO, 3, prisoner))
+    prisoner.visitOrders.addAll(createVisitOrders(PVO, 4, prisoner))
+    prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(PVO, 2, prisoner))
+    prisonerDetailsRepository.save(prisoner)
+
+    val balanceAdjustmentDto = PrisonerBalanceAdjustmentDto(6, 2, AdjustmentReasonType.GOVERNOR_ADJUSTMENT, "balance reduced", "test")
+
+    // When
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentDto, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    val prisonerBalance = getVoBalanceResponse(responseSpec)
+    assertThat(prisonerBalance.prisonerId).isEqualTo(PRISONER_ID)
+    assertThat(prisonerBalance.voBalance).isEqualTo(11)
+    assertThat(prisonerBalance.pvoBalance).isEqualTo(4)
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.size).isEqualTo(15)
+    assertThat(visitOrders.filter { it.type == VO && it.status == AVAILABLE }.size).isEqualTo(8)
+    assertThat(visitOrders.filter { it.type == VO && it.status == ACCUMULATED }.size).isEqualTo(3)
+    assertThat(visitOrders.filter { it.type == VO && it.status == USED }.size).isEqualTo(0)
+    assertThat(visitOrders.filter { it.type == PVO && it.status == AVAILABLE }.size).isEqualTo(4)
+    assertThat(visitOrders.filter { it.type == PVO && it.status == USED }.size).isEqualTo(0)
+
+    val negativeVisitOrders = negativeVisitOrderRepository.findAll()
+    assertThat(negativeVisitOrders.size).isEqualTo(5)
+    assertThat(negativeVisitOrders.filter { it.type == VO && it.status == NegativeVisitOrderStatus.USED }.size).isEqualTo(0)
+    assertThat(negativeVisitOrders.filter { it.type == VO && it.status == NegativeVisitOrderStatus.REPAID }.size).isEqualTo(3)
+    assertThat(negativeVisitOrders.filter { it.type == PVO && it.status == NegativeVisitOrderStatus.USED }.size).isEqualTo(0)
+    assertThat(negativeVisitOrders.filter { it.type == PVO && it.status == NegativeVisitOrderStatus.REPAID }.size).isEqualTo(2)
+
+    val changeLog = changeLogRepository.findAll()
+    assertThat(changeLog.size).isEqualTo(1)
+    assertThat(changeLog.first().changeType).isEqualTo(ChangeLogType.MANUAL_PRISONER_BALANCE_ADJUSTMENT)
+
+    val visitOrderHistory = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistory.size).isEqualTo(1)
+    assertThat(visitOrderHistory[0].type).isEqualTo(VisitOrderHistoryType.MANUAL_PRISONER_BALANCE_ADJUSTMENT)
+    assertThat(visitOrderHistory[0].voBalance).isEqualTo(11)
+    assertThat(visitOrderHistory[0].pvoBalance).isEqualTo(4)
+  }
+
+  @Test
+  fun `when balance adjustment adds VOs and PVOs negative VOs are repaid even if total stays below 0`() {
+    // Given
+    val lastVoAllocationDate = LocalDate.now().minusDays(7)
+    val lastPvoAllocationDate = LocalDate.now().minusDays(14)
+
+    // prisoner has 0 available VOs, 0 accumulated PVOs and 4 -ve PVOs
+    // adding VOs should repay -ve VOs even if balance does not go above 0
+    val prisoner = PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = lastVoAllocationDate, lastPvoAllocatedDate = lastPvoAllocationDate)
+    prisoner.visitOrders.addAll(createVisitOrders(VO, 2, prisoner, USED))
+    prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(VO, 4, prisoner))
+    prisoner.negativeVisitOrders.addAll(createNegativeVisitOrders(PVO, 2, prisoner))
+    prisonerDetailsRepository.save(prisoner)
+
+    val balanceAdjustmentDto = PrisonerBalanceAdjustmentDto(1, 2, AdjustmentReasonType.GOVERNOR_ADJUSTMENT, "balance reduced", "test")
+
+    // When
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentDto, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    val prisonerBalance = getVoBalanceResponse(responseSpec)
+    assertThat(prisonerBalance.prisonerId).isEqualTo(PRISONER_ID)
+    assertThat(prisonerBalance.voBalance).isEqualTo(-3)
+    assertThat(prisonerBalance.pvoBalance).isEqualTo(0)
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.size).isEqualTo(2)
+    assertThat(visitOrders.filter { it.type == VO && it.status == AVAILABLE }.size).isEqualTo(0)
+    assertThat(visitOrders.filter { it.type == VO && it.status == ACCUMULATED }.size).isEqualTo(0)
+    assertThat(visitOrders.filter { it.type == VO && it.status == USED }.size).isEqualTo(2)
+    assertThat(visitOrders.filter { it.type == PVO && it.status == AVAILABLE }.size).isEqualTo(0)
+    assertThat(visitOrders.filter { it.type == PVO && it.status == USED }.size).isEqualTo(0)
+
+    val negativeVisitOrders = negativeVisitOrderRepository.findAll()
+    assertThat(negativeVisitOrders.size).isEqualTo(6)
+    assertThat(negativeVisitOrders.filter { it.type == VO && it.status == NegativeVisitOrderStatus.USED }.size).isEqualTo(3)
+    assertThat(negativeVisitOrders.filter { it.type == VO && it.status == NegativeVisitOrderStatus.REPAID }.size).isEqualTo(1)
+    assertThat(negativeVisitOrders.filter { it.type == PVO && it.status == NegativeVisitOrderStatus.USED }.size).isEqualTo(0)
+    assertThat(negativeVisitOrders.filter { it.type == PVO && it.status == NegativeVisitOrderStatus.REPAID }.size).isEqualTo(2)
+
+    val changeLog = changeLogRepository.findAll()
+    assertThat(changeLog.size).isEqualTo(1)
+    assertThat(changeLog.first().changeType).isEqualTo(ChangeLogType.MANUAL_PRISONER_BALANCE_ADJUSTMENT)
+
+    val visitOrderHistory = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistory.size).isEqualTo(1)
+    assertThat(visitOrderHistory[0].type).isEqualTo(VisitOrderHistoryType.MANUAL_PRISONER_BALANCE_ADJUSTMENT)
+    assertThat(visitOrderHistory[0].voBalance).isEqualTo(-3)
+    assertThat(visitOrderHistory[0].pvoBalance).isEqualTo(0)
+  }
+
+  @Test
   fun `when balance adjustment decreases allocated VOs first and then available Vos only then VO count is updated`() {
     // Given
     val lastVoAllocationDate = LocalDate.now().minusDays(7)
@@ -413,6 +522,8 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
     val errorResponse = getValidationErrorResponse(responseSpec)
     assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    assertThat(errorResponse.validationErrorCodes.size).isEqualTo(1)
+    assertThat(errorResponse.validationErrorCodes).containsAll(listOf(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
     assertThat(errorResponse.developerMessage).isEqualTo("Validation for balance adjustment failed: VO count after adjustment will take it past max allowed")
   }
@@ -438,6 +549,8 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
     val errorResponse = getValidationErrorResponse(responseSpec)
     assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    assertThat(errorResponse.validationErrorCodes.size).isEqualTo(1)
+    assertThat(errorResponse.validationErrorCodes).containsAll(listOf(PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
     assertThat(errorResponse.developerMessage).isEqualTo("Validation for balance adjustment failed: PVO count after adjustment will take it below zero")
   }
@@ -464,6 +577,8 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
     val errorResponse = getValidationErrorResponse(responseSpec)
     assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    assertThat(errorResponse.validationErrorCodes.size).isEqualTo(2)
+    assertThat(errorResponse.validationErrorCodes).containsAll(listOf(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX, PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
     assertThat(errorResponse.developerMessage).isEqualTo("Validation for balance adjustment failed: VO count after adjustment will take it past max allowed, PVO count after adjustment will take it below zero")
   }
@@ -520,5 +635,5 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
 
   private fun getVoBalanceResponse(responseSpec: ResponseSpec): PrisonerBalanceDto = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, PrisonerBalanceDto::class.java)
 
-  private fun getValidationErrorResponse(responseSpec: ResponseSpec): ErrorResponse = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, ErrorResponse::class.java)
+  private fun getValidationErrorResponse(responseSpec: ResponseSpec): ManualBalanceAdjustmentValidationErrorResponse = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, ManualBalanceAdjustmentValidationErrorResponse::class.java)
 }

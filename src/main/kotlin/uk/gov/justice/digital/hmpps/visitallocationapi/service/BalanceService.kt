@@ -3,7 +3,6 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceAdjustmentDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
@@ -52,10 +51,8 @@ class BalanceService(
     return detailedBalanceDto
   }
 
-  @Transactional(propagation = Propagation.NOT_SUPPORTED, readOnly = true)
-  fun adjustPrisonerBalance(prisonerId: String, balanceAdjustmentDto: PrisonerBalanceAdjustmentDto): PrisonerBalanceDto? {
+  fun adjustPrisonerBalance(prisonerId: String, balanceAdjustmentDto: PrisonerBalanceAdjustmentDto) {
     LOG.info("Entered BalanceService - adjustPrisonerBalance for prisoner $prisonerId with adjustment details - $balanceAdjustmentDto")
-
     val changeLogReference = prisonerBalanceAdjustmentService.adjustPrisonerBalance(prisonerId, balanceAdjustmentDto)
     if (changeLogReference != null) {
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisonerId, changeLogReference)
@@ -63,8 +60,6 @@ class BalanceService(
         snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
       }
     }
-
     LOG.info("Adjusted prisoner balance for prisoner $prisonerId with adjustment details - $balanceAdjustmentDto")
-    return getPrisonerBalance(prisonerId)
   }
 }

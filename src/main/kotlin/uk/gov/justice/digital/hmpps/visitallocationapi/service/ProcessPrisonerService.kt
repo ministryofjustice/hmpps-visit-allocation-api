@@ -476,7 +476,7 @@ class ProcessPrisonerService(
     if (isDueVO(prisoner)) {
       val negativeVoCount = prisoner.negativeVisitOrders.count { it.type == VisitOrderType.VO && it.status == NegativeVisitOrderStatus.USED }
       if (negativeVoCount > 0) {
-        handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, VisitOrderType.VO, visitOrders)
+        visitOrdersUtil.handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, VisitOrderType.VO, visitOrders, NegativeRepaymentReason.ALLOCATION)
       } else {
         repeat(amountOfVosToGenerate(prisoner, prisonIncentivesForPrisonerLevel.visitOrders)) {
           visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(prisoner, VisitOrderType.VO))
@@ -504,7 +504,7 @@ class ProcessPrisonerService(
     if (prisonIncentivesForPrisonerLevel.privilegedVisitOrders != 0 && isDuePVO(prisoner)) {
       val negativePvoCount = prisoner.negativeVisitOrders.count { it.type == VisitOrderType.PVO && it.status == NegativeVisitOrderStatus.USED }
       if (negativePvoCount > 0) {
-        handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.privilegedVisitOrders, negativePvoCount, prisoner, VisitOrderType.PVO, visitOrders)
+        visitOrdersUtil.handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.privilegedVisitOrders, negativePvoCount, prisoner, VisitOrderType.PVO, visitOrders, NegativeRepaymentReason.ALLOCATION)
       } else {
         repeat(prisonIncentivesForPrisonerLevel.privilegedVisitOrders) {
           visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(prisoner, VisitOrderType.PVO))
@@ -512,36 +512,6 @@ class ProcessPrisonerService(
       }
     }
     return visitOrders
-  }
-
-  private fun handleNegativeBalanceRepayment(incentiveAmount: Int, negativeBalance: Int, prisoner: PrisonerDetails, type: VisitOrderType, visitOrders: MutableList<VisitOrder>) {
-    if (incentiveAmount < negativeBalance) {
-      // If the incentive amount doesn't fully cover debt, then only repay what is possible.
-      prisoner.negativeVisitOrders
-        .filter { it.type == type && it.status == NegativeVisitOrderStatus.USED }
-        .sortedBy { it.createdTimestamp }
-        .take(incentiveAmount)
-        .forEach {
-          it.status = NegativeVisitOrderStatus.REPAID
-          it.repaidDate = LocalDate.now()
-          it.repaidReason = NegativeRepaymentReason.ALLOCATION
-        }
-    } else {
-      // If the incentive amount pushes the balance positive, repay all debt and generate the required amount of positive VO / PVOs.
-      prisoner.negativeVisitOrders
-        .filter { it.type == type && it.status == NegativeVisitOrderStatus.USED }
-        .forEach {
-          it.status = NegativeVisitOrderStatus.REPAID
-          it.repaidDate = LocalDate.now()
-          it.repaidReason = NegativeRepaymentReason.ALLOCATION
-        }
-
-      val visitOrdersToCreate = incentiveAmount - negativeBalance
-
-      repeat(visitOrdersToCreate) {
-        visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(prisoner, type))
-      }
-    }
   }
 
   private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }
