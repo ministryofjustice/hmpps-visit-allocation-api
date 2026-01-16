@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.VisitOrderHistoryDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerMigrationDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AdjustmentReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType.ACCUMULATION
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType.ALLOCATION
@@ -128,7 +129,7 @@ class VisitOrderHistoryService(
   }
 
   fun logPrisonerBalanceReset(dpsPrisoner: PrisonerDetails, reason: PrisonerReceivedReasonType): VisitOrderHistory {
-    logger.info("Logging to visit_order_history table for prisoner ${dpsPrisoner.prisonerId} - logPrisonerBalanceReset")
+    logger.info("Logging to visit_order_history table for prisoner ${dpsPrisoner.prisonerId} - logPrisonerBalanceReset, reason - $reason")
     return createVisitOrderHistory(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.PRISONER_BALANCE_RESET,
@@ -138,7 +139,7 @@ class VisitOrderHistoryService(
   }
 
   fun logPrisonerNegativeBalanceAdminReset(dpsPrisoner: PrisonerDetails): VisitOrderHistory {
-    logger.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogPrisonerNegativeBalanceAdminReset")
+    logger.info("Logging to visit_order_history table for prisoner ${dpsPrisoner.prisonerId} - logPrisonerNegativeBalanceAdminReset")
     return createVisitOrderHistory(
       dpsPrisoner = dpsPrisoner,
       visitOrderHistoryType = VisitOrderHistoryType.ADMIN_RESET_NEGATIVE_BALANCE,
@@ -146,6 +147,21 @@ class VisitOrderHistoryService(
       attributes = emptyMap(),
     )
   }
+
+  fun logPrisonerManualBalanceAdjustment(dpsPrisoner: PrisonerDetails, userName: String, comment: String?, adjustmentReasonType: AdjustmentReasonType): VisitOrderHistory {
+    logger.info("Logging to visit_order_history table for prisoner ${dpsPrisoner.prisonerId} - logPrisonerManualBalanceAdjustment")
+
+    return createVisitOrderHistory(
+      dpsPrisoner = dpsPrisoner,
+      visitOrderHistoryType = VisitOrderHistoryType.MANUAL_PRISONER_BALANCE_ADJUSTMENT,
+      userName = userName,
+      attributes = mapOf(
+        VisitOrderHistoryAttributeType.ADJUSTMENT_REASON_TYPE to adjustmentReasonType.name,
+      ),
+      comment = comment,
+    )
+  }
+
   private fun getVisitHistoryType(batchProcessType: AllocationBatchProcessType, visitOrderTypes: Set<VisitOrderType>): VisitOrderHistoryType {
     val hasVOAndPVO: Boolean = visitOrderTypes.containsAll(listOf(VO, PVO))
     val hasVOOnly: Boolean = visitOrderTypes.contains(VO) && !visitOrderTypes.contains(PVO)

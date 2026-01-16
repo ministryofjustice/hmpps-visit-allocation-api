@@ -132,6 +132,17 @@ class ChangeLogService(
     )
   }
 
+  fun createLogPrisonerBalanceAdjusted(dpsPrisoner: PrisonerDetails, userId: String): ChangeLog {
+    LOG.info("Logging to change_log table for prisoner ${dpsPrisoner.prisonerId} - createLogPrisonerBalanceAdjusted")
+    return createChangeLog(
+      dpsPrisoner = dpsPrisoner,
+      changeLogType = ChangeLogType.MANUAL_PRISONER_BALANCE_ADJUSTMENT,
+      changeLogSource = ChangeLogSource.STAFF,
+      userId = userId,
+      comment = "prisoners balance manually adjusted by STAFF user ($userId)",
+    )
+  }
+
   @Transactional(readOnly = true)
   fun findAllChangeLogsForPrisoner(prisonerId: String): List<ChangeLog> {
     LOG.info("ChangeLogService - findAllChangeLogsForPrisoner called with prisonerId - $prisonerId")

@@ -26,6 +26,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDeta
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.PrisonerChangeTrackingUtil
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
+import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VisitOrdersUtil
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -41,6 +42,7 @@ class ProcessPrisonerService(
   private val telemetryClientService: TelemetryClientService,
   private val visitOrderHistoryService: VisitOrderHistoryService,
   private val voBalancesUtil: VOBalancesUtil,
+  private val visitOrdersUtil: VisitOrdersUtil,
   @param:Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
 ) {
   companion object {
@@ -149,7 +151,7 @@ class ProcessPrisonerService(
 
         else -> {
           LOG.warn("No visit with reference ${visit.reference} associated with prisoner ${visit.prisonerId} found on visit allocation api. Creating VO.")
-          dpsPrisonerDetails.visitOrders.add(createVisitOrder(dpsPrisonerDetails, VisitOrderType.VO))
+          dpsPrisonerDetails.visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(dpsPrisonerDetails, VisitOrderType.VO))
         }
       }
     }
@@ -189,7 +191,7 @@ class ProcessPrisonerService(
         LOG.info("Creating $visitOrdersToBeCreated new VOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
         repeat(visitOrdersToBeCreated) {
           val lastVoAllocatedDate = newPrisonerDetails.lastVoAllocatedDate
-          newPrisonerDetails.visitOrders.add(createVisitOrder(newPrisonerDetails, VisitOrderType.VO, createdTimestamp = lastVoAllocatedDate.atStartOfDay()))
+          newPrisonerDetails.visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(newPrisonerDetails, VisitOrderType.VO, createdTimestamp = lastVoAllocatedDate.atStartOfDay()))
         }
       }
 
@@ -199,7 +201,7 @@ class ProcessPrisonerService(
         LOG.info("Creating $privilegedVisitOrdersToBeCreated new PVOs for prisoner - $newPrisonerId post merge with removed prisoner - $removedPrisonerId")
         repeat(privilegedVisitOrdersToBeCreated) {
           val createdTimestamp = newPrisonerDetails.lastPvoAllocatedDate?.atStartOfDay() ?: LocalDateTime.now()
-          newPrisonerDetails.visitOrders.add(createVisitOrder(newPrisonerDetails, VisitOrderType.PVO, createdTimestamp = createdTimestamp))
+          newPrisonerDetails.visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(newPrisonerDetails, VisitOrderType.PVO, createdTimestamp = createdTimestamp))
         }
       }
     } else {
@@ -462,18 +464,6 @@ class ProcessPrisonerService(
     }
   }
 
-  private fun createVisitOrder(
-    prisoner: PrisonerDetails,
-    type: VisitOrderType,
-    createdTimestamp: LocalDateTime = LocalDateTime.now(),
-  ): VisitOrder = VisitOrder(
-    type = type,
-    status = VisitOrderStatus.AVAILABLE,
-    createdTimestamp = createdTimestamp,
-    expiryDate = null,
-    prisoner = prisoner,
-  )
-
   private fun isDueVO(prisoner: PrisonerDetails): Boolean = prisoner.lastVoAllocatedDate <= LocalDate.now().minusDays(14)
 
   private fun isDuePVO(prisoner: PrisonerDetails): Boolean {
@@ -486,10 +476,10 @@ class ProcessPrisonerService(
     if (isDueVO(prisoner)) {
       val negativeVoCount = prisoner.negativeVisitOrders.count { it.type == VisitOrderType.VO && it.status == NegativeVisitOrderStatus.USED }
       if (negativeVoCount > 0) {
-        handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, VisitOrderType.VO, visitOrders)
+        visitOrdersUtil.handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.visitOrders, negativeVoCount, prisoner, VisitOrderType.VO, visitOrders, NegativeRepaymentReason.ALLOCATION)
       } else {
         repeat(amountOfVosToGenerate(prisoner, prisonIncentivesForPrisonerLevel.visitOrders)) {
-          visitOrders.add(createVisitOrder(prisoner, VisitOrderType.VO))
+          visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(prisoner, VisitOrderType.VO))
         }
       }
     }
@@ -514,44 +504,14 @@ class ProcessPrisonerService(
     if (prisonIncentivesForPrisonerLevel.privilegedVisitOrders != 0 && isDuePVO(prisoner)) {
       val negativePvoCount = prisoner.negativeVisitOrders.count { it.type == VisitOrderType.PVO && it.status == NegativeVisitOrderStatus.USED }
       if (negativePvoCount > 0) {
-        handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.privilegedVisitOrders, negativePvoCount, prisoner, VisitOrderType.PVO, visitOrders)
+        visitOrdersUtil.handleNegativeBalanceRepayment(prisonIncentivesForPrisonerLevel.privilegedVisitOrders, negativePvoCount, prisoner, VisitOrderType.PVO, visitOrders, NegativeRepaymentReason.ALLOCATION)
       } else {
         repeat(prisonIncentivesForPrisonerLevel.privilegedVisitOrders) {
-          visitOrders.add(createVisitOrder(prisoner, VisitOrderType.PVO))
+          visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(prisoner, VisitOrderType.PVO))
         }
       }
     }
     return visitOrders
-  }
-
-  private fun handleNegativeBalanceRepayment(incentiveAmount: Int, negativeBalance: Int, prisoner: PrisonerDetails, type: VisitOrderType, visitOrders: MutableList<VisitOrder>) {
-    if (incentiveAmount < negativeBalance) {
-      // If the incentive amount doesn't fully cover debt, then only repay what is possible.
-      prisoner.negativeVisitOrders
-        .filter { it.type == type && it.status == NegativeVisitOrderStatus.USED }
-        .sortedBy { it.createdTimestamp }
-        .take(incentiveAmount)
-        .forEach {
-          it.status = NegativeVisitOrderStatus.REPAID
-          it.repaidDate = LocalDate.now()
-          it.repaidReason = NegativeRepaymentReason.ALLOCATION
-        }
-    } else {
-      // If the incentive amount pushes the balance positive, repay all debt and generate the required amount of positive VO / PVOs.
-      prisoner.negativeVisitOrders
-        .filter { it.type == type && it.status == NegativeVisitOrderStatus.USED }
-        .forEach {
-          it.status = NegativeVisitOrderStatus.REPAID
-          it.repaidDate = LocalDate.now()
-          it.repaidReason = NegativeRepaymentReason.ALLOCATION
-        }
-
-      val visitOrdersToCreate = incentiveAmount - negativeBalance
-
-      repeat(visitOrdersToCreate) {
-        visitOrders.add(createVisitOrder(prisoner, type))
-      }
-    }
   }
 
   private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }

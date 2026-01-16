@@ -4,6 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceAdjustmentDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerDetailedBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
@@ -11,6 +12,9 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 @Service
 class BalanceService(
   private val prisonerDetailsService: PrisonerDetailsService,
+  private val prisonerBalanceAdjustmentService: PrisonerBalanceAdjustmentService,
+  private val changeLogService: ChangeLogService,
+  private val snsService: SnsService,
   private val voBalancesUtil: VOBalancesUtil,
 ) {
   companion object {
@@ -45,5 +49,17 @@ class BalanceService(
 
     LOG.info("detailed VO and PVO balance for prisoner $prisonerId - $detailedBalanceDto")
     return detailedBalanceDto
+  }
+
+  fun adjustPrisonerBalance(prisonerId: String, balanceAdjustmentDto: PrisonerBalanceAdjustmentDto) {
+    LOG.info("Entered BalanceService - adjustPrisonerBalance for prisoner $prisonerId with adjustment details - $balanceAdjustmentDto")
+    val changeLogReference = prisonerBalanceAdjustmentService.adjustPrisonerBalance(prisonerId, balanceAdjustmentDto)
+    if (changeLogReference != null) {
+      val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisonerId, changeLogReference)
+      if (changeLog != null) {
+        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+      }
+    }
+    LOG.info("Adjusted prisoner balance for prisoner $prisonerId with adjustment details - $balanceAdjustmentDto")
   }
 }

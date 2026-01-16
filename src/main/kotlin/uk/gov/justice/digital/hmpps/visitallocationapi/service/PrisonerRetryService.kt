@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.AllocationService.Companion.LOG
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
 
 @Service
@@ -23,22 +22,22 @@ class PrisonerRetryService(
   private val changeLogService: ChangeLogService,
 ) {
   companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
+    val logger: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
   fun sendMessageToPrisonerRetryQueue(jobReference: String, prisonerId: String) {
     try {
-      log.info("Putting prisoner $prisonerId on the retry queue, jobReference - $jobReference")
+      logger.info("Putting prisoner $prisonerId on the retry queue, jobReference - $jobReference")
       visitAllocationPrisonerRetrySqsService.sendToVisitAllocationPrisonerRetryQueue(allocationJobReference = jobReference, prisonerId = prisonerId)
     } catch (e: RuntimeException) {
       // ignore if a message could not be sent
-      log.error("Failed to put prisoner $prisonerId on the retry queue, jobReference - $jobReference")
+      logger.error("Failed to put prisoner $prisonerId on the retry queue, jobReference - $jobReference")
     }
   }
 
   @Transactional(propagation = Propagation.NOT_SUPPORTED, readOnly = true)
   fun handlePrisonerRetry(jobReference: String, prisonerId: String) {
-    log.info("handle prisoner - $prisonerId on retry queue")
+    logger.info("handle prisoner - $prisonerId on retry queue")
     val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
     val allIncentiveLevels = getIncentiveLevelsForPrison(prisonId = prisoner.prisonId)
     val changeLogReference = processPrisonerService.processPrisonerAllocation(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
@@ -55,7 +54,7 @@ class PrisonerRetryService(
       incentivesClient.getPrisonIncentiveLevels(prisonId)
     } catch (e: Exception) {
       val failureMessage = "failed to get incentive levels by prisonId - $prisonId in retry queue consumer"
-      LOG.error(failureMessage, e)
+      logger.error(failureMessage, e)
       throw e
     }
 

@@ -3,6 +3,7 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.config
 import com.microsoft.applicationinsights.TelemetryClient
 import jakarta.validation.ValidationException
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
@@ -13,10 +14,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.InvalidSyncRequestException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.PublishEventException
-import uk.gov.justice.hmpps.kotlin.common.ErrorResponse
+import uk.gov.justice.digital.hmpps.visitallocationapi.exception.VoBalanceAdjustmentException
 
 @RestControllerAdvice
 class VisitAllocationApiExceptionHandler(private val telemetryClient: TelemetryClient) {
@@ -124,4 +126,41 @@ class VisitAllocationApiExceptionHandler(private val telemetryClient: TelemetryC
 
     return ResponseEntity.status(INTERNAL_SERVER_ERROR).body(error)
   }
+
+  @ExceptionHandler(VoBalanceAdjustmentException::class)
+  fun handleVoBalanceAdjustmentException(e: VoBalanceAdjustmentException): ResponseEntity<ManualBalanceAdjustmentValidationErrorResponse?>? {
+    log.error("Validation exception", e)
+    return ResponseEntity
+      .status(HttpStatus.UNPROCESSABLE_ENTITY)
+      .body(
+        ManualBalanceAdjustmentValidationErrorResponse(
+          validationErrors = e.errorCodes.toSet(),
+          userMessage = "Validation for balance adjustment failed",
+          developerMessage = "Validation for balance adjustment failed: ${e.errorCodes.joinToString { it.description }}",
+        ),
+      )
+  }
 }
+
+open class ErrorResponse(
+  val status: Int,
+  val errorCode: Int? = null,
+  open val userMessage: String? = null,
+  open val developerMessage: String? = null,
+  val moreInfo: String? = null,
+) {
+  constructor(
+    status: HttpStatus,
+    errorCode: Int? = null,
+    userMessage: String? = null,
+    developerMessage: String? = null,
+    moreInfo: String? = null,
+  ) :
+    this(status.value(), errorCode, userMessage, developerMessage, moreInfo)
+}
+
+data class ManualBalanceAdjustmentValidationErrorResponse(
+  val validationErrors: Set<PrisonerBalanceAdjustmentValidationErrorCodes>,
+  override val userMessage: String? = null,
+  override val developerMessage: String? = null,
+) : ErrorResponse(status = HttpStatus.UNPROCESSABLE_ENTITY, userMessage = userMessage, developerMessage = developerMessage)
