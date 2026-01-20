@@ -16,6 +16,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.Priso
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.INCENTIVE_LEVEL
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.TestObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
@@ -38,7 +39,7 @@ class AllocationVisitOrderHistoryTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -98,7 +99,7 @@ class AllocationVisitOrderHistoryTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 

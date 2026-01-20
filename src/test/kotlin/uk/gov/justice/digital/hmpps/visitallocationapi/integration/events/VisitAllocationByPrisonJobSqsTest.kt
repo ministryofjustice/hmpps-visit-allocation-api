@@ -24,6 +24,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAt
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.TestObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
@@ -57,7 +58,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -133,7 +134,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     // prison code sent with lower case
     val prisonCode = PRISON_CODE.lowercase()
     val event = VisitAllocationEventJob(allocationJobReference, prisonCode)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
     // When
@@ -218,7 +219,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
     // When
@@ -290,7 +291,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -390,7 +391,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -476,7 +477,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -555,7 +556,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -638,7 +639,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -717,7 +718,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -762,7 +763,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(
       VisitOrderAllocationPrisonJob(
@@ -871,7 +872,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -901,7 +902,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -932,7 +933,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 
@@ -964,7 +965,7 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 

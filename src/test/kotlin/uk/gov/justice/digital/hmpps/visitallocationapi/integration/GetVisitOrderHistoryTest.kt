@@ -161,5 +161,5 @@ class GetVisitOrderHistoryTest : IntegrationTestBase() {
     }
   }
 
-  private fun getVisitOrderHistoryUrlResponse(responseSpec: ResponseSpec): List<VisitOrderHistoryDto> = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, Array<VisitOrderHistoryDto>::class.java).toList()
+  private fun getVisitOrderHistoryUrlResponse(responseSpec: ResponseSpec): List<VisitOrderHistoryDto> = TestObjectMapper.mapper.readValue(responseSpec.expectBody().returnResult().responseBody, Array<VisitOrderHistoryDto>::class.java).toList()
 }

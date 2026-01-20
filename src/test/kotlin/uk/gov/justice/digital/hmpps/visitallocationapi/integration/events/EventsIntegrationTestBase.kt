@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -8,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -67,6 +67,7 @@ import java.time.LocalDateTime
   PrisonApiMockExtension::class,
   VisitSchedulerMockExtension::class,
 )
+@AutoConfigureWebTestClient
 abstract class EventsIntegrationTestBase {
   companion object {
     private val localStackContainer = LocalStackContainer.instance
@@ -77,9 +78,6 @@ abstract class EventsIntegrationTestBase {
       localStackContainer?.also { setLocalStackProperties(it, registry) }
     }
   }
-
-  @Autowired
-  protected lateinit var objectMapper: ObjectMapper
 
   @Autowired
   protected lateinit var entityHelper: EntityHelper

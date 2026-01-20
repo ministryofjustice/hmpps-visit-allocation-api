@@ -1,12 +1,12 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT
+import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient
 import org.springframework.http.HttpHeaders
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
@@ -38,9 +38,8 @@ import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
   PrisonerSearchMockExtension::class,
   HmppsAuthApiExtension::class,
 )
+@AutoConfigureWebTestClient
 abstract class IntegrationTestBase {
-  @Autowired
-  protected lateinit var objectMapper: ObjectMapper
 
   @Autowired
   protected lateinit var webTestClient: WebTestClient

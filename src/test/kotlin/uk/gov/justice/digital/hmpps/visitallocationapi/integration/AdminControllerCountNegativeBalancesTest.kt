@@ -94,7 +94,7 @@ class AdminControllerCountNegativeBalancesTest : IntegrationTestBase() {
 
   private fun getAdminCountNegativePrisonBalanceUrl(prisonCode: String): String = RESET_NEGATIVE_VO_BALANCE_COUNT.replace("{prisonCode}", prisonCode)
 
-  private fun getResponse(returnResult: WebTestClient.BodyContentSpec): PrisonNegativeBalanceCountDto = objectMapper.readValue(
+  private fun getResponse(returnResult: WebTestClient.BodyContentSpec): PrisonNegativeBalanceCountDto = TestObjectMapper.mapper.readValue(
     returnResult.returnResult().responseBody,
     PrisonNegativeBalanceCountDto::class.java,
   )

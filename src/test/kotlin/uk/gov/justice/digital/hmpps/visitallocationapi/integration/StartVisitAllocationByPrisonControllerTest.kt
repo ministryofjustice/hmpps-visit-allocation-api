@@ -117,7 +117,7 @@ class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
     authHttpHeaders: (HttpHeaders) -> Unit,
   ): WebTestClient.ResponseSpec = callPost(webTestClient = webTestClient, url = VO_START_VISIT_ALLOCATION_JOB, authHttpHeaders = authHttpHeaders)
 
-  private fun getVisitAllocationEventJobDto(returnResult: WebTestClient.BodyContentSpec): VisitAllocationEventJobDto = objectMapper.readValue(
+  private fun getVisitAllocationEventJobDto(returnResult: WebTestClient.BodyContentSpec): VisitAllocationEventJobDto = TestObjectMapper.mapper.readValue(
     returnResult.returnResult().responseBody,
     VisitAllocationEventJobDto::class.java,
   )

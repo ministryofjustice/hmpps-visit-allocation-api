@@ -1,10 +1,10 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 
-import org.apache.http.HttpStatus
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ManualBalanceAdjustmentValidationErrorResponse
@@ -519,9 +519,9 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentDto, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
 
     // Then
-    responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    responseSpec.expectStatus().isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT)
     val errorResponse = getValidationErrorResponse(responseSpec)
-    assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    assertThat(errorResponse.status).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.value())
     assertThat(errorResponse.validationErrors.size).isEqualTo(1)
     assertThat(errorResponse.validationErrors).containsAll(listOf(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
@@ -546,9 +546,9 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentDto, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
 
     // Then
-    responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    responseSpec.expectStatus().isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT)
     val errorResponse = getValidationErrorResponse(responseSpec)
-    assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    assertThat(errorResponse.status).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.value())
     assertThat(errorResponse.validationErrors.size).isEqualTo(1)
     assertThat(errorResponse.validationErrors).containsAll(listOf(PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
@@ -574,9 +574,9 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentDto, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
 
     // Then
-    responseSpec.expectStatus().isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    responseSpec.expectStatus().isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT)
     val errorResponse = getValidationErrorResponse(responseSpec)
-    assertThat(errorResponse.status).isEqualTo(HttpStatus.SC_UNPROCESSABLE_ENTITY)
+    assertThat(errorResponse.status).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT.value())
     assertThat(errorResponse.validationErrors.size).isEqualTo(2)
     assertThat(errorResponse.validationErrors).containsAll(listOf(VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX, PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO))
     assertThat(errorResponse.userMessage).isEqualTo("Validation for balance adjustment failed")
@@ -633,7 +633,7 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
 
   private fun getPrisonerBalanceUrl(prisonerId: String): String = VO_BALANCE.replace("{prisonerId}", prisonerId)
 
-  private fun getVoBalanceResponse(responseSpec: ResponseSpec): PrisonerBalanceDto = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, PrisonerBalanceDto::class.java)
+  private fun getVoBalanceResponse(responseSpec: ResponseSpec): PrisonerBalanceDto = TestObjectMapper.mapper.readValue(responseSpec.expectBody().returnResult().responseBody, PrisonerBalanceDto::class.java)
 
-  private fun getValidationErrorResponse(responseSpec: ResponseSpec): ManualBalanceAdjustmentValidationErrorResponse = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, ManualBalanceAdjustmentValidationErrorResponse::class.java)
+  private fun getValidationErrorResponse(responseSpec: ResponseSpec): ManualBalanceAdjustmentValidationErrorResponse = TestObjectMapper.mapper.readValue(responseSpec.expectBody().returnResult().responseBody, ManualBalanceAdjustmentValidationErrorResponse::class.java)
 }

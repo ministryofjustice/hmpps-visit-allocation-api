@@ -18,6 +18,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonInce
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.INCENTIVE_LEVEL
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.TestObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
@@ -36,7 +37,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
 
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationPrisonerRetryQueueUrl)
     val visitAllocationPrisonerRetryJob = VisitAllocationPrisonerRetryJob("job-reference", prisonerId)
-    val message = objectMapper.writeValueAsString(visitAllocationPrisonerRetryJob)
+    val message = TestObjectMapper.mapper.writeValueAsString(visitAllocationPrisonerRetryJob)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When
@@ -73,7 +74,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     val prisonerId = "TEST"
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationPrisonerRetryQueueUrl)
     val visitAllocationPrisonerRetryJob = VisitAllocationPrisonerRetryJob("job-reference", prisonerId)
-    val message = objectMapper.writeValueAsString(visitAllocationPrisonerRetryJob)
+    val message = TestObjectMapper.mapper.writeValueAsString(visitAllocationPrisonerRetryJob)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When
@@ -108,7 +109,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     val prisonerId = "TEST"
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationPrisonerRetryQueueUrl)
     val visitAllocationPrisonerRetryJob = VisitAllocationPrisonerRetryJob("job-reference", prisonerId)
-    val message = objectMapper.writeValueAsString(visitAllocationPrisonerRetryJob)
+    val message = TestObjectMapper.mapper.writeValueAsString(visitAllocationPrisonerRetryJob)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When
@@ -143,7 +144,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     val prisonerId = "TEST"
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationPrisonerRetryQueueUrl)
     val visitAllocationPrisonerRetryJob = VisitAllocationPrisonerRetryJob("job-reference", prisonerId)
-    val message = objectMapper.writeValueAsString(visitAllocationPrisonerRetryJob)
+    val message = TestObjectMapper.mapper.writeValueAsString(visitAllocationPrisonerRetryJob)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When
@@ -178,7 +179,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     val prisonerId = "TEST"
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationPrisonerRetryQueueUrl)
     val visitAllocationPrisonerRetryJob = VisitAllocationPrisonerRetryJob("job-reference", prisonerId)
-    val message = objectMapper.writeValueAsString(visitAllocationPrisonerRetryJob)
+    val message = TestObjectMapper.mapper.writeValueAsString(visitAllocationPrisonerRetryJob)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When
@@ -213,7 +214,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     val prisonerId = "TEST"
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationPrisonerRetryQueueUrl)
     val visitAllocationPrisonerRetryJob = VisitAllocationPrisonerRetryJob("job-reference", prisonerId)
-    val message = objectMapper.writeValueAsString(visitAllocationPrisonerRetryJob)
+    val message = TestObjectMapper.mapper.writeValueAsString(visitAllocationPrisonerRetryJob)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When
@@ -247,7 +248,7 @@ class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
     val prisonerId = "TEST"
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationPrisonerRetryQueueUrl)
     val visitAllocationPrisonerRetryJob = VisitAllocationPrisonerRetryJob("job-reference", prisonerId)
-    val message = objectMapper.writeValueAsString(visitAllocationPrisonerRetryJob)
+    val message = TestObjectMapper.mapper.writeValueAsString(visitAllocationPrisonerRetryJob)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When
