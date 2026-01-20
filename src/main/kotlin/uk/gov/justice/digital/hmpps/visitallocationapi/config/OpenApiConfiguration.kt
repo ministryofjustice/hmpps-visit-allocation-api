@@ -23,7 +23,7 @@ import org.springframework.web.method.HandlerMethod
 
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
-  private val version: String = buildProperties.version
+  private val version: String? = buildProperties.version
 
   @Autowired
   private lateinit var context: ApplicationContext

@@ -71,7 +71,7 @@ class VisitAllocationApiExceptionHandler(private val telemetryClient: TelemetryC
     ).also { log.info("No resource found exception: {}", e.message) }
 
   @ExceptionHandler(NotFoundException::class)
-  fun handleNotFoundException(e: NotFoundException): ResponseEntity<ErrorResponse?>? {
+  fun handleNotFoundException(e: NotFoundException): ResponseEntity<ErrorResponse>? {
     log.error("Not Found exception caught: {}", e.message)
     return ResponseEntity
       .status(NOT_FOUND)
@@ -107,7 +107,7 @@ class VisitAllocationApiExceptionHandler(private val telemetryClient: TelemetryC
     ).also { log.error("Unexpected exception", e) }
 
   @ExceptionHandler(PublishEventException::class)
-  fun handlePublishEventException(e: PublishEventException): ResponseEntity<ErrorResponse?>? {
+  fun handlePublishEventException(e: PublishEventException): ResponseEntity<ErrorResponse>? {
     log.error("Publish event exception caught: {}", e.message)
     val error = ErrorResponse(
       status = INTERNAL_SERVER_ERROR,
@@ -128,7 +128,7 @@ class VisitAllocationApiExceptionHandler(private val telemetryClient: TelemetryC
   }
 
   @ExceptionHandler(VoBalanceAdjustmentException::class)
-  fun handleVoBalanceAdjustmentException(e: VoBalanceAdjustmentException): ResponseEntity<ManualBalanceAdjustmentValidationErrorResponse?>? {
+  fun handleVoBalanceAdjustmentException(e: VoBalanceAdjustmentException): ResponseEntity<ManualBalanceAdjustmentValidationErrorResponse>? {
     log.error("Validation exception", e)
     return ResponseEntity
       .status(HttpStatus.UNPROCESSABLE_ENTITY)
