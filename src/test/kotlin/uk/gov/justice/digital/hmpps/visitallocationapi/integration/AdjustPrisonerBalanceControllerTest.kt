@@ -633,7 +633,7 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
 
   private fun getPrisonerBalanceUrl(prisonerId: String): String = VO_BALANCE.replace("{prisonerId}", prisonerId)
 
-  private fun getVoBalanceResponse(responseSpec: ResponseSpec): PrisonerBalanceDto = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, PrisonerBalanceDto::class.java)
+  private fun getVoBalanceResponse(responseSpec: ResponseSpec): PrisonerBalanceDto = TestObjectMapper.mapper.readValue(responseSpec.expectBody().returnResult().responseBody, PrisonerBalanceDto::class.java)
 
-  private fun getValidationErrorResponse(responseSpec: ResponseSpec): ManualBalanceAdjustmentValidationErrorResponse = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, ManualBalanceAdjustmentValidationErrorResponse::class.java)
+  private fun getValidationErrorResponse(responseSpec: ResponseSpec): ManualBalanceAdjustmentValidationErrorResponse = TestObjectMapper.mapper.readValue(responseSpec.expectBody().returnResult().responseBody, ManualBalanceAdjustmentValidationErrorResponse::class.java)
 }

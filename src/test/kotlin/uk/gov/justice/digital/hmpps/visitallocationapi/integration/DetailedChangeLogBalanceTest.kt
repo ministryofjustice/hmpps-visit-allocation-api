@@ -47,7 +47,7 @@ class DetailedChangeLogBalanceTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
     visitOrderAllocationPrisonJobRepository.save(VisitOrderAllocationPrisonJob(allocationJobReference = allocationJobReference, prisonCode = PRISON_CODE))
 

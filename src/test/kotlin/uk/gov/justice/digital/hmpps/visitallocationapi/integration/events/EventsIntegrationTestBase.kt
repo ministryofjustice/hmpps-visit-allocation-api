@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration.events
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.microsoft.applicationinsights.TelemetryClient
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -79,9 +78,6 @@ abstract class EventsIntegrationTestBase {
       localStackContainer?.also { setLocalStackProperties(it, registry) }
     }
   }
-
-  @Autowired
-  protected lateinit var objectMapper: ObjectMapper
 
   @Autowired
   protected lateinit var entityHelper: EntityHelper

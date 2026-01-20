@@ -13,6 +13,7 @@ import org.springframework.test.context.TestPropertySource
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.integration.TestObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.VisitAllocationByPrisonJobSqsTest.Companion.PRISON_CODE
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.VisitAllocationByPrisonJobSqsTest.Companion.prisoner1
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.events.VisitAllocationByPrisonJobSqsTest.Companion.prisoner2
@@ -31,7 +32,7 @@ class SnsDisabledTest : EventsIntegrationTestBase() {
     val sendMessageRequestBuilder = SendMessageRequest.builder().queueUrl(prisonVisitsAllocationEventJobQueueUrl)
     val allocationJobReference = "job-ref"
     val event = VisitAllocationEventJob(allocationJobReference, PRISON_CODE)
-    val message = objectMapper.writeValueAsString(event)
+    val message = TestObjectMapper.mapper.writeValueAsString(event)
     val sendMessageRequest = sendMessageRequestBuilder.messageBody(message).build()
 
     // When

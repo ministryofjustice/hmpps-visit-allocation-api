@@ -179,5 +179,5 @@ class DetailedBalanceControllerTest : IntegrationTestBase() {
 
   private fun getPrisonerDetailedBalanceUrl(prisonerId: String): String = VO_BALANCE_DETAILED.replace("{prisonerId}", prisonerId)
 
-  private fun getDetailedVoBalanceResponse(responseSpec: ResponseSpec): PrisonerDetailedBalanceDto = objectMapper.readValue(responseSpec.expectBody().returnResult().responseBody, PrisonerDetailedBalanceDto::class.java)
+  private fun getDetailedVoBalanceResponse(responseSpec: ResponseSpec): PrisonerDetailedBalanceDto = TestObjectMapper.mapper.readValue(responseSpec.expectBody().returnResult().responseBody, PrisonerDetailedBalanceDto::class.java)
 }

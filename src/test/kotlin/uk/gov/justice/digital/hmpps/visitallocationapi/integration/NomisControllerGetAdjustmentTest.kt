@@ -165,7 +165,7 @@ class NomisControllerGetAdjustmentTest : IntegrationTestBase() {
     assertThat(adjustmentResponseDto.changeToPvoBalance).isEqualTo(expectedPvoChange)
   }
 
-  private fun getVisitAdjustmentResponseDto(returnResult: WebTestClient.BodyContentSpec): VisitAllocationPrisonerAdjustmentResponseDto = objectMapper.readValue(
+  private fun getVisitAdjustmentResponseDto(returnResult: WebTestClient.BodyContentSpec): VisitAllocationPrisonerAdjustmentResponseDto = TestObjectMapper.mapper.readValue(
     returnResult.returnResult().responseBody,
     VisitAllocationPrisonerAdjustmentResponseDto::class.java,
   )

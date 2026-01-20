@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
@@ -41,8 +40,6 @@ import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 )
 @AutoConfigureWebTestClient
 abstract class IntegrationTestBase {
-  @Autowired
-  protected lateinit var objectMapper: ObjectMapper
 
   @Autowired
   protected lateinit var webTestClient: WebTestClient
