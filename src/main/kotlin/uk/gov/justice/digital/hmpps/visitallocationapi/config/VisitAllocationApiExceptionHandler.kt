@@ -131,7 +131,7 @@ class VisitAllocationApiExceptionHandler(private val telemetryClient: TelemetryC
   fun handleVoBalanceAdjustmentException(e: VoBalanceAdjustmentException): ResponseEntity<ManualBalanceAdjustmentValidationErrorResponse>? {
     log.error("Validation exception", e)
     return ResponseEntity
-      .status(HttpStatus.UNPROCESSABLE_ENTITY)
+      .status(HttpStatus.UNPROCESSABLE_CONTENT)
       .body(
         ManualBalanceAdjustmentValidationErrorResponse(
           validationErrors = e.errorCodes.toSet(),
@@ -163,4 +163,4 @@ data class ManualBalanceAdjustmentValidationErrorResponse(
   val validationErrors: Set<PrisonerBalanceAdjustmentValidationErrorCodes>,
   override val userMessage: String? = null,
   override val developerMessage: String? = null,
-) : ErrorResponse(status = HttpStatus.UNPROCESSABLE_ENTITY, userMessage = userMessage, developerMessage = developerMessage)
+) : ErrorResponse(status = HttpStatus.UNPROCESSABLE_CONTENT, userMessage = userMessage, developerMessage = developerMessage)
