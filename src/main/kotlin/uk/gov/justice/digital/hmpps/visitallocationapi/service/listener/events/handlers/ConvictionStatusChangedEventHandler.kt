@@ -27,10 +27,7 @@ class ConvictionStatusChangedEventHandler(
     processor.handle(domainEvent)
   }
 
-  private fun shouldProcess(info: PrisonerConvictionStatusChangedInfo): Boolean {
-    val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
-    return prisoner.inOutStatus == "IN"
-  }
+  private fun shouldProcess(info: PrisonerConvictionStatusChangedInfo): Boolean = false
 
   private fun isDpsPrison(info: PrisonerConvictionStatusChangedInfo): Boolean {
     val prisoner = prisonerSearchClient.getPrisonerById(info.prisonerId)
