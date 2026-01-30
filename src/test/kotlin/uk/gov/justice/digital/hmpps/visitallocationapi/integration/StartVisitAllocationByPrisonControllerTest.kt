@@ -8,28 +8,15 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_START_VISIT_ALLOCATION_JOB
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.ServicePrisonDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPost
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonApiMockExtension.Companion.prisonApiMockServer
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJobSqsService
 
 @DisplayName("Start visit allocation job by prisoner")
 class StartVisitAllocationByPrisonControllerTest : IntegrationTestBase() {
-  @MockitoSpyBean
-  private lateinit var sqsService: VisitAllocationEventJobSqsService
-
-  @MockitoSpyBean
-  private lateinit var visitOrderAllocationJobRepository: VisitOrderAllocationJobRepository
-
-  @MockitoSpyBean
-  private lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
-
   private val prisonCode1 = "ABC"
   private val prisonCode2 = "XYZ"
   private val allPrisonCode = "*ALL*"

@@ -12,7 +12,6 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
@@ -22,14 +21,10 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.integration.TestObjectMap
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.IncentivesMockExtension.Companion.incentivesMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.PrisonerSearchMockExtension.Companion.prisonerSearchMockServer
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationPrisonerRetryQueueListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService.VisitAllocationPrisonerRetryJob
 import uk.gov.justice.hmpps.sqs.countMessagesOnQueue
 
 class PrisonerRetryQueueHandlerTest : EventsIntegrationTestBase() {
-  @MockitoSpyBean
-  lateinit var visitAllocationPrisonerRetryQueueListenerSpy: VisitAllocationPrisonerRetryQueueListener
-
   @Test
   fun `when prisoner put on retry queue the message is processed`() {
     // Given

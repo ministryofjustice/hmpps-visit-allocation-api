@@ -63,3 +63,7 @@ tasks {
 dependencyCheck {
   nvd.datafeedUrl = "file:///opt/vulnz/cache"
 }
+
+tasks.withType<Test>().configureEach {
+  jvmArgs("-Dspring.test.context.cache.pause=never")
+}
