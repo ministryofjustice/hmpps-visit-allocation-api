@@ -26,9 +26,12 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.ChangeLogRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.PrisonerDetailsRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
+import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderHistoryRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepository
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJobSqsService
 import uk.gov.justice.hmpps.test.kotlin.auth.JwtAuthorisationHelper
 
 @SpringBootTest(webEnvironment = RANDOM_PORT)
@@ -64,6 +67,15 @@ abstract class IntegrationTestBase {
 
   @MockitoSpyBean
   lateinit var visitOrderHistoryRepository: VisitOrderHistoryRepository
+
+  @MockitoSpyBean
+  protected lateinit var sqsService: VisitAllocationEventJobSqsService
+
+  @MockitoSpyBean
+  protected lateinit var visitOrderAllocationJobRepository: VisitOrderAllocationJobRepository
+
+  @MockitoSpyBean
+  protected lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
 
   @MockitoSpyBean
   lateinit var telemetryClientService: TelemetryClientService

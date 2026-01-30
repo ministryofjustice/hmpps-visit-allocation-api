@@ -50,6 +50,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEv
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationByPrisonJobListener.Companion.PRISON_VISITS_ALLOCATION_EVENT_JOB_QUEUE_CONFIG_KEY
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationPrisonerRetryQueueListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.VisitAllocationPrisonerRetryQueueListener.Companion.PRISON_VISITS_ALLOCATION_PRISONER_RETRY_QUEUE_CONFIG_KEY
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationPrisonerRetrySqsService
 import uk.gov.justice.hmpps.sqs.HmppsQueue
@@ -108,49 +109,52 @@ abstract class EventsIntegrationTestBase {
   internal val topicArn by lazy { topic.arn }
 
   @MockitoSpyBean
-  lateinit var domainEventListenerSpy: DomainEventListener
+  protected lateinit var domainEventListenerSpy: DomainEventListener
 
   @MockitoSpyBean
-  lateinit var domainEventListenerServiceSpy: DomainEventListenerService
+  protected lateinit var domainEventListenerServiceSpy: DomainEventListenerService
 
   @MockitoSpyBean
-  lateinit var visitOrderRepository: VisitOrderRepository
+  protected lateinit var visitOrderRepository: VisitOrderRepository
 
   @MockitoSpyBean
-  lateinit var prisonerDetailsRepository: PrisonerDetailsRepository
+  protected lateinit var prisonerDetailsRepository: PrisonerDetailsRepository
 
   @MockitoSpyBean
-  lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
+  protected lateinit var visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository
 
   @MockitoSpyBean
-  lateinit var visitAllocationByPrisonJobListenerSpy: VisitAllocationByPrisonJobListener
+  protected lateinit var visitAllocationByPrisonJobListenerSpy: VisitAllocationByPrisonJobListener
 
   @MockitoSpyBean
-  lateinit var visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService
+  protected lateinit var visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService
 
   @MockitoSpyBean
-  lateinit var negativeVisitOrderRepository: NegativeVisitOrderRepository
+  protected lateinit var visitAllocationPrisonerRetryQueueListenerSpy: VisitAllocationPrisonerRetryQueueListener
 
   @MockitoSpyBean
-  lateinit var visitOrderHistoryRepository: VisitOrderHistoryRepository
+  protected lateinit var negativeVisitOrderRepository: NegativeVisitOrderRepository
 
   @MockitoSpyBean
-  lateinit var nomisSyncService: NomisSyncService
+  protected lateinit var visitOrderHistoryRepository: VisitOrderHistoryRepository
 
   @MockitoSpyBean
-  lateinit var processPrisonerService: ProcessPrisonerService
+  protected lateinit var nomisSyncService: NomisSyncService
 
   @MockitoSpyBean
-  lateinit var changeLogService: ChangeLogService
+  protected lateinit var processPrisonerService: ProcessPrisonerService
 
   @MockitoSpyBean
-  lateinit var changeLogRepository: ChangeLogRepository
+  protected lateinit var changeLogService: ChangeLogService
 
   @MockitoSpyBean
-  lateinit var snsService: SnsService
+  protected lateinit var changeLogRepository: ChangeLogRepository
 
   @MockitoSpyBean
-  lateinit var telemetryClient: TelemetryClient
+  protected lateinit var snsService: SnsService
+
+  @MockitoSpyBean
+  protected lateinit var telemetryClient: TelemetryClient
 
   @AfterEach
   @BeforeEach
