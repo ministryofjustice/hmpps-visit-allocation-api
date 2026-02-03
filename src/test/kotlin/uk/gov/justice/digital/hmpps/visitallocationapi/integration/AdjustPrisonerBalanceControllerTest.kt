@@ -179,6 +179,56 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
   }
 
   @Test
+  fun `when adjustment comes in to decrease PVO but stays positive, correct amount of PVOs are expired`() {
+    // Given
+    val lastVoAllocationDate = LocalDate.now()
+    val lastPvoAllocationDate = LocalDate.now()
+
+    val prisoner = prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = lastVoAllocationDate, lastPvoAllocatedDate = lastPvoAllocationDate))
+    visitOrderRepository.saveAll(createVisitOrders(PVO, 13, prisoner))
+
+    val balanceAdjustmentDto = PrisonerBalanceAdjustmentDto(null, -11, AdjustmentReasonType.OTHER, "Testing bug", "ADAVIES_GEN")
+
+    // When
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentDto, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
+
+    // Then
+    responseSpec.expectStatus().isOk
+    val prisonerBalance = getVoBalanceResponse(responseSpec)
+    assertThat(prisonerBalance.prisonerId).isEqualTo(PRISONER_ID)
+    assertThat(prisonerBalance.voBalance).isEqualTo(0)
+    assertThat(prisonerBalance.pvoBalance).isEqualTo(2)
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.size).isEqualTo(13)
+    assertThat(visitOrders.filter { it.type == VO && it.status == AVAILABLE }.size).isEqualTo(0)
+    assertThat(visitOrders.filter { it.type == PVO && it.status == AVAILABLE }.size).isEqualTo(2)
+    assertThat(visitOrders.filter { it.type == PVO && it.status == USED }.size).isEqualTo(11)
+
+    val prisonerDetails = prisonerDetailsRepository.findAll()
+    assertThat(prisonerDetails.size).isEqualTo(1)
+    assertThat(prisonerDetails.first().prisonerId).isEqualTo(PRISONER_ID)
+    assertThat(prisonerDetails.first().lastVoAllocatedDate).isEqualTo(lastVoAllocationDate)
+    assertThat(prisonerDetails.first().lastPvoAllocatedDate).isEqualTo(lastPvoAllocationDate)
+
+    val changeLog = changeLogRepository.findAll()
+    assertThat(changeLog.size).isEqualTo(1)
+    assertThat(changeLog.first().changeType).isEqualTo(ChangeLogType.MANUAL_PRISONER_BALANCE_ADJUSTMENT)
+
+    val visitOrderHistory = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistory.size).isEqualTo(1)
+    assertThat(visitOrderHistory[0].type).isEqualTo(VisitOrderHistoryType.MANUAL_PRISONER_BALANCE_ADJUSTMENT)
+    assertThat(visitOrderHistory[0].voBalance).isEqualTo(0)
+    assertThat(visitOrderHistory[0].pvoBalance).isEqualTo(2)
+    assertThat(visitOrderHistory[0].comment).isEqualTo("Testing bug")
+    assertThat(visitOrderHistory[0].userName).isEqualTo("ADAVIES_GEN")
+
+    assertThat(visitOrderHistory[0].visitOrderHistoryAttributes.size).isEqualTo(1)
+    assertThat(visitOrderHistory[0].visitOrderHistoryAttributes[0].attributeType).isEqualTo(VisitOrderHistoryAttributeType.ADJUSTMENT_REASON_TYPE)
+    assertThat(visitOrderHistory[0].visitOrderHistoryAttributes[0].attributeValue).isEqualTo("OTHER")
+  }
+
+  @Test
   fun `when balance adjustment decreases VO and PVO then both counts are updated`() {
     // Given
     val lastVoAllocationDate = LocalDate.now().minusDays(7)
