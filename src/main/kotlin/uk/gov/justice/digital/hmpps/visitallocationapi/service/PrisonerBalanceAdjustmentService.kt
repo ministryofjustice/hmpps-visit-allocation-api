@@ -78,8 +78,17 @@ class PrisonerBalanceAdjustmentService(
       0
     }
 
-    val availableVosToMark = detailedBalanceDto.availableVos.coerceAtMost(adjustmentAmount - accumulatedVosToMark)
-    val negativeVosToCreate = detailedBalanceDto.availableVos.coerceAtMost(adjustmentAmount - (accumulatedVosToMark + availableVosToMark))
+    val availableVosToMark = if (visitOrderType == VisitOrderType.VO) {
+      (detailedBalanceDto.availableVos.coerceAtMost(adjustmentAmount - accumulatedVosToMark))
+    } else {
+      (detailedBalanceDto.availablePvos.coerceAtMost(adjustmentAmount))
+    }
+
+    val negativeVosToCreate = if (visitOrderType == VisitOrderType.VO) {
+      detailedBalanceDto.availableVos.coerceAtMost(adjustmentAmount - (accumulatedVosToMark + availableVosToMark))
+    } else {
+      detailedBalanceDto.availablePvos.coerceAtMost(adjustmentAmount - availableVosToMark)
+    }
 
     markVosAsUsed(dpsPrisoner, accumulatedVosToMark, visitOrderType, VisitOrderStatus.ACCUMULATED)
     markVosAsUsed(dpsPrisoner, availableVosToMark, visitOrderType, VisitOrderStatus.AVAILABLE)
