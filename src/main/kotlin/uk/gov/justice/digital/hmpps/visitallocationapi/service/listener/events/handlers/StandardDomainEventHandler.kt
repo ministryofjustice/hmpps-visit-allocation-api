@@ -1,6 +1,6 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 
 class StandardDomainEventHandler<T : Any>(
