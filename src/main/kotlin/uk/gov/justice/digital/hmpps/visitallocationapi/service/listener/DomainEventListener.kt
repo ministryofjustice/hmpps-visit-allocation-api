@@ -1,6 +1,5 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.awspring.cloud.sqs.annotation.SqsListener
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.SpanKind
@@ -11,8 +10,10 @@ import kotlinx.coroutines.future.future
 import kotlinx.coroutines.time.withTimeout
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import tools.jackson.databind.ObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.SQSMessage
@@ -22,6 +23,7 @@ import java.util.concurrent.CompletableFuture
 @Service
 class DomainEventListener(
   private val domainEventListenerService: DomainEventListenerService,
+  @param:Qualifier("objectMapper")
   private val objectMapper: ObjectMapper,
   @param:Value("\${domain-event-processing.enabled}") val domainEventProcessingEnabled: Boolean,
 ) {

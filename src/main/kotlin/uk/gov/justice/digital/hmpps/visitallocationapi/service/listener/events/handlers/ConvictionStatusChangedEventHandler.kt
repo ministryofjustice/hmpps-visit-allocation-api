@@ -1,7 +1,8 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
+import tools.jackson.databind.ObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
@@ -9,7 +10,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.a
 
 @Service
 class ConvictionStatusChangedEventHandler(
-  objectMapper: ObjectMapper,
+  @param:Qualifier("objectMapper")
+  private val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
   private val prisonerSearchClient: PrisonerSearchClient,
 ) : DomainEventHandler {

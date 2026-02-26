@@ -1,8 +1,9 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
+import tools.jackson.databind.ObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType.NEW_ADMISSION
@@ -19,7 +20,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.a
 
 @Service
 class PrisonerReceivedEventHandler(
-  objectMapper: ObjectMapper,
+  @param:Qualifier("objectMapper")
+  private val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
   private val nomisSyncService: NomisSyncService,
   private val processPrisonerService: ProcessPrisonerService,

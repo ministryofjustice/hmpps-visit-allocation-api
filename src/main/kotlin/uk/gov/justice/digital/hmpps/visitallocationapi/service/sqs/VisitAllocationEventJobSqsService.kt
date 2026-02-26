@@ -1,16 +1,18 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
+import tools.jackson.databind.ObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.PublishEventException
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 
 @Service
 class VisitAllocationEventJobSqsService(
   private val hmppsQueueService: HmppsQueueService,
+  @param:Qualifier("objectMapper")
   private val objectMapper: ObjectMapper,
 ) {
   companion object {

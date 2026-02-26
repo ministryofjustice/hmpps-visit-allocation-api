@@ -1,10 +1,11 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.handlers
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import tools.jackson.databind.ObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
@@ -17,6 +18,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.a
 
 @Service
 class VisitCancelledEventHandler(
+  @param:Qualifier("objectMapper")
   private val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
   private val visitSchedulerClient: VisitSchedulerClient,
