@@ -49,7 +49,7 @@ class PrisonServiceTest {
 
     // when
     whenever(prisonApiClient.getAllServicePrisonsEnabledForDps()).thenReturn(listOf(activePrison1, activePrison2))
-    whenever(visitOrderAllocationJobRepository.save(any())).thenReturn(visitOrderAllocationJob)
+    whenever(visitOrderAllocationJobRepository.save(any<VisitOrderAllocationJob>())).thenReturn(visitOrderAllocationJob)
     // Begin test
     prisonService.triggerVisitAllocationForActivePrisons()
 
@@ -74,7 +74,7 @@ class PrisonServiceTest {
 
     // when
     whenever(prisonApiClient.getAllServicePrisonsEnabledForDps()).thenReturn(activePrisons)
-    whenever(visitOrderAllocationJobRepository.save(any())).thenReturn(visitOrderAllocationJob)
+    whenever(visitOrderAllocationJobRepository.save(any<VisitOrderAllocationJob>())).thenReturn(visitOrderAllocationJob)
 
     // Begin test
     prisonService.triggerVisitAllocationForActivePrisons()
@@ -100,7 +100,7 @@ class PrisonServiceTest {
 
     // when
     whenever(prisonApiClient.getAllServicePrisonsEnabledForDps()).thenReturn(listOf(activePrison1, activePrison2))
-    whenever(visitOrderAllocationJobRepository.save(any())).thenReturn(visitOrderAllocationJob)
+    whenever(visitOrderAllocationJobRepository.save(any<VisitOrderAllocationJob>())).thenReturn(visitOrderAllocationJob)
 
     // an exception thrown when sending message for prison 1
     whenever(visitAllocationEventJobSqsService.sendVisitAllocationEventToAllocationJobQueue(visitOrderAllocationJobReference, activePrison1.agencyId)).thenThrow(RuntimeException::class.java)
