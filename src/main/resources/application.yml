@@ -101,3 +101,5 @@ feature:
   events:
     sns:
       enabled: true
+
+springdoc.swagger-ui.version: 5.32.1
