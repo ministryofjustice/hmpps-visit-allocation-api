@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.wiremock.MockUtils.Companion.getJsonString
 
@@ -32,6 +33,30 @@ class VisitSchedulerMockServer : WireMockServer(8097) {
             responseBuilder
               .withStatus(HttpStatus.OK.value())
               .withBody(getJsonString(visit))
+          },
+        ),
+    )
+  }
+
+  fun stubGetSessionTemplateByReference(sessionTemplateReference: String, sessionTemplate: SessionTemplateDto?, httpStatus: HttpStatus? = null) {
+    val responseBuilder = aResponse()
+      .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+
+    stubFor(
+      get("/admin/session-templates/$sessionTemplateReference")
+        .willReturn(
+          if (sessionTemplate == null) {
+            if (httpStatus != null) {
+              responseBuilder
+                .withStatus(httpStatus.value())
+            } else {
+              responseBuilder
+                .withStatus(HttpStatus.NOT_FOUND.value())
+            }
+          } else {
+            responseBuilder
+              .withStatus(HttpStatus.OK.value())
+              .withBody(getJsonString(sessionTemplate))
           },
         ),
     )

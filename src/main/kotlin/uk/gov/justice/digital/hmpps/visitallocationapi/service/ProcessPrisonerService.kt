@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.PrisonerSnap
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.snapshot
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateVisitOrderRestrictionType
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaymentReason
@@ -49,13 +50,22 @@ class ProcessPrisonerService(
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID? {
+  fun processPrisonerVisitOrderUsage(
+    visit: VisitDto,
+    visitOrderRestriction: SessionTemplateVisitOrderRestrictionType? = null,
+  ): UUID? {
     val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
     // Due to our SQS queues being "At least once delivery", this specific event needs to return early if this visit has already been mapped.
     if (visitAlreadyMapped(dpsPrisonerDetails, visit)) {
       LOG.info("Duplicate request to map a visit booking (${visit.reference}) to a visit order for prisoner ${dpsPrisonerDetails.prisonerId}. Exiting early.")
+      return null
+    }
+
+    if (visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE) {
+      LOG.info("Visit booking (${visit.reference}) does not require a visit order for prisoner ${dpsPrisonerDetails.prisonerId}. Logging history only.")
+      visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
       return null
     }
 

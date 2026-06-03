@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi
 
 import kotlinx.coroutines.runBlocking
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -9,15 +10,19 @@ import org.mockito.Mockito.anyMap
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateVisitOrderRestrictionType
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
@@ -301,6 +306,29 @@ class ProcessPrisonerServiceTest {
     // THEN
     verify(changeLogService).createLogAllocationUsedByVisit(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_CONSUMED_BY_VISIT), anyMap())
+  }
+
+  @Test
+  fun `Prisoner VO consumption - Given session template uses no visit order, when processPrisonerVisitOrderUsage is called, then only history is created`() {
+    // GIVEN
+    val visitReference = "ab-cd-ef-gh"
+    val prisonerId = "AA123456"
+    val prisonId = "HEI"
+    val visit = createVisitDto(visitReference, prisonerId, prisonId)
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    dpsPrisoner.visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(dpsPrisoner, VisitOrderType.VO))
+
+    // WHEN
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
+
+    val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit, SessionTemplateVisitOrderRestrictionType.NONE)
+
+    // THEN
+    assertThat(changeLogReference).isNull()
+    assertThat(dpsPrisoner.visitOrders).allMatch { it.status == VisitOrderStatus.AVAILABLE && it.visitReference == null }
+    assertThat(dpsPrisoner.negativeVisitOrders).isEmpty()
+    verify(visitOrderHistoryService).logAllocationUsedByVisit(dpsPrisoner, visitReference)
+    verifyNoInteractions(changeLogService, telemetryClientService)
   }
 
   // Prisoner VO Refund By Visit Cancelled \\

@@ -43,7 +43,9 @@ class VisitBookedEventHandler(
       LOG.info("Prisoner ${prisoner.prisonerId} is in ${prisoner.prisonId} which is enabled for DPS, processing event")
 
       if (prisoner.convictedStatus == CONVICTED) {
-        val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit)
+        val visitOrderRestriction = visit.sessionTemplateReference
+          ?.let { visitSchedulerClient.getSessionTemplateByReference(it).visitOrderRestriction }
+        val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit, visitOrderRestriction)
         if (changeLogReference != null) {
           val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisoner.prisonerId, changeLogReference)
           if (changeLog != null) {
