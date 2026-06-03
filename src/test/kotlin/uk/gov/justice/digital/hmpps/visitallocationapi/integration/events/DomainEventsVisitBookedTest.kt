@@ -164,7 +164,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
   }
 
   @Test
-  fun `when domain event visit booked is found and session template is not found, then PVO is consumed`() {
+  fun `when domain event visit booked is found and session template is not found, then message is sent to DLQ`() {
     // Given
     val visitReference = "ab-cd-ef-gh"
     val prisonId = "HEI"
@@ -207,24 +207,21 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     awsSnsClient.publish(publishRequest).get()
 
     // Then
-    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
-    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderUsage(any(), anyOrNull()) }
-    await untilAsserted { verify(changeLogService, times(1)).createLogAllocationUsedByVisit(any(), any()) }
-    await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
-
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderUsage(any(), anyOrNull()) }
+    await untilAsserted { verify(changeLogService, times(0)).createLogAllocationUsedByVisit(any(), any()) }
+    await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
     val visitOrders = visitOrderRepository.findAll()
-    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(2)
-    assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(1)
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(3)
+    assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(0)
 
-    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
-    assertThat(changeLog.comment).isEqualTo("allocated to $visitReference")
+    val changeLogs = changeLogRepository.findAll()
+    assertThat(changeLogs.none { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }).isTrue()
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
-    assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.PVO.name))
+    assertThat(visitOrderHistoryList.size).isEqualTo(0)
   }
 
   @Test

@@ -9,7 +9,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateVisitOrderRestrictionType
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
@@ -63,12 +62,5 @@ class VisitBookedEventHandler(
   }
 
   private fun getVisitOrderRestriction(visit: VisitDto): SessionTemplateVisitOrderRestrictionType? = visit.sessionTemplateReference
-    ?.let { sessionTemplateReference ->
-      try {
-        visitSchedulerClient.getSessionTemplateByReference(sessionTemplateReference).visitOrderRestriction
-      } catch (e: NotFoundException) {
-        LOG.warn("Session template $sessionTemplateReference not found for visit ${visit.reference}. Continuing with default visit order usage.")
-        null
-      }
-    }
+    ?.let { sessionTemplateReference -> visitSchedulerClient.getSessionTemplateByReference(sessionTemplateReference).visitOrderRestriction }
 }
