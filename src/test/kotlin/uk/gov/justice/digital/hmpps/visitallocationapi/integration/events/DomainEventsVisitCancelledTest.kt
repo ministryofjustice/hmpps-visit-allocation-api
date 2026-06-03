@@ -98,8 +98,8 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.first { it.type == VisitOrderType.VO }.createdTimestamp.toLocalDate()).isEqualTo(LocalDate.now().minusDays(1))
     assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(0)
 
-    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
-    assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
+    assertThat(changeLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
@@ -170,8 +170,8 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.size).isEqualTo(1)
 
-    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
-    assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
+    assertThat(changeLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
     assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
@@ -250,8 +250,8 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.size).isEqualTo(2)
 
-    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
-    assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
+    assertThat(changeLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
@@ -296,8 +296,8 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(1)
 
-    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
-    assertThat(changLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
+    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
+    assertThat(changeLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
@@ -531,8 +531,8 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     val visitOrders = visitOrderRepository.findAll()
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(26)
 
-    val changLogCount = changeLogRepository.findAll().count { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
-    assertThat(changLogCount).isEqualTo(0)
+    val changeLogCount = changeLogRepository.findAll().count { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
+    assertThat(changeLogCount).isEqualTo(0)
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(0)

@@ -90,8 +90,8 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(2)
     assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(1)
 
-    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
-    assertThat(changLog.comment).isEqualTo("allocated to $visitReference")
+    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
+    assertThat(changeLog.comment).isEqualTo("allocated to $visitReference")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
@@ -218,8 +218,8 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(2)
     assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(1)
 
-    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
-    assertThat(changLog.comment).isEqualTo("allocated to $visitReference")
+    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
+    assertThat(changeLog.comment).isEqualTo("allocated to $visitReference")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
@@ -279,8 +279,8 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(1)
     assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(1)
 
-    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
-    assertThat(changLog.comment).isEqualTo("allocated to $visitReference")
+    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
+    assertThat(changeLog.comment).isEqualTo("allocated to $visitReference")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
@@ -342,8 +342,8 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     assertThat(negativeVisitOrders.size).isEqualTo(1)
     assertThat(negativeVisitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(1)
 
-    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
-    assertThat(changLog.comment).isEqualTo("allocated to $visitReference")
+    val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
+    assertThat(changeLog.comment).isEqualTo("allocated to $visitReference")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
@@ -516,10 +516,10 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
     assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(1)
     assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(1)
 
-    val changLogs = changeLogRepository.findAll()
-    assertThat(changLogs.size).isEqualTo(1)
+    val changeLogs = changeLogRepository.findAll()
+    assertThat(changeLogs.size).isEqualTo(1)
 
-    assertThat(changLogs[0].comment).isEqualTo("allocated to $visitReference")
+    assertThat(changeLogs[0].comment).isEqualTo("allocated to $visitReference")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(0)
