@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito.anyMap
+import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.eq
@@ -21,16 +22,12 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.Sessi
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHistory
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHistoryAttributes
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
@@ -343,30 +340,18 @@ class ProcessPrisonerServiceTest {
     val prisonId = "HEI"
     val visit = createVisitDto(visitReference, prisonerId, prisonId)
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-    val visitOrderHistory = VisitOrderHistory(
-      type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT,
-      prisoner = dpsPrisoner,
-      voBalance = 1,
-      pvoBalance = 0,
-      userName = "SYSTEM",
-    )
-    visitOrderHistory.visitOrderHistoryAttributes.add(
-      VisitOrderHistoryAttributes(
-        visitOrderHistory = visitOrderHistory,
-        attributeType = VisitOrderHistoryAttributeType.VISIT_REFERENCE,
-        attributeValue = visitReference,
-      ),
-    )
-    dpsPrisoner.visitOrderHistory.add(visitOrderHistory)
 
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(visitOrderHistoryService.allocationUsedByVisitExists(prisonerId, visitReference)).thenReturn(true)
 
     val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit, SessionTemplateVisitOrderRestrictionType.NONE)
 
     // THEN
     assertThat(changeLogReference).isNull()
-    verifyNoInteractions(visitOrderHistoryService, changeLogService, telemetryClientService)
+    verify(visitOrderHistoryService).allocationUsedByVisitExists(prisonerId, visitReference)
+    verify(visitOrderHistoryService, never()).logAllocationUsedByVisit(dpsPrisoner, visitReference)
+    verifyNoInteractions(changeLogService, telemetryClientService)
   }
 
   // Prisoner VO Refund By Visit Cancelled \\

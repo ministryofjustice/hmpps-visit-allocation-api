@@ -39,6 +39,14 @@ class VisitOrderHistoryService(
 
   fun getVisitOrderHistoryForPrisoner(prisonerId: String, fromDate: LocalDate): List<VisitOrderHistoryDto> = visitOrderHistoryRepository.findVisitOrderHistoryByPrisonerIdAfterFromDateOrderByIdAsc(prisonerId, fromDate.atStartOfDay()).map { VisitOrderHistoryDto(it) }
 
+  fun allocationUsedByVisitExists(prisonerId: String, visitReference: String): Boolean = visitOrderHistoryRepository.existsByPrisonerIdAndTypeAndVisitReferenceAttribute(
+    prisonerId = prisonerId,
+    visitOrderHistoryType = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT.name,
+    // VisitOrderHistoryAttributes.attributeType currently uses JPA's default ordinal enum mapping.
+    attributeType = VisitOrderHistoryAttributeType.VISIT_REFERENCE.ordinal.toString(),
+    visitReference = visitReference,
+  )
+
   fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): VisitOrderHistory {
     logger.info("Logging migration to visit_order_history table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
 

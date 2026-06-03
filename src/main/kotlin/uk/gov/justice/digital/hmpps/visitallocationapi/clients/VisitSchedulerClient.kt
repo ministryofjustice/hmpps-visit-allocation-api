@@ -53,7 +53,7 @@ class VisitSchedulerClient(
           LOG.error("getSessionTemplateByReference Failed for get request $uri")
           Mono.error(e)
         } else {
-          LOG.error("getSessionTemplateByReference NOT_FOUND for get request $uri")
+          LOG.debug("getSessionTemplateByReference NOT_FOUND for get request $uri")
           Mono.error { NotFoundException("Session template not found for reference $sessionTemplateReference, $e") }
         }
       }

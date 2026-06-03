@@ -67,7 +67,7 @@ class VisitBookedEventHandler(
       try {
         visitSchedulerClient.getSessionTemplateByReference(sessionTemplateReference).visitOrderRestriction
       } catch (e: NotFoundException) {
-        LOG.warn("Session template $sessionTemplateReference not found for visit ${visit.reference}. Continuing with default visit order usage.", e)
+        LOG.warn("Session template $sessionTemplateReference not found for visit ${visit.reference}. Continuing with default visit order usage.")
         null
       }
     }
