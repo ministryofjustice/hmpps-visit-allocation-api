@@ -285,6 +285,7 @@ class ProcessPrisonerServiceTest {
     val prisonId = "HEI"
     val visit = createVisitDto(visitReference, prisonerId, prisonId)
     val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    dpsPrisoner.visitOrders.add(visitOrdersUtil.createAvailableVisitOrder(dpsPrisoner, VisitOrderType.PVO))
 
     val changeLog = ChangeLog(
       changeType = ChangeLogType.ALLOCATION_USED_BY_VISIT,
@@ -305,6 +306,7 @@ class ProcessPrisonerServiceTest {
     processPrisonerService.processPrisonerVisitOrderUsage(visit)
 
     // THEN
+    verify(visitOrderHistoryService).logAllocationUsedByVisit(dpsPrisoner, visitReference, VisitOrderType.PVO.name)
     verify(changeLogService).createLogAllocationUsedByVisit(dpsPrisoner, visitReference)
     verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_CONSUMED_BY_VISIT), anyMap())
   }
@@ -328,7 +330,7 @@ class ProcessPrisonerServiceTest {
     assertThat(changeLogReference).isNull()
     assertThat(dpsPrisoner.visitOrders).allMatch { it.status == VisitOrderStatus.AVAILABLE && it.visitReference == null }
     assertThat(dpsPrisoner.negativeVisitOrders).isEmpty()
-    verify(visitOrderHistoryService).logAllocationUsedByVisit(dpsPrisoner, visitReference)
+    verify(visitOrderHistoryService).logAllocationUsedByVisit(dpsPrisoner, visitReference, "NONE")
     verifyNoInteractions(changeLogService, telemetryClientService)
   }
 
@@ -350,7 +352,7 @@ class ProcessPrisonerServiceTest {
     // THEN
     assertThat(changeLogReference).isNull()
     verify(visitOrderHistoryService).allocationUsedByVisitExists(prisonerId, visitReference)
-    verify(visitOrderHistoryService, never()).logAllocationUsedByVisit(dpsPrisoner, visitReference)
+    verify(visitOrderHistoryService, never()).logAllocationUsedByVisit(dpsPrisoner, visitReference, "NONE")
     verifyNoInteractions(changeLogService, telemetryClientService)
   }
 

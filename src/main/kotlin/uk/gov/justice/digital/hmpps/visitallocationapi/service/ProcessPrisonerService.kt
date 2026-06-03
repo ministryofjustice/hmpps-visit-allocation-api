@@ -65,7 +65,7 @@ class ProcessPrisonerService(
 
     if (visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE) {
       LOG.info("Visit booking (${visit.reference}) does not require a visit order for prisoner ${dpsPrisonerDetails.prisonerId}. Logging history only.")
-      visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
+      visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference, "NONE")
       return null
     }
 
@@ -95,7 +95,7 @@ class ProcessPrisonerService(
       dpsPrisonerDetails.negativeVisitOrders.add(negativeVo)
     }
 
-    visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
+    visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference, selected?.type?.name ?: VisitOrderType.VO.name)
     val changeLog = changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
     dpsPrisonerDetails.changeLogs.add(changeLog)
 

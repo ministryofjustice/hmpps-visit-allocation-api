@@ -17,6 +17,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.Sessi
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateVisitOrderRestrictionType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.VISIT_ORDER_TYPE_USED
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.VISIT_REFERENCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -95,7 +96,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.PVO.name))
   }
 
   @Test
@@ -159,7 +160,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to "NONE"))
   }
 
   @Test
@@ -223,7 +224,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.PVO.name))
   }
 
   @Test
@@ -284,7 +285,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
   }
 
   @Test
@@ -347,7 +348,7 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
   }
 
   @Test
