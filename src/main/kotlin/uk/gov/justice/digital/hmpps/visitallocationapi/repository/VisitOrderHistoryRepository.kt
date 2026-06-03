@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.repository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderHistory
 import java.time.LocalDateTime
 
@@ -12,24 +14,20 @@ interface VisitOrderHistoryRepository : JpaRepository<VisitOrderHistory, Long> {
   fun findVisitOrderHistoryByPrisonerIdAfterFromDateOrderByIdAsc(prisonerId: String, fromDateTime: LocalDateTime): List<VisitOrderHistory>
 
   @Query(
-    value =
     """
-    SELECT EXISTS (
-      SELECT 1
-      FROM visit_order_history voh
-      JOIN visit_order_history_attributes attribute ON attribute.visit_order_history_id = voh.id
-      WHERE voh.prisoner_id = :prisonerId
-      AND voh.type = :visitOrderHistoryType
-      AND attribute.attribute_type = :attributeType
-      AND attribute.attribute_value = :visitReference
-    )
-    """,
-    nativeQuery = true,
+    SELECT CASE WHEN COUNT(voh) > 0 THEN true ELSE false END
+    FROM VisitOrderHistory voh
+    JOIN voh.visitOrderHistoryAttributes attribute
+    WHERE voh.prisoner.prisonerId = :prisonerId
+    AND voh.type = :visitOrderHistoryType
+    AND attribute.attributeType = :attributeType
+    AND attribute.attributeValue = :visitReference
+  """,
   )
   fun existsByPrisonerIdAndTypeAndVisitReferenceAttribute(
     prisonerId: String,
-    visitOrderHistoryType: String,
-    attributeType: String,
+    visitOrderHistoryType: VisitOrderHistoryType,
+    attributeType: VisitOrderHistoryAttributeType,
     visitReference: String,
   ): Boolean
 }

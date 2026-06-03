@@ -41,9 +41,8 @@ class VisitOrderHistoryService(
 
   fun allocationUsedByVisitExists(prisonerId: String, visitReference: String): Boolean = visitOrderHistoryRepository.existsByPrisonerIdAndTypeAndVisitReferenceAttribute(
     prisonerId = prisonerId,
-    visitOrderHistoryType = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT.name,
-    // VisitOrderHistoryAttributes.attributeType currently uses JPA's default ordinal enum mapping.
-    attributeType = VisitOrderHistoryAttributeType.VISIT_REFERENCE.ordinal.toString(),
+    visitOrderHistoryType = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT,
+    attributeType = VisitOrderHistoryAttributeType.VISIT_REFERENCE,
     visitReference = visitReference,
   )
 

@@ -50,7 +50,7 @@ class VisitSchedulerClient(
       .bodyToMono<SessionTemplateDto>()
       .onErrorResume { e ->
         if (!isNotFoundError(e)) {
-          LOG.error("getSessionTemplateByReference Failed for get request $uri")
+          LOG.error("getSessionTemplateByReference Failed for get request $uri", e)
           Mono.error(e)
         } else {
           LOG.debug("getSessionTemplateByReference NOT_FOUND for get request $uri")
