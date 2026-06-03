@@ -163,6 +163,70 @@ class DomainEventsVisitBookedTest : EventsIntegrationTestBase() {
   }
 
   @Test
+  fun `when domain event visit booked is found and session template is not found, then PVO is consumed`() {
+    // Given
+    val visitReference = "ab-cd-ef-gh"
+    val prisonId = "HEI"
+    val prisonerId = "AA123456"
+    val sessionTemplateReference = "missing-session-template-ref"
+
+    val visit = createVisitDto(visitReference, prisonerId, prisonId, sessionTemplateReference)
+
+    val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    dpsPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.VO, 2, dpsPrisoner))
+    dpsPrisoner.visitOrders.addAll(createVisitOrders(VisitOrderType.PVO, 1, dpsPrisoner))
+    dpsPrisoner.changeLogs.add(
+      ChangeLog(
+        changeTimestamp = LocalDateTime.now().minusSeconds(1),
+        changeType = ChangeLogType.BATCH_PROCESS,
+        changeSource = ChangeLogSource.SYSTEM,
+        userId = "SYSTEM",
+        comment = "Random existing changeLog",
+        prisoner = dpsPrisoner,
+        visitOrderBalance = 2,
+        privilegedVisitOrderBalance = 1,
+        reference = UUID.randomUUID(),
+      ),
+    )
+    prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.VISIT_BOOKED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson(visitReference),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_BOOKED_EVENT_TYPE.value, domainEvent)
+
+    // And
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    visitSchedulerMockServer.stubGetSessionTemplateByReference(sessionTemplateReference, null, HttpStatus.NOT_FOUND)
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN", convictedStatus = "Convicted"))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderUsage(any(), anyOrNull()) }
+    await untilAsserted { verify(changeLogService, times(1)).createLogAllocationUsedByVisit(any(), any()) }
+    await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders.filter { it.status == VisitOrderStatus.AVAILABLE }.size).isEqualTo(2)
+    assertThat(visitOrders.filter { it.visitReference == visitReference }.size).isEqualTo(1)
+
+    val changLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_USED_BY_VISIT }
+    assertThat(changLog.comment).isEqualTo("allocated to $visitReference")
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList.size).isEqualTo(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 2, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT, attributes = mapOf(VISIT_REFERENCE to visitReference))
+  }
+
+  @Test
   fun `when domain event visit booked is found, and no PVO is available, then VO is consumed`() {
     // Given
     val visitReference = "ab-cd-ef-gh"

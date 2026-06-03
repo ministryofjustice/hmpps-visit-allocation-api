@@ -18,6 +18,8 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProc
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaymentReason
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
@@ -524,7 +526,15 @@ class ProcessPrisonerService(
     return visitOrders
   }
 
-  private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }
+  private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } ||
+    dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference } ||
+    dpsPrisonerDetails.visitOrderHistory.any { history ->
+      history.type == VisitOrderHistoryType.ALLOCATION_USED_BY_VISIT &&
+        history.visitOrderHistoryAttributes.any { attribute ->
+          attribute.attributeType == VisitOrderHistoryAttributeType.VISIT_REFERENCE &&
+            attribute.attributeValue == visit.reference
+        }
+    }
 
   private fun logAllocationBatchProcess(
     dpsPrisonerDetailsAfter: PrisonerDetails,
