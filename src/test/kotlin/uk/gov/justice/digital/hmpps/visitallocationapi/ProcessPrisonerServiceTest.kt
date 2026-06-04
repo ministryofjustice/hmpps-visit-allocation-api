@@ -452,6 +452,57 @@ class ProcessPrisonerServiceTest {
     verifyNoInteractions(changeLogService, telemetryClientService)
   }
 
+  @Test
+  fun `Prisoner VO refund - Given refund history exists for session template using no visit order, no extra processing is done`() {
+    // GIVEN
+    val visitReference = "ab-cd-ef-gh"
+    val prisonerId = "AA123456"
+    val visit = createVisitDto(visitReference, prisonerId, "HEI")
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(visitOrderHistoryService.allocationRefundedByVisitCancelledExists(prisonerId, visitReference)).thenReturn(true)
+
+    // WHEN
+    val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit, SessionTemplateVisitOrderRestrictionType.NONE)
+
+    // THEN
+    assertThat(changeLogReference).isNull()
+    verify(visitOrderHistoryService).allocationRefundedByVisitCancelledExists(prisonerId, visitReference)
+    verify(visitOrderHistoryService, never()).logAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference, "NONE")
+    verifyNoInteractions(changeLogService, telemetryClientService)
+  }
+
+  @Test
+  fun `Prisoner VO refund - Given refund history exists for visit with a used VO, no extra processing is done`() {
+    // GIVEN
+    val visitReference = "ab-cd-ef-gh"
+    val prisonerId = "AA123456"
+    val visit = createVisitDto(visitReference, prisonerId, "HEI")
+    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    val usedVisitOrder = VisitOrder(
+      type = VisitOrderType.VO,
+      status = VisitOrderStatus.USED,
+      visitReference = visitReference,
+      prisoner = dpsPrisoner,
+    )
+    dpsPrisoner.visitOrders.add(usedVisitOrder)
+
+    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
+    whenever(visitOrderHistoryService.allocationRefundedByVisitCancelledExists(prisonerId, visitReference)).thenReturn(true)
+
+    // WHEN
+    val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit)
+
+    // THEN
+    assertThat(changeLogReference).isNull()
+    assertThat(usedVisitOrder.status).isEqualTo(VisitOrderStatus.USED)
+    assertThat(usedVisitOrder.visitReference).isEqualTo(visitReference)
+    verify(visitOrderHistoryService).allocationRefundedByVisitCancelledExists(prisonerId, visitReference)
+    verify(visitOrderHistoryService, never()).logAllocationRefundedByVisitCancelled(dpsPrisoner, visitReference, VisitOrderType.VO.name)
+    verifyNoInteractions(changeLogService, telemetryClientService)
+  }
+
   // Prisoner Reset balance \\
 
   /**

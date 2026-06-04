@@ -164,6 +164,45 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
   }
 
   @Test
+  fun `when duplicate visit cancelled events are found and session template uses no visit order, then history is only created once`() {
+    // Given
+    val visitReference = "ab-cd-ef-gh"
+    val prisonId = "HEI"
+    val prisonerId = "AA123456"
+    val sessionTemplateReference = "session-template-ref"
+    val visit = createVisitDto(visitReference, prisonerId, prisonId, sessionTemplateReference)
+    val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson(visitReference),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value, domainEvent)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN", convictedStatus = "Convicted"))
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    visitSchedulerMockServer.stubGetSessionTemplateByReference(sessionTemplateReference, SessionTemplateDto(SessionTemplateVisitOrderRestrictionType.NONE))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(2)).processPrisonerVisitOrderRefund(any(), eq(SessionTemplateVisitOrderRestrictionType.NONE)) }
+    await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
+    await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList).hasSize(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to "NONE"))
+  }
+
+  @Test
   fun `when domain event visit cancelled is found and session template lookup fails, then message is sent to DLQ`() {
     // Given
     val visitReference = "ab-cd-ef-gh"
@@ -336,13 +375,14 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val negativeVisitOrders = negativeVisitOrderRepository.findAll()
     assertThat(negativeVisitOrders.size).isEqualTo(2)
+    assertThat(negativeVisitOrders).allMatch { it.status == NegativeVisitOrderStatus.REPAID }
 
     val changeLog = changeLogRepository.findAll().first { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }
     assertThat(changeLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
   }
 
   @Test

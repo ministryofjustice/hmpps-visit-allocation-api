@@ -118,6 +118,11 @@ class ProcessPrisonerService(
     val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
+    if (visitOrderHistoryService.allocationRefundedByVisitCancelledExists(dpsPrisonerDetails.prisonerId, visit.reference)) {
+      LOG.info("Duplicate request to refund a visit order for cancelled visit (${visit.reference}) for prisoner ${dpsPrisonerDetails.prisonerId}. Exiting early.")
+      return null
+    }
+
     if (visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE) {
       LOG.info("Visit cancellation (${visit.reference}) does not require a visit order refund for prisoner ${visit.prisonerId}. Logging history only.")
       visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, "NONE")
@@ -159,7 +164,7 @@ class ProcessPrisonerService(
         // If the original negative VO has already been repaid by something else (such as allocation),
         // find any negative USED VO, repay the first one.
         dpsPrisonerDetails.negativeVisitOrders.any { it.status == NegativeVisitOrderStatus.USED } -> {
-          dpsPrisonerDetails.negativeVisitOrders.first().apply {
+          dpsPrisonerDetails.negativeVisitOrders.first { it.status == NegativeVisitOrderStatus.USED }.apply {
             visitOrderTypeUsed = type
             status = NegativeVisitOrderStatus.REPAID
             repaidDate = LocalDate.now()

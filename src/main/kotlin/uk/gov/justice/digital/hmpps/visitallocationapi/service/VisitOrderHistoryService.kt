@@ -46,6 +46,13 @@ class VisitOrderHistoryService(
     visitReference = visitReference,
   )
 
+  fun allocationRefundedByVisitCancelledExists(prisonerId: String, visitReference: String): Boolean = visitOrderHistoryRepository.existsByPrisonerIdAndTypeAndVisitReferenceAttribute(
+    prisonerId = prisonerId,
+    visitOrderHistoryType = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED,
+    attributeType = VisitOrderHistoryAttributeType.VISIT_REFERENCE,
+    visitReference = visitReference,
+  )
+
   fun logMigrationChange(migrationChangeDto: VisitAllocationPrisonerMigrationDto, dpsPrisoner: PrisonerDetails): VisitOrderHistory {
     logger.info("Logging migration to visit_order_history table for prisoner ${migrationChangeDto.prisonerId}, migration - $migrationChangeDto")
 
