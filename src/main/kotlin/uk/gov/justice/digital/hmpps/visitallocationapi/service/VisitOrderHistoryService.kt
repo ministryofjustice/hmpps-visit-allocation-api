@@ -112,9 +112,12 @@ class VisitOrderHistoryService(
     )
   }
 
-  fun logAllocationRefundedByVisitCancelled(dpsPrisoner: PrisonerDetails, visitReference: String): VisitOrderHistory {
+  fun logAllocationRefundedByVisitCancelled(dpsPrisoner: PrisonerDetails, visitReference: String, visitOrderTypeUsed: String): VisitOrderHistory {
     logger.info("Logging to visit_order_history table for prisoner ${dpsPrisoner.prisonerId} - logAllocationRefundedByVisitCancelled")
-    val attributes = mapOf(VisitOrderHistoryAttributeType.VISIT_REFERENCE to visitReference)
+    val attributes = mapOf(
+      VisitOrderHistoryAttributeType.VISIT_REFERENCE to visitReference,
+      VisitOrderHistoryAttributeType.VISIT_ORDER_TYPE_USED to visitOrderTypeUsed,
+    )
 
     return createVisitOrderHistory(
       dpsPrisoner = dpsPrisoner,

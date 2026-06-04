@@ -8,13 +8,18 @@ import org.awaitility.kotlin.untilCallTo
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.springframework.http.HttpStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.AttributeSearchPrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateVisitOrderRestrictionType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.VISIT_ORDER_TYPE_USED
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType.VISIT_REFERENCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
@@ -87,7 +92,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -103,7 +108,89 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
+  }
+
+  @Test
+  fun `when domain event visit cancelled is found and session template uses no visit order, then no refund is processed`() {
+    // Given
+    val visitReference = "ab-cd-ef-gh"
+    val prisonId = "HEI"
+    val prisonerId = "AA123456"
+    val sessionTemplateReference = "session-template-ref"
+    val visit = createVisitDto(visitReference, prisonerId, prisonId, sessionTemplateReference)
+
+    val dpsPrisoner = PrisonerDetails(prisonerId = prisonerId, lastVoAllocatedDate = LocalDate.now(), LocalDate.now())
+    dpsPrisoner.visitOrders.add(
+      VisitOrder(
+        type = VisitOrderType.VO,
+        status = VisitOrderStatus.AVAILABLE,
+        createdTimestamp = LocalDateTime.now().minusDays(1),
+        prisoner = dpsPrisoner,
+      ),
+    )
+    prisonerDetailsRepository.saveAndFlush(dpsPrisoner)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson(visitReference),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value, domainEvent)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN", convictedStatus = "Convicted"))
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    visitSchedulerMockServer.stubGetSessionTemplateByReference(sessionTemplateReference, SessionTemplateDto(SessionTemplateVisitOrderRestrictionType.NONE))
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
+    await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), eq(SessionTemplateVisitOrderRestrictionType.NONE)) }
+    await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
+    await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
+
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+
+    val visitOrders = visitOrderRepository.findAll()
+    assertThat(visitOrders).hasSize(1)
+    assertThat(visitOrders.single().status).isEqualTo(VisitOrderStatus.AVAILABLE)
+    assertThat(changeLogRepository.findAll().none { it.changeType == ChangeLogType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED }).isTrue()
+    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    assertThat(visitOrderHistoryList).hasSize(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to "NONE"))
+  }
+
+  @Test
+  fun `when domain event visit cancelled is found and session template lookup fails, then message is sent to DLQ`() {
+    // Given
+    val visitReference = "ab-cd-ef-gh"
+    val prisonId = "HEI"
+    val prisonerId = "AA123456"
+    val sessionTemplateReference = "missing-session-template-ref"
+    val visit = createVisitDto(visitReference, prisonerId, prisonId, sessionTemplateReference)
+
+    val domainEvent = createDomainEventJson(
+      DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson(visitReference),
+    )
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_CANCELLED_EVENT_TYPE.value, domainEvent)
+
+    prisonerSearchMockServer.stubGetPrisonerById(prisonerId = prisonerId, createPrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = "IN", convictedStatus = "Convicted"))
+    visitSchedulerMockServer.stubGetVisitByReference(visitReference, visit)
+    visitSchedulerMockServer.stubGetSessionTemplateByReference(sessionTemplateReference, null, HttpStatus.INTERNAL_SERVER_ERROR)
+    prisonApiMockServer.stubGetPrisonEnabledForDps(prisonId, true)
+
+    // When
+    awsSnsClient.publish(publishRequest).get()
+
+    // Then
+    await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
+    await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
+    verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull())
+    assertThat(visitOrderHistoryRepository.findAll()).isEmpty()
   }
 
   @Test
@@ -158,7 +245,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -174,7 +261,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     assertThat(changeLog.comment).isEqualTo("allocated refunded as $visitReference cancelled")
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 0, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
   }
 
   @Test
@@ -238,7 +325,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -255,7 +342,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = -1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
   }
 
   @Test
@@ -287,7 +374,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -301,7 +388,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(1)
-    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference))
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
   }
 
   @Test
@@ -468,7 +555,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -522,7 +609,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -535,7 +622,8 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     assertThat(changeLogCount).isEqualTo(0)
 
     val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
-    assertThat(visitOrderHistoryList.size).isEqualTo(0)
+    assertThat(visitOrderHistoryList).hasSize(1)
+    assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisonerId, comment = null, voBalance = 26, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.ALLOCATION_REFUNDED_BY_VISIT_CANCELLED, attributes = mapOf(VISIT_REFERENCE to visitReference, VISIT_ORDER_TYPE_USED to VisitOrderType.VO.name))
   }
 
   @Test
@@ -563,7 +651,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -601,7 +689,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any()) }
+    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 

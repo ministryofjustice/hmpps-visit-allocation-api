@@ -111,17 +111,28 @@ class ProcessPrisonerService(
     return changeLog.reference
   }
 
-  fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID? {
+  fun processPrisonerVisitOrderRefund(
+    visit: VisitDto,
+    visitOrderRestriction: SessionTemplateVisitOrderRestrictionType? = null,
+  ): UUID? {
     val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
+
+    if (visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE) {
+      LOG.info("Visit cancellation (${visit.reference}) does not require a visit order refund for prisoner ${visit.prisonerId}. Logging history only.")
+      visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, "NONE")
+      return null
+    }
 
     // Find the VO used by the visit.
     val voUsedForVisit = dpsPrisonerDetails.visitOrders
       .firstOrNull { it.visitReference == visit.reference }
+    var visitOrderTypeUsed = voUsedForVisit?.type ?: VisitOrderType.VO
 
     if (voUsedForVisit != null) {
       if (voUsedForVisit.type == VisitOrderType.VO && hasPrisonerReachedVoCap(dpsPrisonerDetails)) {
         LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} already has the maximum number of VOs. Refund for visit ${visit.reference} will not be processed.")
+        visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, visitOrderTypeUsed.name)
         return null
       }
 
@@ -137,6 +148,7 @@ class ProcessPrisonerService(
         // Aim to repay the original negative VO which was used by the visit.
         negativeVoUsedForVisit != null && negativeVoUsedForVisit.status == NegativeVisitOrderStatus.USED -> {
           LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} - refunding VO by removing negative VO")
+          visitOrderTypeUsed = negativeVoUsedForVisit.type
           negativeVoUsedForVisit.apply {
             status = NegativeVisitOrderStatus.REPAID
             repaidDate = LocalDate.now()
@@ -148,6 +160,7 @@ class ProcessPrisonerService(
         // find any negative USED VO, repay the first one.
         dpsPrisonerDetails.negativeVisitOrders.any { it.status == NegativeVisitOrderStatus.USED } -> {
           dpsPrisonerDetails.negativeVisitOrders.first().apply {
+            visitOrderTypeUsed = type
             status = NegativeVisitOrderStatus.REPAID
             repaidDate = LocalDate.now()
             repaidReason = NegativeRepaymentReason.VISIT_ORDER_REFUND
@@ -156,6 +169,7 @@ class ProcessPrisonerService(
 
         hasPrisonerReachedVoCap(dpsPrisonerDetails) -> {
           LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} already has the maximum number of VOs. Refund for visit ${visit.reference} will not be processed.")
+          visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, visitOrderTypeUsed.name)
           return null
         }
 
@@ -166,7 +180,7 @@ class ProcessPrisonerService(
       }
     }
 
-    visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference)
+    visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, visitOrderTypeUsed.name)
     val changeLog = changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference)
     dpsPrisonerDetails.changeLogs.add(changeLog)
 
