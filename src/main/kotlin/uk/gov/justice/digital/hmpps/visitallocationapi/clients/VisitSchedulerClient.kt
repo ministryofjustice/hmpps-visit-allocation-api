@@ -42,7 +42,7 @@ class VisitSchedulerClient(
   }
 
   fun getSessionTemplateByReference(sessionTemplateReference: String): SessionTemplateDto {
-    val uri = "/admin/session-templates/$sessionTemplateReference"
+    val uri = "/admin/session-templates/template/$sessionTemplateReference"
     return webClient.get()
       .uri(uri)
       .accept(MediaType.APPLICATION_JSON)

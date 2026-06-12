@@ -43,7 +43,7 @@ class VisitSchedulerMockServer : WireMockServer(8097) {
       .withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
 
     stubFor(
-      get("/admin/session-templates/$sessionTemplateReference")
+      get("/admin/session-templates/template/$sessionTemplateReference")
         .willReturn(
           if (sessionTemplate == null) {
             if (httpStatus != null) {
