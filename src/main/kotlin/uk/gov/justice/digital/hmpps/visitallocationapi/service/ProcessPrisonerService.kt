@@ -12,6 +12,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchCli
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.PrisonerSnap
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.snapshot
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateVisitOrderRestrictionType
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaymentReason
@@ -49,13 +50,22 @@ class ProcessPrisonerService(
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
-  fun processPrisonerVisitOrderUsage(visit: VisitDto): UUID? {
+  fun processPrisonerVisitOrderUsage(
+    visit: VisitDto,
+    visitOrderRestriction: SessionTemplateVisitOrderRestrictionType? = null,
+  ): UUID? {
     val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
 
     // Due to our SQS queues being "At least once delivery", this specific event needs to return early if this visit has already been mapped.
-    if (visitAlreadyMapped(dpsPrisonerDetails, visit)) {
+    if (visitAlreadyMapped(dpsPrisonerDetails, visit, visitOrderRestriction)) {
       LOG.info("Duplicate request to map a visit booking (${visit.reference}) to a visit order for prisoner ${dpsPrisonerDetails.prisonerId}. Exiting early.")
+      return null
+    }
+
+    if (visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE) {
+      LOG.info("Visit booking (${visit.reference}) does not require a visit order for prisoner ${dpsPrisonerDetails.prisonerId}. Logging history only.")
+      visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference, "NONE")
       return null
     }
 
@@ -85,7 +95,7 @@ class ProcessPrisonerService(
       dpsPrisonerDetails.negativeVisitOrders.add(negativeVo)
     }
 
-    visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
+    visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference, selected?.type?.name ?: VisitOrderType.VO.name)
     val changeLog = changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
     dpsPrisonerDetails.changeLogs.add(changeLog)
 
@@ -101,17 +111,33 @@ class ProcessPrisonerService(
     return changeLog.reference
   }
 
-  fun processPrisonerVisitOrderRefund(visit: VisitDto): UUID? {
+  fun processPrisonerVisitOrderRefund(
+    visit: VisitDto,
+    visitOrderRestriction: SessionTemplateVisitOrderRestrictionType? = null,
+  ): UUID? {
     val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(visit.prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
+
+    if (visitOrderHistoryService.allocationRefundedByVisitCancelledExists(dpsPrisonerDetails.prisonerId, visit.reference)) {
+      LOG.info("Duplicate request to refund a visit order for cancelled visit (${visit.reference}) for prisoner ${dpsPrisonerDetails.prisonerId}. Exiting early.")
+      return null
+    }
+
+    if (visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE) {
+      LOG.info("Visit cancellation (${visit.reference}) does not require a visit order refund for prisoner ${visit.prisonerId}. Logging history only.")
+      visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, "NONE")
+      return null
+    }
 
     // Find the VO used by the visit.
     val voUsedForVisit = dpsPrisonerDetails.visitOrders
       .firstOrNull { it.visitReference == visit.reference }
+    var visitOrderTypeUsed = voUsedForVisit?.type ?: VisitOrderType.VO
 
     if (voUsedForVisit != null) {
       if (voUsedForVisit.type == VisitOrderType.VO && hasPrisonerReachedVoCap(dpsPrisonerDetails)) {
         LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} already has the maximum number of VOs. Refund for visit ${visit.reference} will not be processed.")
+        visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, visitOrderTypeUsed.name)
         return null
       }
 
@@ -127,6 +153,7 @@ class ProcessPrisonerService(
         // Aim to repay the original negative VO which was used by the visit.
         negativeVoUsedForVisit != null && negativeVoUsedForVisit.status == NegativeVisitOrderStatus.USED -> {
           LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} - refunding VO by removing negative VO")
+          visitOrderTypeUsed = negativeVoUsedForVisit.type
           negativeVoUsedForVisit.apply {
             status = NegativeVisitOrderStatus.REPAID
             repaidDate = LocalDate.now()
@@ -137,7 +164,8 @@ class ProcessPrisonerService(
         // If the original negative VO has already been repaid by something else (such as allocation),
         // find any negative USED VO, repay the first one.
         dpsPrisonerDetails.negativeVisitOrders.any { it.status == NegativeVisitOrderStatus.USED } -> {
-          dpsPrisonerDetails.negativeVisitOrders.first().apply {
+          dpsPrisonerDetails.negativeVisitOrders.first { it.status == NegativeVisitOrderStatus.USED }.apply {
+            visitOrderTypeUsed = type
             status = NegativeVisitOrderStatus.REPAID
             repaidDate = LocalDate.now()
             repaidReason = NegativeRepaymentReason.VISIT_ORDER_REFUND
@@ -146,6 +174,7 @@ class ProcessPrisonerService(
 
         hasPrisonerReachedVoCap(dpsPrisonerDetails) -> {
           LOG.info("Prisoner ${dpsPrisonerDetails.prisonerId} already has the maximum number of VOs. Refund for visit ${visit.reference} will not be processed.")
+          visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, visitOrderTypeUsed.name)
           return null
         }
 
@@ -156,7 +185,7 @@ class ProcessPrisonerService(
       }
     }
 
-    visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference)
+    visitOrderHistoryService.logAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference, visitOrderTypeUsed.name)
     val changeLog = changeLogService.createLogAllocationRefundedByVisitCancelled(dpsPrisonerDetails, visit.reference)
     dpsPrisonerDetails.changeLogs.add(changeLog)
 
@@ -514,7 +543,16 @@ class ProcessPrisonerService(
     return visitOrders
   }
 
-  private fun visitAlreadyMapped(dpsPrisonerDetails: PrisonerDetails, visit: VisitDto): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } || dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference }
+  private fun visitAlreadyMapped(
+    dpsPrisonerDetails: PrisonerDetails,
+    visit: VisitDto,
+    visitOrderRestriction: SessionTemplateVisitOrderRestrictionType?,
+  ): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } ||
+    dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference } ||
+    (
+      visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE &&
+        visitOrderHistoryService.allocationUsedByVisitExists(dpsPrisonerDetails.prisonerId, visit.reference)
+      )
 
   private fun logAllocationBatchProcess(
     dpsPrisonerDetailsAfter: PrisonerDetails,

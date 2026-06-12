@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service
 import tools.jackson.databind.ObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateVisitOrderRestrictionType
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
@@ -43,7 +45,8 @@ class VisitBookedEventHandler(
       LOG.info("Prisoner ${prisoner.prisonerId} is in ${prisoner.prisonId} which is enabled for DPS, processing event")
 
       if (prisoner.convictedStatus == CONVICTED) {
-        val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit)
+        val visitOrderRestriction = getVisitOrderRestriction(visit)
+        val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit, visitOrderRestriction)
         if (changeLogReference != null) {
           val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisoner.prisonerId, changeLogReference)
           if (changeLog != null) {
@@ -57,4 +60,7 @@ class VisitBookedEventHandler(
       LOG.info("Prison ${prisoner.prisonId} is not enabled for DPS, skipping processing")
     }
   }
+
+  private fun getVisitOrderRestriction(visit: VisitDto): SessionTemplateVisitOrderRestrictionType? = visit.sessionTemplateReference
+    ?.let { sessionTemplateReference -> visitSchedulerClient.getSessionTemplateByReference(sessionTemplateReference).visitOrderRestriction }
 }

@@ -244,7 +244,12 @@ abstract class EventsIntegrationTestBase {
 
   protected fun createVisitBalancesDto(remainingVo: Int, remainingPvo: Int, latestIepAdjustDate: LocalDate? = null, latestPrivIepAdjustDate: LocalDate? = null): VisitBalancesDto = VisitBalancesDto(remainingVo, remainingPvo, latestIepAdjustDate, latestPrivIepAdjustDate)
 
-  protected fun createVisitDto(visitReference: String, prisonerId: String, prisonId: String): VisitDto = VisitDto(visitReference, prisonerId, prisonId)
+  protected fun createVisitDto(
+    visitReference: String,
+    prisonerId: String,
+    prisonId: String,
+    sessionTemplateReference: String? = null,
+  ): VisitDto = VisitDto(visitReference, prisonerId, prisonId, sessionTemplateReference)
 
   private fun createAdditionalInformationJson(jsonValues: Map<String, Any>): String {
     val builder = StringBuilder()

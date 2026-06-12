@@ -9,6 +9,8 @@ import tools.jackson.databind.ObjectMapper
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.VisitSchedulerClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateVisitOrderRestrictionType
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
@@ -48,7 +50,8 @@ class VisitCancelledEventHandler(
       LOG.info("Prisoner ${prisoner.prisonerId} is in ${prisoner.prisonId} which is enabled for DPS, processing event")
 
       if (prisoner.convictedStatus == CONVICTED) {
-        val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit)
+        val visitOrderRestriction = getVisitOrderRestriction(visit)
+        val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit, visitOrderRestriction)
 
         if (changeLogReference != null) {
           val changeLog = changeLogService.findChangeLogForPrisonerByReference(visit.prisonerId, changeLogReference)
@@ -63,6 +66,9 @@ class VisitCancelledEventHandler(
       LOG.info("Prison ${prisoner.prisonId} is not enabled for DPS, skipping processing")
     }
   }
+
+  private fun getVisitOrderRestriction(visit: VisitDto): SessionTemplateVisitOrderRestrictionType? = visit.sessionTemplateReference
+    ?.let { sessionTemplateReference -> visitSchedulerClient.getSessionTemplateByReference(sessionTemplateReference).visitOrderRestriction }
 
   private fun getPrisonerOrHandleMergedPrisoner(prisonerId: String): PrisonerDto? {
     try {

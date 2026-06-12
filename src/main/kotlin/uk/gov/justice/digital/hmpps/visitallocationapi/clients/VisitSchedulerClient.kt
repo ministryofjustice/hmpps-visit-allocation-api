@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Mono
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.SessionTemplateDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.exception.NotFoundException
 
@@ -38,6 +39,25 @@ class VisitSchedulerClient(
         }
       }
       .block() ?: throw IllegalStateException("timeout response from visit-scheduler for getVisitByReference with reference $visitReference")
+  }
+
+  fun getSessionTemplateByReference(sessionTemplateReference: String): SessionTemplateDto {
+    val uri = "/admin/session-templates/$sessionTemplateReference"
+    return webClient.get()
+      .uri(uri)
+      .accept(MediaType.APPLICATION_JSON)
+      .retrieve()
+      .bodyToMono<SessionTemplateDto>()
+      .onErrorResume { e ->
+        if (!isNotFoundError(e)) {
+          LOG.error("getSessionTemplateByReference Failed for get request $uri", e)
+          Mono.error(e)
+        } else {
+          LOG.debug("getSessionTemplateByReference NOT_FOUND for get request $uri")
+          Mono.error { NotFoundException("Session template not found for reference $sessionTemplateReference, $e") }
+        }
+      }
+      .block() ?: throw IllegalStateException("timeout response from visit-scheduler for getSessionTemplateByReference with reference $sessionTemplateReference")
   }
 
   private fun isNotFoundError(e: Throwable?) = e is WebClientResponseException && e.statusCode == NOT_FOUND
