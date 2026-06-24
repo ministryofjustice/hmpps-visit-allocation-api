@@ -93,6 +93,7 @@ hmpps:
   sqs:
     enabled: ${hmpps.sqs.enabled}
     queueAdminRole: ROLE_VISIT_ALLOCATION_EVENTS_QUEUE_ADMIN
+    defaultErrorVisibilityTimeout: 20, 40, 120, 1230
 
 domain-event-processing:
     enabled: ${SQS_DOMAIN_EVENT_PROCESSING_ENABLED}
