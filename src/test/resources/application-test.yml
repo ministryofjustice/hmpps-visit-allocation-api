@@ -39,6 +39,7 @@ hmpps:
   sqs:
     enabled: true
     provider: localstack
+    defaultErrorVisibilityTimeout: 0
     queues:
       prisonvisitsallocationevents:
         queueName: ${random.uuid}
