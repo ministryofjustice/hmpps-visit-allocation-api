@@ -71,8 +71,7 @@ generic-service:
       - internal
 
   retryDlqCronjob:
-    enabled: true
-    retryDlqSchedule: "*/15 * * * *" # Override to every 15 minutes for the DLQ retry. Allows for downstream API issues to resolve before retrying.
+    enabled: false
 
 generic-prometheus-alerts:
   targetApplication: hmpps-visit-allocation-api

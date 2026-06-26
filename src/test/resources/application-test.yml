@@ -50,9 +50,11 @@ hmpps:
       visitsallocationeventjob:
         queueName: ${random.uuid}
         dlqName: ${random.uuid}
+        errorVisibilityTimeout: 0
       prisonvisitsallocationprisonerretryqueue:
         queueName: ${random.uuid}
         dlqName: ${random.uuid}
+        errorVisibilityTimeout: 0
     topics:
       domainevents:
         arn: arn:aws:sns:eu-west-2:000000000000:${random.uuid}
