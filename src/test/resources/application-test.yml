@@ -47,6 +47,7 @@ hmpps:
         subscribeTopicId: domainevents
         dlqMaxReceiveCount: 1
         visibilityTimeout: 1
+        errorVisibilityTimeout: 0
       visitsallocationeventjob:
         queueName: ${random.uuid}
         dlqName: ${random.uuid}

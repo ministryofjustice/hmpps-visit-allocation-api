@@ -93,11 +93,15 @@ hmpps:
   sqs:
     enabled: ${hmpps.sqs.enabled}
     queueAdminRole: ROLE_VISIT_ALLOCATION_EVENTS_QUEUE_ADMIN
-    # Default failed-message retry delay. With maxReceiveCount=3 this gives the domain events queue around 30 minutes before DLQ.
+    # Fallback failed-message retry delay. Queues with operational retry requirements should define their own timeout below.
     defaultErrorVisibilityTimeout:
-      - 900
-      - 900
+      - 0
     queues:
+      # Domain events retry for around 2 hours, then DLQ before the 3-hour source queue retention expires.
+      prisonvisitsallocationevents:
+        errorVisibilityTimeout:
+          - 3600
+          - 3600
       # Individual prisoner retries should run for several hours, then stay on the DLQ for manual review.
       prisonvisitsallocationprisonerretryqueue:
         errorVisibilityTimeout:
@@ -105,11 +109,11 @@ hmpps:
           - 40
           - 120
           - 840
-      # Per-prison nightly jobs get two 30-minute retries, then DLQ well before the next scheduled run.
+      # Per-prison nightly jobs get two 90-minute retries, then DLQ well before the next scheduled run.
       visitsallocationeventjob:
         errorVisibilityTimeout:
-          - 1800
-          - 1800
+          - 5400
+          - 5400
 
 domain-event-processing:
     enabled: ${SQS_DOMAIN_EVENT_PROCESSING_ENABLED}
