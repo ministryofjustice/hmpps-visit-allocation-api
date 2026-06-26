@@ -1,16 +1,15 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.batch
 
+import io.awspring.cloud.sqs.annotation.SqsListener
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory
 import org.springframework.beans.factory.support.DefaultListableBeanFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 
 /**
- * This batch job moves messages from the events DLQ back to the events queue. Remove the events listener in batch mode
- * so the short-lived batch pod does not consume the same messages it has just retried.
+ * Batch jobs run in short-lived pods, so remove all SQS listener beans in batch mode to stop the pod consuming queues.
  */
 @Component
 @ConditionalOnProperty(name = ["batch.enabled"], havingValue = "true")
@@ -21,19 +20,20 @@ class SqsListenerSuppressor : BeanFactoryPostProcessor {
 
   override fun postProcessBeanFactory(beanFactory: ConfigurableListableBeanFactory) {
     (beanFactory as DefaultListableBeanFactory).beanDefinitionNames
-      .filter { beanName -> beanFactory.isBeanAssignableFrom<DomainEventListener>(beanName) }
+      .filter { beanName -> beanFactory.hasSqsListener(beanName) }
       .forEach {
-        LOG.info("Removing events listener bean {} for batch job", it)
+        LOG.info("Removing SQS listener bean {} for batch job", it)
         beanFactory.removeBeanDefinition(it)
       }
   }
 
-  private inline fun <reified T> DefaultListableBeanFactory.isBeanAssignableFrom(beanName: String): Boolean {
-    getBeanDefinition(beanName).beanClassName
+  private fun DefaultListableBeanFactory.hasSqsListener(beanName: String): Boolean {
+    val beanClass = getBeanDefinition(beanName).beanClassName
       ?.let { runCatching { Class.forName(it, false, beanClassLoader) }.getOrNull() }
-      ?.let { return T::class.java.isAssignableFrom(it) }
+      ?: runCatching { getType(beanName, false) }.getOrNull()
 
-    return runCatching { getType(beanName, false) }.getOrNull()
-      ?.let { T::class.java.isAssignableFrom(it) } == true
+    return beanClass
+      ?.methods
+      ?.any { it.isAnnotationPresent(SqsListener::class.java) } == true
   }
 }
