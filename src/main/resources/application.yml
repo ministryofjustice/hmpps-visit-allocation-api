@@ -105,11 +105,11 @@ hmpps:
           - 40
           - 120
           - 840
-      # Per-prison nightly jobs get two 10-minute retries, then DLQ well before the next scheduled run.
+      # Per-prison nightly jobs get two 30-minute retries, then DLQ well before the next scheduled run.
       visitsallocationeventjob:
         errorVisibilityTimeout:
-          - 600
-          - 600
+          - 1800
+          - 1800
 
 domain-event-processing:
     enabled: ${SQS_DOMAIN_EVENT_PROCESSING_ENABLED}
