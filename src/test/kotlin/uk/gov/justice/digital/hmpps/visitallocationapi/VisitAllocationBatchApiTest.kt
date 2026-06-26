@@ -1,7 +1,9 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi
 
+import jakarta.persistence.EntityManagerFactory
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.flywaydb.core.Flyway
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -18,8 +20,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEv
 import uk.gov.justice.hmpps.sqs.HmppsQueue
 import uk.gov.justice.hmpps.sqs.HmppsQueueService
 import uk.gov.justice.hmpps.sqs.RetryDlqResult
-import jakarta.persistence.EntityManagerFactory
-import org.flywaydb.core.Flyway
 import javax.sql.DataSource
 
 class VisitAllocationBatchApiTest {
