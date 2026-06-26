@@ -73,6 +73,11 @@ generic-service:
   retryDlqCronjob:
     enabled: false
 
+  batchjobs:
+    - name: retry-events-dlq
+      type: RETRY_EVENTS_DLQ
+      schedule: "*/15 * * * *"
+
 generic-prometheus-alerts:
   targetApplication: hmpps-visit-allocation-api
 
