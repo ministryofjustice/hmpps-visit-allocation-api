@@ -136,6 +136,28 @@ When prisoner balance changes and the prison is owned by this service (enabled i
 NOMIS to listen and consume. Event name: "prison-visit-allocation.adjustment.created". The event will contain a prisoner ID and 
 adjustment ID which NOMIS can then use to call via the NomisController "getPrisonerAdjustment" endpoint to re-sync with DPS.
 
-### SQS Retries
-We've enabled an automated cron job via the generic-service helm chart, which runs every 15minutes and reprocesses any message which enters 
-the DLQ. To configure this further, see the helm_deploy/values.yaml. On dev and staging environments the retry cron only runs during operational hours (7am–8:50pm).
+### SQS
+This service uses the HMPPS SQS library to consume events from multiple queues. The queues are configured in application.yml, 
+including their retry configurations, which combine with settings in the cloud-platform-environments repository under our namespace, to 
+create the full retry policy.
+
+#### 1. Nightly Prison Visit Allocation Queue
+This queue is used to receive events from the Cronjob that is responsible for allocating visit orders for active prisons. One message 
+is processed per prison per day. To see the cron configuration for this queue, see the 'periodic visit allocation cronjob' section above. 
+The DLQ for this queue is terminal, with no retry mechanism.
+
+#### 2. Prisoner Retry Queue
+During the nightly visit allocation process, if a prisoner fails to be allocated, a message is placed on this queue. This queue 
+is used to retry the allocation process for a prisoner without failing the entire prison job. The DLQ for this queue is terminal, with no retry mechanism.
+
+#### 3. Event Queue
+This queue is used to receive events from the 'domain events' topic. The domain-events we subscribe to can be found in the 
+cloud-platform-environments repository, under our namespace.
+
+The queue processes domain events from other DPS APIs and NOMIS.
+
+##### Batch Jobs
+This queue has a custom batch-job configured to allow for DLQ retries. This allows us to re-process of messages that 
+failed to be processed due to transient errors without needing to rely on a robust retry / visibility timeout mechanism in the main queue.
+
+Note: We can't rely on the generic-service "retryDlqCronJob" as this enables DLQ retries for all queues.
