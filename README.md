@@ -151,13 +151,13 @@ During the nightly visit allocation process, if a prisoner fails to be allocated
 is used to retry the allocation process for a prisoner without failing the entire prison job. The DLQ for this queue is terminal, with no retry mechanism.
 
 #### 3. Event Queue
-This queue is used to receive events from the 'domain events' topic. The domain-events we subscribe to can be found in the 
+This queue is used to receive events from the 'domain events' topic. The "domain events" we subscribe to can be found in the 
 cloud-platform-environments repository, under our namespace.
 
 The queue processes domain events from other DPS APIs and NOMIS.
 
 ##### Batch Jobs
-This queue has a custom batch-job configured to allow for DLQ retries. This allows us to re-process of messages that 
-failed to be processed due to transient errors without needing to rely on a robust retry / visibility timeout mechanism in the main queue.
+This queue has a custom batch job configured to allow for DLQ retries. This allows us to reprocess messages that
+failed due to transient errors without needing to rely on a robust retry/visibility timeout mechanism in the main queue.
 
 Note: We can't rely on the generic-service "retryDlqCronJob" as this enables DLQ retries for all queues.
