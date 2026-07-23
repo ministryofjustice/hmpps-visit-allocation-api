@@ -12,7 +12,7 @@ class ClientCachingOAuth2AuthorizedClientService(
 ) : OAuth2AuthorizedClientService {
   private val authorizedClients: MutableMap<OAuth2AuthorizedClientId, OAuth2AuthorizedClient> = ConcurrentHashMap()
 
-  override fun <T : OAuth2AuthorizedClient?> loadAuthorizedClient(
+  override fun <T : OAuth2AuthorizedClient> loadAuthorizedClient(
     clientRegistrationId: String,
     principalName: String,
   ): T? = clientRegistrationRepository.findByRegistrationId(clientRegistrationId)?.let {
