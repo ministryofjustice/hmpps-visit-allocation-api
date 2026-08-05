@@ -215,7 +215,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
+    await untilAsserted { verify(prisonerMergeService, times(1)).processPrisonerMerge(any(), any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationForPrisonerMerge(any(), any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
@@ -263,7 +263,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
+    await untilAsserted { verify(prisonerMergeService, times(1)).processPrisonerMerge(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val availableVisitOrdersForPrisoner = visitOrderRepository.findAll().filter { it.status == VisitOrderStatus.AVAILABLE && it.prisonerId == prisonerId }
@@ -307,7 +307,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
+    await untilAsserted { verify(prisonerMergeService, times(1)).processPrisonerMerge(any(), any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationForPrisonerMerge(any(), any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
@@ -346,7 +346,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, atLeastOnce()).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, atLeastOnce()).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerMerge(any(), any()) }
+    await untilAsserted { verify(prisonerMergeService, times(1)).processPrisonerMerge(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
 
     val availableVisitOrdersForPrisoner = visitOrderRepository.findAll().filter { it.status == VisitOrderStatus.AVAILABLE && it.prisonerId == prisonerId }
