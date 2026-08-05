@@ -44,6 +44,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepo
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerVisitOrderRefundService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerVisitOrderUsageService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
@@ -144,6 +145,9 @@ abstract class EventsIntegrationTestBase {
 
   @MockitoSpyBean
   protected lateinit var processPrisonerService: ProcessPrisonerService
+
+  @MockitoSpyBean
+  protected lateinit var prisonerVisitOrderRefundService: PrisonerVisitOrderRefundService
 
   @MockitoSpyBean
   protected lateinit var prisonerVisitOrderUsageService: PrisonerVisitOrderUsageService

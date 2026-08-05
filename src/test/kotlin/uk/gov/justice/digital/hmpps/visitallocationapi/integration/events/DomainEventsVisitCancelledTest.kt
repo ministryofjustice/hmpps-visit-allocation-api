@@ -92,7 +92,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -148,7 +148,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), eq(SessionTemplateVisitOrderRestrictionType.NONE)) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(1)).processPrisonerVisitOrderRefund(any(), eq(SessionTemplateVisitOrderRestrictionType.NONE)) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -192,7 +192,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     // Then
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(2)).processPrisonerVisitOrderRefund(any(), eq(SessionTemplateVisitOrderRestrictionType.NONE)) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(2)).processPrisonerVisitOrderRefund(any(), eq(SessionTemplateVisitOrderRestrictionType.NONE)) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
@@ -228,7 +228,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
     await untilCallTo { domainEventsSqsDlqClient!!.countMessagesOnQueue(domainEventsDlqUrl!!).get() } matches { it == 1 }
-    verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull())
+    verify(prisonerVisitOrderRefundService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull())
     assertThat(visitOrderHistoryRepository.findAll()).isEmpty()
   }
 
@@ -284,7 +284,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -364,7 +364,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -414,7 +414,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -595,7 +595,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -649,7 +649,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
     // Then (first to spy verify calls twice, because at the end of the processing, we raise an event on the same queue which is read but ignored).
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(1)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -691,7 +691,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
@@ -729,7 +729,7 @@ class DomainEventsVisitCancelledTest : EventsIntegrationTestBase() {
 
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
+    await untilAsserted { verify(prisonerVisitOrderRefundService, times(0)).processPrisonerVisitOrderRefund(any(), anyOrNull()) }
     await untilAsserted { verify(changeLogService, times(0)).createLogAllocationRefundedByVisitCancelled(any(), any()) }
     await untilAsserted { verify(snsService, times(0)).sendPrisonAllocationAdjustmentCreatedEvent(any()) }
 
