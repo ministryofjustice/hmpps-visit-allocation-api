@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.Sessi
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerVisitOrderRefundService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.VisitCancelledInfo
@@ -25,7 +25,7 @@ class VisitCancelledEventHandler(
   private val prisonService: PrisonService,
   private val visitSchedulerClient: VisitSchedulerClient,
   private val prisonerSearchClient: PrisonerSearchClient,
-  private val processPrisonerService: ProcessPrisonerService,
+  private val prisonerVisitOrderRefundService: PrisonerVisitOrderRefundService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
 ) : DomainEventHandler {
@@ -51,7 +51,7 @@ class VisitCancelledEventHandler(
 
       if (prisoner.convictedStatus == CONVICTED) {
         val visitOrderRestriction = getVisitOrderRestriction(visit)
-        val changeLogReference = processPrisonerService.processPrisonerVisitOrderRefund(visit, visitOrderRestriction)
+        val changeLogReference = prisonerVisitOrderRefundService.processPrisonerVisitOrderRefund(visit, visitOrderRestriction)
 
         if (changeLogReference != null) {
           val changeLog = changeLogService.findChangeLogForPrisonerByReference(visit.prisonerId, changeLogReference)
