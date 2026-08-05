@@ -25,6 +25,7 @@ class PrisonerReceivedResetBalanceService(
   }
 
   fun processPrisonerReceivedResetBalance(prisonerId: String, reason: PrisonerReceivedReasonType): UUID {
+    LOG.info("processPrisonerReceivedResetBalance for prisoner $prisonerId with reason $reason")
     val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
       ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
