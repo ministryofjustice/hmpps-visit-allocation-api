@@ -22,7 +22,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.NegativeVisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.PrisonerChangeTrackingUtil
@@ -48,67 +47,6 @@ class ProcessPrisonerService(
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
-  }
-
-  fun processPrisonerVisitOrderUsage(
-    visit: VisitDto,
-    visitOrderRestriction: SessionTemplateVisitOrderRestrictionType? = null,
-  ): UUID? {
-    val dpsPrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(visit.prisonerId)
-      ?: prisonerDetailsService.createPrisonerDetails(visit.prisonerId, LocalDate.now().minusDays(14), null)
-
-    // Due to our SQS queues being "At least once delivery", this specific event needs to return early if this visit has already been mapped.
-    if (visitAlreadyMapped(dpsPrisonerDetails, visit, visitOrderRestriction)) {
-      LOG.info("Duplicate request to map a visit booking (${visit.reference}) to a visit order for prisoner ${dpsPrisonerDetails.prisonerId}. Exiting early.")
-      return null
-    }
-
-    if (visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE) {
-      LOG.info("Visit booking (${visit.reference}) does not require a visit order for prisoner ${dpsPrisonerDetails.prisonerId}. Logging history only.")
-      visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference, "NONE")
-      return null
-    }
-
-    // Find the oldest PVO to use. If none exists, find the oldest VO to use.
-    val selected: VisitOrder? = dpsPrisonerDetails.visitOrders
-      .asSequence()
-      .filter { it.type == VisitOrderType.PVO }
-      .filter { it.status == VisitOrderStatus.AVAILABLE }
-      .minByOrNull { it.createdTimestamp }
-      ?: dpsPrisonerDetails.visitOrders
-        .asSequence()
-        .filter { it.type == VisitOrderType.VO }
-        .filter { it.status in listOf(VisitOrderStatus.AVAILABLE, VisitOrderStatus.ACCUMULATED) }
-        .minByOrNull { it.createdTimestamp }
-
-    if (selected != null) {
-      selected.status = VisitOrderStatus.USED
-      selected.visitReference = visit.reference
-    } else {
-      // If none are found, generate a negative VO and save to prisoners negativeVisitOrders list.
-      val negativeVo = NegativeVisitOrder(
-        status = NegativeVisitOrderStatus.USED,
-        type = VisitOrderType.VO,
-        prisoner = dpsPrisonerDetails,
-        visitReference = visit.reference,
-      )
-      dpsPrisonerDetails.negativeVisitOrders.add(negativeVo)
-    }
-
-    visitOrderHistoryService.logAllocationUsedByVisit(dpsPrisonerDetails, visit.reference, selected?.type?.name ?: VisitOrderType.VO.name)
-    val changeLog = changeLogService.createLogAllocationUsedByVisit(dpsPrisonerDetails, visit.reference)
-    dpsPrisonerDetails.changeLogs.add(changeLog)
-
-    telemetryClientService.trackEvent(
-      TelemetryEventType.VO_CONSUMED_BY_VISIT,
-      mapOf(
-        "visitReference" to visit.reference,
-        "prisonerId" to visit.prisonerId,
-        "voType" to (selected?.type?.name ?: "vo"),
-      ),
-    )
-
-    return changeLog.reference
   }
 
   fun processPrisonerVisitOrderRefund(
@@ -542,17 +480,6 @@ class ProcessPrisonerService(
     }
     return visitOrders
   }
-
-  private fun visitAlreadyMapped(
-    dpsPrisonerDetails: PrisonerDetails,
-    visit: VisitDto,
-    visitOrderRestriction: SessionTemplateVisitOrderRestrictionType?,
-  ): Boolean = dpsPrisonerDetails.visitOrders.any { it.visitReference == visit.reference } ||
-    dpsPrisonerDetails.negativeVisitOrders.any { it.visitReference == visit.reference } ||
-    (
-      visitOrderRestriction == SessionTemplateVisitOrderRestrictionType.NONE &&
-        visitOrderHistoryService.allocationUsedByVisitExists(dpsPrisonerDetails.prisonerId, visit.reference)
-      )
 
   private fun logAllocationBatchProcess(
     dpsPrisonerDetailsAfter: PrisonerDetails,
