@@ -94,7 +94,7 @@ class DomainEventsPrisonerReceivedTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, times(2)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(2)).handleMessage(any()) }
-    await untilAsserted { verify(processPrisonerService, times(1)).processPrisonerReceivedResetBalance(any(), any()) }
+    await untilAsserted { verify(prisonerReceivedResetBalanceService, times(1)).processPrisonerReceivedResetBalance(any(), any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogPrisonerBalanceReset(any(), any()) }
     await untilAsserted { verify(snsService, times(1)).sendPrisonAllocationPrisonerBalanceResetEvent(any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
