@@ -41,10 +41,10 @@ class PrisonerVisitOrderUsageServiceTest {
   @Mock
   private lateinit var visitOrderHistoryService: VisitOrderHistoryService
 
-  private var visitOrdersUtil: VisitOrdersUtil = VisitOrdersUtil()
-
   @Mock
   private lateinit var telemetryClientService: TelemetryClientService
+
+  private var visitOrdersUtil: VisitOrdersUtil = VisitOrdersUtil()
 
   private lateinit var prisonerVisitOrderUsageService: PrisonerVisitOrderUsageService
 
@@ -58,9 +58,6 @@ class PrisonerVisitOrderUsageServiceTest {
     )
   }
 
-  /**
-   * Scenario 1: An event comes in to consume a VO and map to a visit.
-   */
   @Test
   fun `Prisoner VO consumption - Given a prisoner with a balance of 2 PVO and 1 PVO, when processPrisonerVisitOrderUsage is called, then PVO is used`() {
     // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
