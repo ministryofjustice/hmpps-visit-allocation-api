@@ -18,16 +18,16 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSour
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerAllocationService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerAllocationService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitOrderHistoryService
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VisitOrdersUtil
 import java.time.LocalDate
 import java.util.*
 
 @ExtendWith(MockitoExtension::class)
-class PrisonerPrisonAllocationServiceTest {
+class PrisonerAllocationServiceTest {
 
   @Mock
   private lateinit var prisonerSearchClient: PrisonerSearchClient
