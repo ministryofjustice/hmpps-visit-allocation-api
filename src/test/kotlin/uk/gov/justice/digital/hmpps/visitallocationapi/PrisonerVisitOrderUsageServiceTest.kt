@@ -28,7 +28,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientSe
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitOrderHistoryService
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VisitOrdersUtil
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class PrisonerVisitOrderUsageServiceTest {
@@ -59,7 +59,7 @@ class PrisonerVisitOrderUsageServiceTest {
   }
 
   @Test
-  fun `Prisoner VO consumption - Given a prisoner with a balance of 2 PVO and 1 PVO, when processPrisonerVisitOrderUsage is called, then PVO is used`() {
+  fun `Given a prisoner with an available PVO, when processPrisonerVisitOrderUsage is called, then PVO is used`() {
     // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
     val visitReference = "ab-cd-ef-gh"
     val prisonerId = "AA123456"
@@ -93,7 +93,7 @@ class PrisonerVisitOrderUsageServiceTest {
   }
 
   @Test
-  fun `Prisoner VO consumption - Given session template uses no visit order, when processPrisonerVisitOrderUsage is called, then only history is created`() {
+  fun `Given session template uses no visit order, when processPrisonerVisitOrderUsage is called, then only history is created`() {
     // GIVEN
     val visitReference = "ab-cd-ef-gh"
     val prisonerId = "AA123456"
@@ -116,7 +116,7 @@ class PrisonerVisitOrderUsageServiceTest {
   }
 
   @Test
-  fun `Prisoner VO consumption - Given session template uses no visit order and visit history exists, when processPrisonerVisitOrderUsage is called, then no extra processing is done`() {
+  fun `Given session template uses no visit order and visit history exists, when processPrisonerVisitOrderUsage is called, then no extra processing is done`() {
     // GIVEN
     val visitReference = "ab-cd-ef-gh"
     val prisonerId = "AA123456"

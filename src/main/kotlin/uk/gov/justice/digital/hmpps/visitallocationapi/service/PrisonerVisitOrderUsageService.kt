@@ -77,7 +77,7 @@ class PrisonerVisitOrderUsageService(
       mapOf(
         "visitReference" to visit.reference,
         "prisonerId" to visit.prisonerId,
-        "voType" to (selected?.type?.name ?: "vo"),
+        "voType" to (selected?.type?.name ?: VisitOrderType.VO.name),
       ),
     )
 
