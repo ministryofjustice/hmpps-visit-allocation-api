@@ -5,10 +5,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
-import org.mockito.Mockito.anyMap
 import org.mockito.Mockito.verify
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
@@ -16,9 +14,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonInce
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonerIncentivesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.PrisonerDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSource
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
@@ -258,42 +254,6 @@ class ProcessPrisonerServiceTest {
 
     // THEN
     verify(incentivesClient).getPrisonerIncentiveReviewHistory(prisonerId)
-  }
-
-  // Prisoner Reset balance \\
-
-  /**
-   * Scenario 1: An event comes in to reset prisoner balance (prisoner-received event), prisoner balance is reset.
-   */
-  @Test
-  fun `Prisoner balance reset - Given a prisoner with a balance of 2 PVO and 1 PVO, when processPrisonerReceivedResetBalance is called, balance is reset`() {
-    // GIVEN - A new prisoner with Standard incentive level, in prison Hewell
-    val visitReference = "ab-cd-ef-gh"
-    val prisonerId = "AA123456"
-
-    val dpsPrisoner = PrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
-
-    val changeLog = ChangeLog(
-      changeType = ChangeLogType.PRISONER_BALANCE_RESET,
-      changeSource = ChangeLogSource.SYSTEM,
-      userId = "SYSTEM",
-      comment = "prisoner balance reset for reason NEW_ADMISSION",
-      prisoner = dpsPrisoner,
-      visitOrderBalance = 0,
-      privilegedVisitOrderBalance = 1,
-      reference = UUID.randomUUID(),
-    )
-
-    // WHEN
-    whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
-    whenever(changeLogService.createLogPrisonerBalanceReset(dpsPrisoner, PrisonerReceivedReasonType.NEW_ADMISSION)).thenReturn(changeLog)
-
-    // Begin test
-    processPrisonerService.processPrisonerReceivedResetBalance(prisonerId, PrisonerReceivedReasonType.NEW_ADMISSION)
-
-    // THEN
-    verify(changeLogService).createLogPrisonerBalanceReset(dpsPrisoner, PrisonerReceivedReasonType.NEW_ADMISSION)
-    verify(telemetryClientService).trackEvent(eq(TelemetryEventType.VO_PRISONER_BALANCE_RESET), anyMap())
   }
 
   private fun createPrisonerDto(prisonerId: String, prisonId: String = "MDI", inOutStatus: String = "IN", lastPrisonId: String = "HEI"): PrisonerDto = PrisonerDto(prisonerId = prisonerId, prisonId = prisonId, inOutStatus = inOutStatus, lastPrisonId = lastPrisonId)

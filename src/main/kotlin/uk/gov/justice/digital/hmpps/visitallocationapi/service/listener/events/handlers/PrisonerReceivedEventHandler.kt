@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerRecei
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerReceivedResetBalanceService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerReceivedInfo
@@ -24,7 +24,7 @@ class PrisonerReceivedEventHandler(
   private val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
   private val nomisSyncService: NomisSyncService,
-  private val processPrisonerService: ProcessPrisonerService,
+  private val prisonerReceivedResetBalanceService: PrisonerReceivedResetBalanceService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
 ) : DomainEventHandler {
@@ -62,7 +62,7 @@ class PrisonerReceivedEventHandler(
     if (shouldWipePrisonerBalance(info.reason)) {
       LOG.info("Prisoner ${info.prisonerId} received for reason ${info.reason}, wiping balance")
 
-      val changeLogReference = processPrisonerService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
+      val changeLogReference = prisonerReceivedResetBalanceService.processPrisonerReceivedResetBalance(info.prisonerId, info.reason)
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)
       if (changeLog != null) {
         snsService.sendPrisonAllocationPrisonerBalanceResetEvent(prisonerId = changeLog.prisonerId)
