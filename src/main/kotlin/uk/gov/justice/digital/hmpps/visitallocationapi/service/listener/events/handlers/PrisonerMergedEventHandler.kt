@@ -9,7 +9,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerMergeService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.PrisonerMergedInfo
@@ -21,7 +21,7 @@ class PrisonerMergedEventHandler(
   private val prisonService: PrisonService,
   private val prisonerSearchClient: PrisonerSearchClient,
   private val nomisSyncService: NomisSyncService,
-  private val processPrisonerService: ProcessPrisonerService,
+  private val prisonerMergeService: PrisonerMergeService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
 ) : DomainEventHandler {
@@ -52,7 +52,7 @@ class PrisonerMergedEventHandler(
 
   private fun processDps(info: PrisonerMergedInfo) {
     LOG.info("Handling DPS prison merge event - $info")
-    val changeLogReference = processPrisonerService.processPrisonerMerge(info.prisonerId, info.removedPrisonerId)
+    val changeLogReference = prisonerMergeService.processPrisonerMerge(info.prisonerId, info.removedPrisonerId)
     if (changeLogReference != null) {
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(info.prisonerId, changeLogReference)
       if (changeLog != null) {

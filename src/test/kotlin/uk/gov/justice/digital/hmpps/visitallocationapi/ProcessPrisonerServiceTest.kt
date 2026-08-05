@@ -27,7 +27,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryServ
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitOrderHistoryService
-import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VisitOrdersUtil
 import java.time.LocalDate
 import java.util.*
@@ -54,9 +53,6 @@ class ProcessPrisonerServiceTest {
   private lateinit var visitOrderHistoryService: VisitOrderHistoryService
 
   @Mock
-  private lateinit var voBalancesUtil: VOBalancesUtil
-
-  @Mock
   private lateinit var telemetryClientService: TelemetryClientService
 
   private var visitOrdersUtil: VisitOrdersUtil = VisitOrdersUtil()
@@ -73,7 +69,6 @@ class ProcessPrisonerServiceTest {
       changeLogService,
       telemetryClientService,
       visitOrderHistoryService,
-      voBalancesUtil,
       visitOrdersUtil,
       26,
     )
