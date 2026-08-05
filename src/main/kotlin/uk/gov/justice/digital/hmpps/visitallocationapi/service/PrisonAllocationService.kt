@@ -11,11 +11,11 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonInce
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.AttributeSearchPrisonerDto
 
 @Service
-class AllocationService(
+class PrisonAllocationService(
   private val prisonerSearchClient: PrisonerSearchClient,
   private val incentivesClient: IncentivesClient,
   private val prisonService: PrisonService,
-  private val processPrisonerService: ProcessPrisonerService,
+  private val prisonerAllocationService: PrisonerAllocationService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
 ) {
@@ -34,7 +34,7 @@ class AllocationService(
     var totalConvictedPrisonersFailedOrSkipped = 0
 
     for (prisoner in allPrisoners) {
-      val changeLogReference = processPrisonerService.processPrisonerAllocation(
+      val changeLogReference = prisonerAllocationService.processPrisonerAllocation(
         prisonerId = prisoner.prisonerId,
         jobReference = jobReference,
         allPrisonIncentiveAmounts = allIncentiveLevels,

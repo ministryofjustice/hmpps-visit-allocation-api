@@ -7,7 +7,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocati
 
 @Service
 class VisitAllocationByPrisonJobListenerService(
-  private val allocationService: AllocationService,
+  private val prisonAllocationService: PrisonAllocationService,
 ) {
   companion object {
     private val log: Logger = LoggerFactory.getLogger(this::class.java)
@@ -16,7 +16,7 @@ class VisitAllocationByPrisonJobListenerService(
   fun handleVisitAllocationJob(visitAllocationEventJob: VisitAllocationEventJob) {
     with(visitAllocationEventJob) {
       log.info("received allocation job event with reference {} and prison code: {}", jobReference, prisonCode.uppercase())
-      allocationService.processPrison(jobReference, prisonCode.uppercase())
+      prisonAllocationService.processPrison(jobReference, prisonCode.uppercase())
     }
   }
 }

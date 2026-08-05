@@ -13,7 +13,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.NegativeVisitO
 @Service
 class AdminService(
   private val prisonerSearchClient: PrisonerSearchClient,
-  private val processPrisonerService: ProcessPrisonerService,
+  private val adminResetPrisonerNegativeBalanceService: AdminResetPrisonerNegativeBalanceService,
   private val changeLogService: ChangeLogService,
   private val snsService: SnsService,
   private val negativeVisitOrderRepository: NegativeVisitOrderRepository,
@@ -34,7 +34,7 @@ class AdminService(
 
     LOG.info("Found ${prisoners.size} prisoners for prison $prisonCode")
     for (prisoner in prisoners) {
-      val changeLogReference = processPrisonerService.processAdminResetPrisonerNegativeBalance(prisoner.prisonerId)
+      val changeLogReference = adminResetPrisonerNegativeBalanceService.processAdminResetPrisonerNegativeBalance(prisoner.prisonerId)
       if (changeLogReference != null) {
         val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisoner.prisonerId, changeLogReference)
         if (changeLog != null) {

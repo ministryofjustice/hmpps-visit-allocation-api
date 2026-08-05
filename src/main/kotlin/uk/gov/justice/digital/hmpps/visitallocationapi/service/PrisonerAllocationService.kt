@@ -15,7 +15,6 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.snapshot
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.AllocationBatchProcessType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeRepaymentReason
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
-import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
@@ -29,13 +28,12 @@ import java.util.*
 
 @Transactional
 @Service
-class ProcessPrisonerService(
+class PrisonerAllocationService(
   private val prisonerSearchClient: PrisonerSearchClient,
   private val incentivesClient: IncentivesClient,
   private val prisonerDetailsService: PrisonerDetailsService,
   private val prisonerRetryService: PrisonerRetryService,
   private val changeLogService: ChangeLogService,
-  private val telemetryClientService: TelemetryClientService,
   private val visitOrderHistoryService: VisitOrderHistoryService,
   private val visitOrdersUtil: VisitOrdersUtil,
   @param:Value("\${max.visit-orders:26}") val maxAccumulatedVisitOrders: Int,
@@ -45,44 +43,8 @@ class ProcessPrisonerService(
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun processAdminResetPrisonerNegativeBalance(prisonerId: String): UUID? {
-    val details = prisonerDetailsService.getPrisonerDetails(prisonerId)
-    if (details == null) {
-      LOG.info("Prisoner $prisonerId not found in DPS DB, skipping admin reset negative balance")
-      return null
-    }
-
-    val used = details.negativeVisitOrders.filter { it.status == NegativeVisitOrderStatus.USED }
-    if (used.isEmpty()) {
-      LOG.info("Prisoner $prisonerId has no negative VOs, skipping admin reset negative balance")
-      return null
-    }
-
-    val amountToRepay = used.count()
-    used.forEach {
-      it.status = NegativeVisitOrderStatus.REPAID
-      it.repaidDate = LocalDate.now()
-      it.repaidReason = NegativeRepaymentReason.ADMIN_RESET
-    }
-
-    visitOrderHistoryService.logPrisonerNegativeBalanceAdminReset(details)
-    val changeLog = changeLogService.createLogPrisonerNegativeBalanceAdminReset(details)
-    details.changeLogs.add(changeLog)
-
-    telemetryClientService.trackEvent(
-      TelemetryEventType.VO_PRISONER_NEGATIVE_BALANCE_ADMIN_RESET,
-      mapOf(
-        "prisonerId" to prisonerId,
-      ),
-    )
-
-    LOG.info("Admin reset negative balance by repaying $amountToRepay for prisoner $prisonerId")
-    return changeLog.reference
-  }
-
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
   fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): UUID? {
-    LOG.info("Entered ProcessPrisonerService - processPrisoner for prisoner - $prisonerId")
+    LOG.info("Entered PrisonerAllocationService - processPrisoner for prisoner - $prisonerId")
 
     try {
       // Get prisoner on DPS (or create if they're new).
@@ -138,7 +100,7 @@ class ProcessPrisonerService(
   }
 
   private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, prisonIncentiveAmounts: PrisonIncentiveAmountsDto) {
-    LOG.info("Entered ProcessPrisonerService - processPrisonerAllocation with prisonerId ${dpsPrisoner.prisonerId}")
+    LOG.info("Entered PrisonerAllocationService - processPrisonerAllocation with prisonerId ${dpsPrisoner.prisonerId}")
 
     val visitOrders = mutableListOf<VisitOrder>()
     visitOrders.addAll(generateVos(dpsPrisoner, prisonIncentiveAmounts))
@@ -153,7 +115,7 @@ class ProcessPrisonerService(
   }
 
   private fun processPrisonerAccumulation(dpsPrisonerDetailsAfter: PrisonerDetails, dpsPrisonerDetailsBefore: PrisonerSnap, prisonIncentiveAmounts: PrisonIncentiveAmountsDto) {
-    LOG.info("Entered ProcessPrisonerService - processPrisonerAccumulation with prisonerId: ${dpsPrisonerDetailsAfter.prisonerId}")
+    LOG.info("Entered PrisonerAllocationService - processPrisonerAccumulation with prisonerId: ${dpsPrisonerDetailsAfter.prisonerId}")
 
     // Move any VOs in status of 'AVAILABLE' older than 28 days, to 'ACCUMULATED'.
     dpsPrisonerDetailsAfter.visitOrders.filter { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.AVAILABLE && it.createdTimestamp.isBefore(LocalDateTime.now().minusDays(28)) }.forEach { it.status = VisitOrderStatus.ACCUMULATED }
@@ -193,7 +155,7 @@ class ProcessPrisonerService(
   }
 
   private fun processPrisonerExpiration(dpsPrisoner: PrisonerDetails) {
-    LOG.info("Entered ProcessPrisonerService - processPrisonerExpiration with prisonerId: ${dpsPrisoner.prisonerId}")
+    LOG.info("Entered PrisonerAllocationService - processPrisonerExpiration with prisonerId: ${dpsPrisoner.prisonerId}")
 
     // Expire all VOs over the maximum accumulation cap.
     val currentAccumulatedVoCount = dpsPrisoner.visitOrders.count { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.ACCUMULATED }

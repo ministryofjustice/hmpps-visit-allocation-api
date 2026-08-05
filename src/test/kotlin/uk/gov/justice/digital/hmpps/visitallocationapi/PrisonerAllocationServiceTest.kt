@@ -18,17 +18,16 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.ChangeLogSour
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.ChangeLog
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerAllocationService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitOrderHistoryService
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VisitOrdersUtil
 import java.time.LocalDate
 import java.util.*
 
 @ExtendWith(MockitoExtension::class)
-class ProcessPrisonerServiceTest {
+class PrisonerAllocationServiceTest {
 
   @Mock
   private lateinit var prisonerSearchClient: PrisonerSearchClient
@@ -48,22 +47,18 @@ class ProcessPrisonerServiceTest {
   @Mock
   private lateinit var visitOrderHistoryService: VisitOrderHistoryService
 
-  @Mock
-  private lateinit var telemetryClientService: TelemetryClientService
-
   private var visitOrdersUtil: VisitOrdersUtil = VisitOrdersUtil()
 
-  private lateinit var processPrisonerService: ProcessPrisonerService
+  private lateinit var prisonerAllocationService: PrisonerAllocationService
 
   @BeforeEach
   fun setUp() {
-    processPrisonerService = ProcessPrisonerService(
+    prisonerAllocationService = PrisonerAllocationService(
       prisonerSearchClient,
       incentivesClient,
       prisonerDetailsService,
       prisonerRetryService,
       changeLogService,
-      telemetryClientService,
       visitOrderHistoryService,
       visitOrdersUtil,
       26,
@@ -101,7 +96,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      prisonerAllocationService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -141,7 +136,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      prisonerAllocationService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN - 2 Visit orders should be generated (2 VOs but no PVOs).
@@ -180,7 +175,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      prisonerAllocationService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -209,7 +204,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      prisonerAllocationService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN
@@ -249,7 +244,7 @@ class ProcessPrisonerServiceTest {
 
     // Begin test
     runBlocking {
-      processPrisonerService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
+      prisonerAllocationService.processPrisonerAllocation(prisonerId, "allocation-job-ref", prisonIncentiveAmounts)
     }
 
     // THEN

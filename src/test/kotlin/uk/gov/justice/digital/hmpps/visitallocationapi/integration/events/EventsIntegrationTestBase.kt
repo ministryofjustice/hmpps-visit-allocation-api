@@ -44,11 +44,11 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderRepo
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.DomainEventListenerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.NomisSyncService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerAllocationService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerMergeService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerReceivedResetBalanceService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerVisitOrderRefundService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerVisitOrderUsageService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.DomainEventListener.Companion.PRISON_VISITS_ALLOCATION_ALERTS_QUEUE_CONFIG_KEY
@@ -146,7 +146,7 @@ abstract class EventsIntegrationTestBase {
   protected lateinit var nomisSyncService: NomisSyncService
 
   @MockitoSpyBean
-  protected lateinit var processPrisonerService: ProcessPrisonerService
+  protected lateinit var prisonerAllocationService: PrisonerAllocationService
 
   @MockitoSpyBean
   protected lateinit var prisonerMergeService: PrisonerMergeService
