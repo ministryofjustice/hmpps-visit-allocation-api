@@ -11,7 +11,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.Sessi
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.visit.scheduler.VisitDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonService
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerVisitOrderUsageService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.DomainEvent
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.listener.events.additionalinfo.VisitBookedInfo
@@ -23,7 +23,7 @@ class VisitBookedEventHandler(
   private val prisonService: PrisonService,
   private val visitSchedulerClient: VisitSchedulerClient,
   private val prisonerSearchClient: PrisonerSearchClient,
-  private val processPrisonerService: ProcessPrisonerService,
+  private val prisonerVisitOrderUsageService: PrisonerVisitOrderUsageService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
 ) : DomainEventHandler {
@@ -46,7 +46,7 @@ class VisitBookedEventHandler(
 
       if (prisoner.convictedStatus == CONVICTED) {
         val visitOrderRestriction = getVisitOrderRestriction(visit)
-        val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit, visitOrderRestriction)
+        val changeLogReference = prisonerVisitOrderUsageService.processPrisonerVisitOrderUsage(visit, visitOrderRestriction)
         if (changeLogReference != null) {
           val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisoner.prisonerId, changeLogReference)
           if (changeLog != null) {

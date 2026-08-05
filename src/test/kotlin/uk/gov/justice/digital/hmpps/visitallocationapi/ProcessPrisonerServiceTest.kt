@@ -32,6 +32,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrder
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerDetailsService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerRetryService
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.PrisonerVisitOrderUsageService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ProcessPrisonerService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.TelemetryClientService
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.VisitOrderHistoryService
@@ -70,6 +71,7 @@ class ProcessPrisonerServiceTest {
   private lateinit var telemetryClientService: TelemetryClientService
 
   private lateinit var processPrisonerService: ProcessPrisonerService
+  private lateinit var prisonerVisitOrderUsageService: PrisonerVisitOrderUsageService
 
   @BeforeEach
   fun setUp() {
@@ -84,6 +86,12 @@ class ProcessPrisonerServiceTest {
       voBalancesUtil,
       visitOrdersUtil,
       26,
+    )
+    prisonerVisitOrderUsageService = PrisonerVisitOrderUsageService(
+      prisonerDetailsService,
+      changeLogService,
+      telemetryClientService,
+      visitOrderHistoryService,
     )
   }
 
@@ -304,7 +312,7 @@ class ProcessPrisonerServiceTest {
     whenever(changeLogService.createLogAllocationUsedByVisit(dpsPrisoner, visitReference)).thenReturn(changeLog)
 
     // Begin test
-    processPrisonerService.processPrisonerVisitOrderUsage(visit)
+    prisonerVisitOrderUsageService.processPrisonerVisitOrderUsage(visit)
 
     // THEN
     verify(visitOrderHistoryService).logAllocationUsedByVisit(dpsPrisoner, visitReference, VisitOrderType.PVO.name)
@@ -325,7 +333,7 @@ class ProcessPrisonerServiceTest {
     // WHEN
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
 
-    val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit, SessionTemplateVisitOrderRestrictionType.NONE)
+    val changeLogReference = prisonerVisitOrderUsageService.processPrisonerVisitOrderUsage(visit, SessionTemplateVisitOrderRestrictionType.NONE)
 
     // THEN
     assertThat(changeLogReference).isNull()
@@ -348,7 +356,7 @@ class ProcessPrisonerServiceTest {
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(dpsPrisoner)
     whenever(visitOrderHistoryService.allocationUsedByVisitExists(prisonerId, visitReference)).thenReturn(true)
 
-    val changeLogReference = processPrisonerService.processPrisonerVisitOrderUsage(visit, SessionTemplateVisitOrderRestrictionType.NONE)
+    val changeLogReference = prisonerVisitOrderUsageService.processPrisonerVisitOrderUsage(visit, SessionTemplateVisitOrderRestrictionType.NONE)
 
     // THEN
     assertThat(changeLogReference).isNull()
