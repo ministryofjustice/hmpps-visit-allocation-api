@@ -28,9 +28,10 @@ generic-service:
 
   # Environment variables to load into the deployment
   env:
-    JAVA_OPTS: "-Xmx1024m"
     SERVER_PORT: "8080"
     APPLICATIONINSIGHTS_CONFIGURATION_FILE: applicationinsights.json
+    APPLICATIONINSIGHTS_STATSBEAT_DISABLED: "true"
+    JAVA_TOOL_OPTIONS: "$(JAVA_PROXY_TOOL_OPTIONS) -Xmx1024m -XX:+ExitOnOutOfMemoryError -XX:MaxRAMPercentage=50.0"
 
   namespace_secrets:
     hmpps-visit-allocation-api:
@@ -57,6 +58,11 @@ generic-service:
       HMPPS_SQS_QUEUES_PRISONVISITSALLOCATIONPRISONERRETRYQUEUE_QUEUE_NAME: "sqs_queue_name"
     sqs-prison-visits-allocation-prisoner-retry-dlq-secret:
       HMPPS_SQS_QUEUES_PRISONVISITSALLOCATIONPRISONERRETRYQUEUE_DLQ_NAME: "sqs_queue_name"
+    hmpps-envoy-https-proxy-env:
+      HTTP_PROXY: "HTTP_PROXY"
+      HTTPS_PROXY: "HTTPS_PROXY"
+      NO_PROXY: "NO_PROXY"
+      JAVA_PROXY_TOOL_OPTIONS: "JAVA_PROXY_TOOL_OPTIONS"
 
   resources:
     requests:
