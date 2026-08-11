@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__VISIT_SCHEDULER_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceAdjustmentDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
@@ -25,7 +26,7 @@ const val VO_BALANCE_DETAILED = "$VO_BALANCE/detailed"
 
 @RestController
 class BalanceController(val balanceService: BalanceService) {
-  @PreAuthorize("hasAnyRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API', '$ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API')")
+  @PreAuthorize("hasAnyRole('$ROLE_VISIT_ALLOCATION_API__NOMIS_API', '$ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API', '$ROLE_VISIT_ALLOCATION_API__VISIT_SCHEDULER_API')")
   @GetMapping(VO_BALANCE)
   @Operation(
     summary = "Endpoint to get a prisoners current balance.",
