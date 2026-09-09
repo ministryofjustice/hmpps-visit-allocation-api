@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.security.SecurityRequirement
 import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.servers.Server
 import org.springdoc.core.customizers.OperationCustomizer
+import org.springdoc.core.models.GroupedOpenApi
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.ApplicationContext
@@ -20,6 +21,9 @@ import org.springframework.expression.spel.standard.SpelExpressionParser
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.method.HandlerMethod
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.GET_VISIT_ORDER_HISTORY
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE_DETAILED
 
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
@@ -74,6 +78,16 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
       ),
     )
     .addSecurityItem(SecurityRequirement().addList("bearer-jwt"))
+
+  @Bean
+  fun clientOpenApi(): GroupedOpenApi = GroupedOpenApi.builder()
+    .group("client")
+    .pathsToMatch(
+      VO_BALANCE,
+      VO_BALANCE_DETAILED,
+      GET_VISIT_ORDER_HISTORY,
+    )
+    .build()
 
   @Bean
   fun preAuthorizeCustomizer(): OperationCustomizer = OperationCustomizer { operation: Operation, handlerMethod: HandlerMethod ->
