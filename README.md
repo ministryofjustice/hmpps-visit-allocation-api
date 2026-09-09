@@ -32,6 +32,11 @@ complete refresh, build and local publication workflow.
 Use root-qualified API tasks (`:build`, `:test`, `:assemble`, `:check`) to build the API
 without also building the client, which requires a manually exported specification.
 
+Use client qualified API tasks (`:client:publishToMavenLocal`) for client specific operations.
+
+When making changes to the API, remember to update the JVM client library version according to 
+the MAJOR.MINOR.PATCH version control flow.
+
 ## Running
 
 The hmpps-visit-allocation-api uses the deployed dev environment to connect to most of the required services,
