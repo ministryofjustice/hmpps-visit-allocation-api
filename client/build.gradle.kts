@@ -1,3 +1,6 @@
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
+import java.util.jar.JarFile
+
 plugins {
   kotlin("jvm")
   `java-library`
@@ -6,7 +9,7 @@ plugins {
 }
 
 group = "uk.gov.justice.service.hmpps"
-version = "0.1.0-SNAPSHOT"
+version = "1.0.0-SNAPSHOT"
 base.archivesName.set("hmpps-visit-allocation-client")
 
 repositories {
@@ -24,14 +27,11 @@ java {
 }
 
 dependencies {
-  api(platform("org.springframework.boot:spring-boot-dependencies:4.1.1"))
+  api(platform(SpringBootPlugin.BOM_COORDINATES))
   api("org.springframework:spring-webflux")
-  // The pinned WebClient generator uses Jackson 2 in its optional base-URL constructor.
   api("com.fasterxml.jackson.core:jackson-databind")
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
   implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-  runtimeOnly("io.projectreactor.netty:reactor-netty-http")
-  runtimeOnly("org.springframework:spring-context")
 }
 
 val specFile = rootProject.layout.buildDirectory.file("openapi/client-api.json")
@@ -93,4 +93,69 @@ publishing {
       }
     }
   }
+}
+
+val verifyClientArtifact = tasks.register("verifyClientArtifact") {
+  group = "verification"
+  description = "Verify the client JAR surface and published dependency metadata."
+  dependsOn("jar", "generatePomFileForClientPublication")
+
+  val clientJar = tasks.named<Jar>("jar").flatMap { it.archiveFile }
+  inputs.file(clientJar)
+  inputs.file(layout.buildDirectory.file("publications/client/pom-default.xml"))
+
+  doLast {
+    val jarFile = clientJar.get().asFile
+    val entries = JarFile(jarFile).use { jar ->
+      jar.entries().asSequence().map { it.name }.toSet()
+    }
+
+    val apiClasses = entries
+      .filter { it.startsWith("uk/gov/justice/digital/hmpps/visitallocationclient/api/") && it.endsWith(".class") && '$' !in it }
+      .map { it.substringAfterLast('/').removeSuffix(".class") }
+      .toSet()
+    check(apiClasses == setOf("BalanceControllerApi", "VisitOrderHistoryControllerApi")) {
+      "Unexpected generated API classes in ${jarFile.name}: $apiClasses"
+    }
+
+    val modelClasses = entries
+      .filter { it.startsWith("uk/gov/justice/digital/hmpps/visitallocationclient/model/") && it.endsWith(".class") && '$' !in it }
+      .map { it.substringAfterLast('/').removeSuffix(".class") }
+      .toSet()
+    val expectedModels = setOf(
+      "ErrorResponse",
+      "ManualBalanceAdjustmentValidationErrorResponse",
+      "PrisonerBalanceAdjustmentDto",
+      "PrisonerBalanceDto",
+      "PrisonerDetailedBalanceDto",
+      "VisitOrderHistoryAttributesDto",
+      "VisitOrderHistoryDto",
+    )
+    check(modelClasses == expectedModels) {
+      "Unexpected generated model classes in ${jarFile.name}: $modelClasses"
+    }
+    check(entries.none { it.startsWith("META-INF/openapi/") }) {
+      "The OpenAPI contract must not be packaged in ${jarFile.name}"
+    }
+
+    val pom = layout.buildDirectory.file("publications/client/pom-default.xml").get().asFile.readText()
+    val forbiddenDependencyMarkers = listOf("spring-security", "oauth")
+    check(forbiddenDependencyMarkers.none { it in pom.lowercase() }) {
+      "The client publication must not include Spring Security or OAuth dependencies"
+    }
+
+    val forbiddenRuntimeDependencies = configurations.getByName("runtimeClasspath")
+      .resolvedConfiguration
+      .resolvedArtifacts
+      .map { "${it.moduleVersion.id.group}:${it.name}" }
+      .filter { dependency -> forbiddenDependencyMarkers.any { it in dependency.lowercase() } }
+    check(forbiddenRuntimeDependencies.isEmpty()) {
+      "The client runtime must not include Spring Security or OAuth dependencies: $forbiddenRuntimeDependencies"
+    }
+  }
+}
+
+tasks.named("check") { dependsOn(verifyClientArtifact) }
+tasks.withType<org.gradle.api.publish.maven.tasks.PublishToMavenLocal>().configureEach {
+  dependsOn("check")
 }

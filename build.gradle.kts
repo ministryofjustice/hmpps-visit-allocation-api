@@ -116,3 +116,9 @@ tasks.register("exportOpenApi") {
     }
   }
 }
+
+tasks.register("refreshAndPublishClientToMavenLocal") {
+  group = "client"
+  description = "Export, validate, generate, build and publish the JVM client to Maven Local."
+  dependsOn("exportOpenApi", ":client:publishToMavenLocal")
+}

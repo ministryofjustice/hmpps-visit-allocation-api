@@ -26,6 +26,9 @@ Run:
 
 See [the client guide](client/README.md) for manually exporting the consumer client contract,
 building the client JAR, publishing to Maven Local and consuming it from Kotlin or Java.
+With the API running locally, `./gradlew refreshAndPublishClientToMavenLocal` performs the
+complete refresh, build and local publication workflow.
+
 Use root-qualified API tasks (`:build`, `:test`, `:assemble`, `:check`) to build the API
 without also building the client, which requires a manually exported specification.
 

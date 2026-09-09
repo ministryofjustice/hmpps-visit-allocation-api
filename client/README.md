@@ -2,22 +2,40 @@
 
 This module generates a Kotlin client for the consumer-facing balance and visit-order
 history endpoints. The JAR contains the generated client methods, their required DTOs
-and the shared client infrastructure. Operational admin, queue, job and NOMIS APIs are
-excluded.
+and the shared client infrastructure.
 
-Publication: `uk.gov.justice.service.hmpps:hmpps-visit-allocation-client:0.1.0-SNAPSHOT`
+Note: Operational admin, queue, job and NOMIS APIs are excluded.
+
+Publication: `uk.gov.justice.service.hmpps:hmpps-visit-allocation-client:1.0.0-SNAPSHOT`
 
 ## Requirements
 
 - JDK 25 to run this repository's Gradle build; the client bytecode targets Java 24.
-- Consumers running Java 24 or newer. The client uses Kotlin 2.4.10.
-- The configured dependency baseline is Spring Boot 4.1.1 / Spring Framework 7.0.9.
+- Consumers running Java 24 or newer.
+- Client library versions are managed by the Spring Boot BOM selected by this repository's
+  `hmpps-gradle-spring-boot` plugin. See [the client build](build.gradle.kts).
 - A running local allocation API with `/v3/api-docs/client` enabled for the export step.
   Follow [the API setup instructions](../README.md#running), including PostgreSQL,
   LocalStack and the `dev` profile. Start/restart the API from the source revision
   you want represented in the client.
 
-There is no Node.js requirement and no remote publishing or release workflow in this POC.
+There is no Node.js support currently for this client.
+
+## Complete local workflow
+
+With the API running on port 8079, refresh the contract and publish a new Maven Local
+snapshot with one command:
+
+```bash
+./gradlew refreshAndPublishClientToMavenLocal
+```
+
+This exports and validates the restricted client contract, regenerates and compiles the
+client, verifies the published artefact boundary, creates the binary and sources JARs,
+and publishes the Maven metadata and artefacts to Maven Local. It fails without publishing
+if any step fails. The task does not start the API or its supporting services.
+
+The commands below perform the same stages individually and are useful for troubleshooting.
 
 ## 1. Export the client contract
 
@@ -52,8 +70,8 @@ This validates the saved spec, generates the two client API classes and their mo
 compiles the library and produces:
 
 ```text
-client/build/libs/hmpps-visit-allocation-client-0.1.0-SNAPSHOT.jar
-client/build/libs/hmpps-visit-allocation-client-0.1.0-SNAPSHOT-sources.jar
+client/build/libs/hmpps-visit-allocation-client-1.0.0-SNAPSHOT.jar
+client/build/libs/hmpps-visit-allocation-client-1.0.0-SNAPSHOT-sources.jar
 ```
 
 The input OpenAPI document is used only at build time and is not packaged in the JAR.
@@ -76,7 +94,22 @@ building the client. Use root-qualified tasks such as `:build`, `:test`, `:check
 `:assemble` for API-only work; unqualified Gradle task names also select matching
 tasks in `client` and therefore require an exported contract.
 
-## 3. Publish locally
+## 3. Verify the client artefact
+
+After exporting the contract, run:
+
+```bash
+./gradlew :client:check
+```
+
+The `check` task validates and generates the client, builds its JAR, and verifies that the
+JAR contains exactly the approved API classes and models. It also confirms that the OpenAPI
+document is not packaged and that neither the publication metadata nor resolved runtime
+dependencies contain Spring Security or OAuth libraries.
+
+Functional HTTP and Java compatibility tests are not included in this POC stage.
+
+## 4. Publish locally
 
 After the build succeeds:
 
@@ -94,7 +127,11 @@ The binary is a normal library JAR, not a self-contained executable or fat JAR.
 To use it on another machine, transfer/install the publication with its metadata,
 or generate and publish locally on that machine; Maven Local is machine-specific.
 
-## 4. Consume from another API
+Publishing runs `:client:check` first, so a failed artefact check prevents the Maven Local
+snapshot from being replaced. `refreshAndPublishClientToMavenLocal` reaches the same check
+through its dependency on `:client:publishToMavenLocal`.
+
+## 5. Consume from another API
 
 Add this to the consuming API's `build.gradle.kts` (or equivalent repository settings
 if that project centralizes repositories in `settings.gradle.kts`):
@@ -110,7 +147,7 @@ repositories {
 }
 
 dependencies {
-  implementation("uk.gov.justice.service.hmpps:hmpps-visit-allocation-client:0.1.0-SNAPSHOT")
+  implementation("uk.gov.justice.service.hmpps:hmpps-visit-allocation-client:1.0.0-SNAPSHOT")
 }
 ```
 
@@ -143,27 +180,12 @@ val balances = BalanceControllerApi(webClient)
 ```
 
 The consumer obtains/refreshes tokens and configures timeouts, tracing and any retry
-policy. The client does not automatically obtain HMPPS Auth tokens or grant roles.
-The publication contains no credentials, tokens or client secrets. Keep remote
-publication in an organisation-controlled Maven repository.
+policy. It also supplies the HTTP transport through its own configured `WebClient`; the client
+publication does not add Reactor Netty or Spring Context for this purpose. The client does
+not automatically obtain HMPPS Auth tokens or grant roles. The publication contains no
+credentials, tokens or client secrets. 
 
-Java can use the same JAR:
-
-```java
-import java.time.Duration;
-import uk.gov.justice.digital.hmpps.visitallocationclient.api.BalanceControllerApi;
-import uk.gov.justice.digital.hmpps.visitallocationclient.model.PrisonerBalanceAdjustmentDto;
-
-var balances = new BalanceControllerApi(allocationWebClient);
-var balance = balances.getPrisonerBalance("AA123456").block(Duration.ofSeconds(10));
-var request = new PrisonerBalanceAdjustmentDto(
-    PrisonerBalanceAdjustmentDto.AdjustmentReasonType.GOVERNOR_ADJUSTMENT,
-    "ABC1234", 1, null, null
-);
-```
-
-Java callers supply all constructor arguments; Kotlin default arguments do not create
-Java overloads. Generated DTOs are separate types from the API's server DTOs.
+Keep remote publication in an organisation-controlled Maven repository.
 
 ### Jackson compatibility
 
@@ -173,7 +195,9 @@ publication. Spring Boot 4 consumers can supply their existing WebClient with Ja
 codecs.
 Jackson 2 and 3 have different databind packages and coexist here. No custom generator
 templates or generated-source rewriting are used. The Spring Boot dependency platform
-is published as dependency constraints, so review dependency alignment in your consumer.
+is published as dependency constraints. Its coordinates come from the Spring Boot plugin
+bundled with `hmpps-gradle-spring-boot`, and all explicitly declared client libraries use
+versions managed by that platform.
 
 ### Error responses
 
@@ -198,7 +222,3 @@ try {
 
 For a reactive flow use `onErrorResume`/`onErrorMap`. Transport failures and timeouts
 are separate from HTTP error responses. Domain-specific exceptions are not generated.
-
-There is no client-specific automated test suite in this stage. Verification is manual
-in the consuming API. Remote publishing, immutable releases, automatic API startup/export
-in CI, broader consumer compatibility and migrating a downstream service are future stages.
