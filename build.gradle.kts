@@ -1,9 +1,24 @@
+import io.swagger.v3.parser.OpenAPIV3Parser
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.time.Duration
+
+buildscript {
+  repositories { mavenCentral() }
+  dependencies { classpath("io.swagger.parser.v3:swagger-parser:2.1.48") }
+}
+
 plugins {
   id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.8"
   kotlin("plugin.spring") version "2.4.10"
   kotlin("plugin.jpa") version "2.4.10"
   kotlin("plugin.allopen") version "2.4.10"
   id("org.owasp.dependencycheck") version "13.0.0"
+  id("org.openapi.generator") version "7.24.0" apply false
 }
 
 configurations {
@@ -57,4 +72,53 @@ tasks {
 
 tasks.withType<Test>().configureEach {
   jvmArgs("-Dspring.test.context.cache.pause=never")
+}
+
+val docsUrl = providers.gradleProperty("openApiUrl").orElse("http://localhost:8079/v3/api-docs/client")
+val specFile = layout.buildDirectory.file("openapi/client-api.json")
+
+tasks.register("exportOpenApi") {
+  group = "client"
+  description = "Export and validate the consumer client OpenAPI contract from a running local allocation API."
+  inputs.property("openApiUrl", docsUrl)
+  outputs.file(specFile)
+  // An explicit export must always fetch the running application's current contract.
+  outputs.upToDateWhen { false }
+  doLast {
+    val target = specFile.get().asFile.toPath()
+    Files.createDirectories(target.parent)
+    // A failed export must not leave an old contract available for a subsequent client build.
+    Files.deleteIfExists(target)
+    try {
+      val request = HttpRequest.newBuilder(URI.create(docsUrl.get()))
+        .timeout(Duration.ofSeconds(30))
+        .header("Accept", "application/json")
+        .GET()
+        .build()
+      val response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()
+        .send(request, HttpResponse.BodyHandlers.ofString())
+      check(response.statusCode() == 200) { "Documentation endpoint returned HTTP ${response.statusCode()}" }
+      check(response.body().trimStart().startsWith("{")) { "Documentation endpoint did not return JSON" }
+      val parsed = OpenAPIV3Parser().readContents(response.body(), null, null)
+      check(parsed.openAPI != null && !parsed.openAPI.paths.isNullOrEmpty() && parsed.messages.isNullOrEmpty()) {
+        "Invalid or empty OpenAPI contract: ${parsed.messages}"
+      }
+      val temporary = Files.createTempFile(target.parent, "allocation-api-", ".json")
+      try {
+        Files.writeString(temporary, response.body())
+        Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
+      } finally {
+        Files.deleteIfExists(temporary)
+      }
+      logger.lifecycle("Exported ${parsed.openAPI.paths.size} paths to $target")
+    } catch (exception: Exception) {
+      throw GradleException("OpenAPI export failed. Start the local API with API docs enabled, then run ./gradlew exportOpenApi. ${exception.message}", exception)
+    }
+  }
+}
+
+tasks.register("refreshAndPublishClientToMavenLocal") {
+  group = "client"
+  description = "Export, validate, generate, build and publish the JVM client to Maven Local."
+  dependsOn(":exportOpenApi", ":client:publishToMavenLocal")
 }
