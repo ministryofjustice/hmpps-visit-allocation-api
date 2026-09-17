@@ -10,7 +10,7 @@ USER root
 WORKDIR /app
 COPY . .
 RUN chmod +x ./gradlew && \
-    ./gradlew --no-daemon assemble
+    ./gradlew --no-daemon :assemble
 
 FROM ${BASE_IMAGE}
 

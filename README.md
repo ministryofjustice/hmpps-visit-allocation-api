@@ -12,15 +12,30 @@ This is a Spring Boot application, written in Kotlin, providing visit allocation
 
 To build the project (without tests):
 ```
-./gradlew clean build -x test
+./gradlew :clean :build -x test
 ```
 
 ## Testing
 
 Run:
 ```
-./gradlew test 
+./gradlew :test
 ```
+
+## JVM client library
+
+See [the client guide](client/README.md) for manually exporting the consumer client contract,
+building the client JAR, publishing to Maven Local and consuming it from Kotlin or Java.
+With the API running locally, `./gradlew refreshAndPublishClientToMavenLocal` performs the
+complete refresh, build and local publication workflow.
+
+Use root-qualified API tasks (`:build`, `:test`, `:assemble`, `:check`) to build the API
+without also building the client, which requires a manually exported specification.
+
+Use client-qualified API tasks (`:client:publishToMavenLocal`) for client-specific operations.
+
+When making changes to the API, remember to update the JVM client library version according to
+the MAJOR.MINOR.PATCH version control flow.
 
 ## Running
 
