@@ -1,6 +1,7 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 
 import io.swagger.v3.oas.models.PathItem.HttpMethod.GET
+import io.swagger.v3.oas.models.PathItem.HttpMethod.POST
 import io.swagger.v3.oas.models.PathItem.HttpMethod.PUT
 import io.swagger.v3.parser.OpenAPIV3Parser
 import org.assertj.core.api.Assertions.assertThat
@@ -10,6 +11,9 @@ import org.springframework.http.MediaType
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.GET_VISIT_ORDER_HISTORY
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE_DETAILED
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_GET_PRISONER_ADJUSTMENT
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_MIGRATION
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_SYNC
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -73,6 +77,9 @@ class OpenApiDocsTest : IntegrationTestBase() {
       VO_BALANCE,
       VO_BALANCE_DETAILED,
       GET_VISIT_ORDER_HISTORY,
+      VO_PRISONER_MIGRATION,
+      VO_PRISONER_SYNC,
+      VO_GET_PRISONER_ADJUSTMENT,
     )
     assertThat(result.openAPI.paths.getValue(VO_BALANCE).readOperationsMap().keys)
       .containsExactlyInAnyOrder(GET, PUT)
@@ -80,12 +87,21 @@ class OpenApiDocsTest : IntegrationTestBase() {
       .containsExactly(GET)
     assertThat(result.openAPI.paths.getValue(GET_VISIT_ORDER_HISTORY).readOperationsMap().keys)
       .containsExactly(GET)
+    assertThat(result.openAPI.paths.getValue(VO_PRISONER_MIGRATION).readOperationsMap().keys)
+      .containsExactly(POST)
+    assertThat(result.openAPI.paths.getValue(VO_PRISONER_SYNC).readOperationsMap().keys)
+      .containsExactly(POST)
+    assertThat(result.openAPI.paths.getValue(VO_GET_PRISONER_ADJUSTMENT).readOperationsMap().keys)
+      .containsExactly(GET)
     assertThat(result.openAPI.components.schemas.keys).containsExactlyInAnyOrder(
       "ErrorResponse",
       "ManualBalanceAdjustmentValidationErrorResponse",
       "PrisonerBalanceAdjustmentDto",
       "PrisonerBalanceDto",
       "PrisonerDetailedBalanceDto",
+      "VisitAllocationPrisonerAdjustmentResponseDto",
+      "VisitAllocationPrisonerMigrationDto",
+      "VisitAllocationPrisonerSyncDto",
       "VisitOrderHistoryAttributesDto",
       "VisitOrderHistoryDto",
     )

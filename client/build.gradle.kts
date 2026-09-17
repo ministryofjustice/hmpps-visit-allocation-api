@@ -114,7 +114,7 @@ val verifyClientArtifact = tasks.register("verifyClientArtifact") {
       .filter { it.startsWith("uk/gov/justice/digital/hmpps/visitallocationclient/api/") && it.endsWith(".class") && '$' !in it }
       .map { it.substringAfterLast('/').removeSuffix(".class") }
       .toSet()
-    check(apiClasses == setOf("BalanceControllerApi", "VisitOrderHistoryControllerApi")) {
+    check(apiClasses == setOf("BalanceControllerApi", "NomisControllerApi", "VisitOrderHistoryControllerApi")) {
       "Unexpected generated API classes in ${jarFile.name}: $apiClasses"
     }
 
@@ -128,6 +128,9 @@ val verifyClientArtifact = tasks.register("verifyClientArtifact") {
       "PrisonerBalanceAdjustmentDto",
       "PrisonerBalanceDto",
       "PrisonerDetailedBalanceDto",
+      "VisitAllocationPrisonerAdjustmentResponseDto",
+      "VisitAllocationPrisonerMigrationDto",
+      "VisitAllocationPrisonerSyncDto",
       "VisitOrderHistoryAttributesDto",
       "VisitOrderHistoryDto",
     )

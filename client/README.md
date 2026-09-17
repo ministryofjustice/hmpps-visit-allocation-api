@@ -1,10 +1,10 @@
 # Visit Allocation JVM client POC
 
-This module generates a Kotlin client for the consumer-facing balance and visit-order
-history endpoints. The JAR contains the generated client methods, their required DTOs
-and the shared client infrastructure.
+This module generates a Kotlin client for the consumer-facing balance, visit-order
+history and NOMIS integration endpoints. The JAR contains the generated client methods,
+their required DTOs and the shared client infrastructure.
 
-Note: Operational admin, queue, job and NOMIS APIs are excluded.
+Note: Operational admin, queue and job APIs are excluded.
 
 Publication: `uk.gov.justice.service.hmpps:hmpps-visit-allocation-client:1.0.0-SNAPSHOT`
 
@@ -66,7 +66,7 @@ client builds use that file and do not contact the API.
 ./gradlew :client:build
 ```
 
-This validates the saved spec, generates the two client API classes and their models,
+This validates the saved spec, generates the three client API classes and their models,
 compiles the library and produces:
 
 ```text
@@ -166,8 +166,8 @@ fun readBalance(allocationWebClient: WebClient, prisonerId: String) =
 ```
 
 In reactive application code, return/compose the `Mono` instead of blocking.
-Create and reuse API client instances as beans. `VisitOrderHistoryControllerApi` is in
-the same `.api` package; DTOs are in `.model`.
+Create and reuse API client instances as beans. `VisitOrderHistoryControllerApi` and
+`NomisControllerApi` are in the same `.api` package; DTOs are in `.model`.
 
 For a short local experiment with a valid token:
 

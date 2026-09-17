@@ -24,6 +24,9 @@ import org.springframework.web.method.HandlerMethod
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.GET_VISIT_ORDER_HISTORY
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE
 import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_BALANCE_DETAILED
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_GET_PRISONER_ADJUSTMENT
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_MIGRATION
+import uk.gov.justice.digital.hmpps.visitallocationapi.controller.VO_PRISONER_SYNC
 
 @Configuration
 class OpenApiConfiguration(buildProperties: BuildProperties) {
@@ -86,6 +89,9 @@ class OpenApiConfiguration(buildProperties: BuildProperties) {
       VO_BALANCE,
       VO_BALANCE_DETAILED,
       GET_VISIT_ORDER_HISTORY,
+      VO_PRISONER_MIGRATION,
+      VO_PRISONER_SYNC,
+      VO_GET_PRISONER_ADJUSTMENT,
     )
     .build()
 
