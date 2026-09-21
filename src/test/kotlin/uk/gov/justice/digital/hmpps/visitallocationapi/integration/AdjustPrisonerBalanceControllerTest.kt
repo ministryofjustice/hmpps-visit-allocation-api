@@ -3,6 +3,8 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.verify
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.test.web.reactive.server.WebTestClient
@@ -17,6 +19,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.ChangeLogType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.PVO_TOTAL_POST_ADJUSTMENT_BELOW_ZERO
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.PrisonerBalanceAdjustmentValidationErrorCodes.VO_TOTAL_POST_ADJUSTMENT_ABOVE_MAX
+import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryAttributeType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderHistoryType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderStatus.ACCUMULATED
@@ -41,7 +44,7 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     val lastVoAllocationDate = LocalDate.now().minusDays(7)
     val lastPvoAllocationDate = LocalDate.now().minusDays(14)
     prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = lastVoAllocationDate, lastPvoAllocatedDate = lastPvoAllocationDate))
-    val balanceAdjustmentDto = PrisonerBalanceAdjustmentDto(5, 2, AdjustmentReasonType.GOVERNOR_ADJUSTMENT, null, "test")
+    val balanceAdjustmentDto = PrisonerBalanceAdjustmentDto(5, 2, AdjustmentReasonType.GOVERNOR_ADJUSTMENT, null, "test", "MDI")
 
     // When
     val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentDto, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
@@ -79,6 +82,47 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
     assertThat(visitOrderHistory[0].visitOrderHistoryAttributes.size).isEqualTo(1)
     assertThat(visitOrderHistory[0].visitOrderHistoryAttributes[0].attributeType).isEqualTo(VisitOrderHistoryAttributeType.ADJUSTMENT_REASON_TYPE)
     assertThat(visitOrderHistory[0].visitOrderHistoryAttributes[0].attributeValue).isEqualTo("GOVERNOR_ADJUSTMENT")
+
+    verify(telemetryClientService).trackEvent(
+      eq(TelemetryEventType.MANUAL_PRISONER_BALANCE_ADJUSTMENT),
+      eq(
+        mapOf(
+          "prisonerId" to PRISONER_ID,
+          "voAdjusted" to "5",
+          "pvoAdjusted" to "2",
+          "adjustmentReasonType" to "GOVERNOR_ADJUSTMENT",
+          "userName" to "test",
+          "caseloadId" to "MDI",
+        ),
+      ),
+    )
+  }
+
+  @Test
+  fun `when balance adjustment omits caseload ID then the telemetry field is empty`() {
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null))
+    val balanceAdjustmentRequest = mapOf(
+      "voAmount" to 1,
+      "adjustmentReasonType" to "GOVERNOR_ADJUSTMENT",
+      "userName" to "test",
+    )
+
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentRequest, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
+
+    responseSpec.expectStatus().isOk
+    verify(telemetryClientService).trackEvent(
+      eq(TelemetryEventType.MANUAL_PRISONER_BALANCE_ADJUSTMENT),
+      eq(
+        mapOf(
+          "prisonerId" to PRISONER_ID,
+          "voAdjusted" to "1",
+          "pvoAdjusted" to "0",
+          "adjustmentReasonType" to "GOVERNOR_ADJUSTMENT",
+          "userName" to "test",
+          "caseloadId" to "",
+        ),
+      ),
+    )
   }
 
   @Test
@@ -671,11 +715,11 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
 
   private fun callVisitAllocationPrisonerBalanceEndpoint(
     prisonerId: String,
-    balanceAdjustmentDto: PrisonerBalanceAdjustmentDto,
+    balanceAdjustmentRequest: Any,
     webTestClient: WebTestClient,
     authHttpHeaders: (HttpHeaders) -> Unit,
   ): ResponseSpec = callPut(
-    balanceAdjustmentDto,
+    balanceAdjustmentRequest,
     webTestClient,
     getPrisonerBalanceUrl(prisonerId),
     authHttpHeaders,
