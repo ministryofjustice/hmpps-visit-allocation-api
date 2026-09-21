@@ -57,7 +57,7 @@ class BalanceService(
     if (changeLogReference != null) {
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisonerId, changeLogReference)
       if (changeLog != null) {
-        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog)
+        snsService.sendPrisonAllocationAdjustmentCreatedEvent(changeLog, balanceAdjustmentDto.caseloadId)
       }
     }
     LOG.info("Adjusted prisoner balance for prisoner $prisonerId with adjustment details - $balanceAdjustmentDto")

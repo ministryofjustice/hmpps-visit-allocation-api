@@ -44,7 +44,7 @@ class SnsService(
 
   fun LocalDateTime.toOffsetDateFormat(): String = atZone(ZoneId.of(EVENT_ZONE_ID)).toOffsetDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
-  fun sendPrisonAllocationAdjustmentCreatedEvent(changeLog: ChangeLog) {
+  fun sendPrisonAllocationAdjustmentCreatedEvent(changeLog: ChangeLog, caseloadId: String? = null) {
     val event = HMPPSAdjustmentCreatedDomainEvent(
       eventType = EVENT_PRISON_ALLOCATION_ADJUSTMENT_CREATED,
       version = EVENT_PRISON_VISIT_VERSION,
@@ -55,6 +55,7 @@ class SnsService(
         prisonerId = changeLog.prisonerId,
         adjustmentId = changeLog.id.toString(),
         hasBalanceChanged = hasBalanceChanged(changeLog),
+        caseloadId = caseloadId,
       ),
     )
 
@@ -162,6 +163,7 @@ internal data class AdditionalInformation(
   val prisonerId: String,
   val adjustmentId: String,
   val hasBalanceChanged: Boolean,
+  val caseloadId: String? = null,
 )
 
 internal data class HMPPSBalanceResetDomainEvent(

@@ -3,8 +3,12 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.integration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.verify
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.test.web.reactive.server.WebTestClient.ResponseSpec
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ManualBalanceAdjustmentValidationErrorResponse
@@ -26,13 +30,43 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType.PVO
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.VisitOrderType.VO
 import uk.gov.justice.digital.hmpps.visitallocationapi.integration.helper.callPut
 import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.PrisonerDetails
+import uk.gov.justice.digital.hmpps.visitallocationapi.service.SnsService
 import java.time.LocalDate
 
 @DisplayName("Balance Controller tests to update a prisoner's VO and / or PVO balance - PUT $VO_BALANCE")
 class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
 
+  @MockitoSpyBean
+  private lateinit var snsService: SnsService
+
   companion object {
     const val PRISONER_ID = "AA123456"
+  }
+
+  @Test
+  fun `when balance adjustment includes a caseload ID then it is passed to the SNS event`() {
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null))
+    val balanceAdjustmentDto = PrisonerBalanceAdjustmentDto(1, null, AdjustmentReasonType.GOVERNOR_ADJUSTMENT, null, "test", "MDI")
+
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentDto, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
+
+    responseSpec.expectStatus().isOk
+    verify(snsService).sendPrisonAllocationAdjustmentCreatedEvent(any(), eq("MDI"))
+  }
+
+  @Test
+  fun `when balance adjustment omits the caseload ID then null is passed to the SNS event`() {
+    prisonerDetailsRepository.save(PrisonerDetails(prisonerId = PRISONER_ID, lastVoAllocatedDate = LocalDate.now(), lastPvoAllocatedDate = null))
+    val balanceAdjustmentRequest = mapOf(
+      "voAmount" to 1,
+      "adjustmentReasonType" to AdjustmentReasonType.GOVERNOR_ADJUSTMENT,
+      "userName" to "test",
+    )
+
+    val responseSpec = callVisitAllocationPrisonerBalanceEndpoint(PRISONER_ID, balanceAdjustmentRequest, webTestClient, setAuthorisation(roles = listOf(ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API)))
+
+    responseSpec.expectStatus().isOk
+    verify(snsService).sendPrisonAllocationAdjustmentCreatedEvent(any(), eq(null))
   }
 
   @Test
@@ -671,11 +705,11 @@ class AdjustPrisonerBalanceControllerTest : IntegrationTestBase() {
 
   private fun callVisitAllocationPrisonerBalanceEndpoint(
     prisonerId: String,
-    balanceAdjustmentDto: PrisonerBalanceAdjustmentDto,
+    balanceAdjustmentRequest: Any,
     webTestClient: WebTestClient,
     authHttpHeaders: (HttpHeaders) -> Unit,
   ): ResponseSpec = callPut(
-    balanceAdjustmentDto,
+    balanceAdjustmentRequest,
     webTestClient,
     getPrisonerBalanceUrl(prisonerId),
     authHttpHeaders,
