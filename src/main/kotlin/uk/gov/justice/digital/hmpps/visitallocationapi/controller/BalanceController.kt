@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import uk.gov.justice.digital.hmpps.visitallocationapi.config.ManualBalanceAdjustmentValidationErrorResponse
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__NOMIS_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__VISIT_SCHEDULER_API
 import uk.gov.justice.digital.hmpps.visitallocationapi.config.ROLE_VISIT_ALLOCATION_API__VSIP_ORCHESTRATION_API
@@ -120,7 +121,7 @@ class BalanceController(val balanceService: BalanceService) {
       ApiResponse(
         responseCode = "422",
         description = "Adjust prisoner balance validation failed.",
-        content = [Content(mediaType = "application/json", schema = Schema(implementation = ErrorResponse::class))],
+        content = [Content(mediaType = "application/json", schema = Schema(implementation = ManualBalanceAdjustmentValidationErrorResponse::class))],
       ),
     ],
   )
