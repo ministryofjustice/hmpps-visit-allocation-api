@@ -313,7 +313,7 @@ class NomisSyncServiceTest {
     whenever(voBalancesUtil.getPrisonerBalance(existingPrisonerDetails)).thenReturn(prisonerBalance)
 
     // WHEN
-    nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_BOOKING_MOVED_EVENT_TYPE)
+    nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_RECEIVED_EVENT_TYPE)
 
     // THEN
     verify(changeLogService, times(1)).createLogSyncEventChange(any(), any())
