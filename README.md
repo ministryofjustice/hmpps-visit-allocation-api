@@ -92,13 +92,13 @@ Put any dummy value for AWS_ACCESS_KEY=test and AWS_SECRET_KEY=test and eu-west-
 The queueName is the value of hmpps.sqs.queues.prisonvisitsallocationevents.queueName on the application-<env>.yml file.
 So the queue URL should be - http://localhost:4566/000000000000/{queueName}
 
-#### Step 4 - Send a message to the queue. The below is a prisoner.conviction-status-updated event for prisoner A8713DY.
+#### Step 4 - Send a message to the queue. The example below is a prison-visit.booked event.
 ```
 aws sqs send-message \
   --endpoint-url=http://localhost:4566 \
   --queue-url=http://localhost:4566/000000000000/sqs_hmpps_visits_allocation_events_queue \
   --message-body \
-    '{"Type":"Notification", "Message": "{\"eventType\": \"prisoner-offender-search.prisoner.convicted-status-changed\", \"additionalInformation\": {\"nomsNumber\": \"A8713DY\", \"convictedStatus\": \"Convicted\"}}", "MessageId": "123"}'
+    '{"Type":"Notification", "Message": "{\"eventType\": \"prison-visit.booked\", \"additionalInformation\": {\"reference\": \"ab-cd-ef-gh\"}}", "MessageId": "123"}'
 ```
 
 If you are unsure about the queue name you can check the queue names using the following command and replace it in the above --queue-url value parameter
