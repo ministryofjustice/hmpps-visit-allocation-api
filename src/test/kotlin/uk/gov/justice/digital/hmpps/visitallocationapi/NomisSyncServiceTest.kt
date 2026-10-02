@@ -12,7 +12,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
-import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
@@ -46,9 +45,6 @@ class NomisSyncServiceTest {
 
   @Mock
   private lateinit var visitOrderHistoryService: VisitOrderHistoryService
-
-  @Mock
-  private lateinit var prisonApiClient: PrisonApiClient
 
   @Mock
   private lateinit var voBalancesUtil: VOBalancesUtil
@@ -308,12 +304,11 @@ class NomisSyncServiceTest {
     val existingNomisBalance = VisitBalancesDto(remainingVo = 3, remainingPvo = 2, latestIepAdjustDate = LocalDate.now().minusDays(1), latestPrivIepAdjustDate = LocalDate.now().minusDays(1))
 
     // WHEN
-    whenever(prisonApiClient.getBookingVisitBalances(prisonerId)).thenReturn(existingNomisBalance)
     whenever(prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)).thenReturn(existingPrisonerDetails)
     whenever(voBalancesUtil.getPrisonerBalance(existingPrisonerDetails)).thenReturn(prisonerBalance)
 
     // WHEN
-    nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_RECEIVED_EVENT_TYPE)
+    nomisSyncService.syncPrisonerBalanceFromEventChange(prisonerId, DomainEventType.PRISONER_RECEIVED_EVENT_TYPE, existingNomisBalance)
 
     // THEN
     verify(changeLogService, times(1)).createLogSyncEventChange(any(), any())

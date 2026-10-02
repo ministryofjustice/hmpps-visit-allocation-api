@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import tools.jackson.databind.ObjectMapper
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.service.ChangeLogService
@@ -19,6 +20,7 @@ class PrisonerMergedEventHandler(
   @param:Qualifier("objectMapper")
   private val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
+  private val prisonApiClient: PrisonApiClient,
   private val prisonerSearchClient: PrisonerSearchClient,
   private val nomisSyncService: NomisSyncService,
   private val prisonerMergeService: PrisonerMergeService,
@@ -64,7 +66,12 @@ class PrisonerMergedEventHandler(
   }
 
   private fun processNomis(info: PrisonerMergedInfo) {
-    nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId, DomainEventType.PRISONER_MERGED_EVENT_TYPE)
+    val prisonerNomisBalance = prisonApiClient.getBookingVisitBalances(info.prisonerId)
+    nomisSyncService.syncPrisonerBalanceFromEventChange(
+      prisonerId = info.prisonerId,
+      domainEventType = DomainEventType.PRISONER_MERGED_EVENT_TYPE,
+      prisonerNomisBalance = prisonerNomisBalance,
+    )
     nomisSyncService.syncPrisonerRemoved(info.removedPrisonerId)
   }
 }
