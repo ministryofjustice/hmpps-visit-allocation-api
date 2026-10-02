@@ -9,6 +9,7 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prisoner.search.AttributeSearchPrisonerDto
+import java.util.UUID
 
 @Service
 class PrisonAllocationService(
@@ -16,6 +17,7 @@ class PrisonAllocationService(
   private val incentivesClient: IncentivesClient,
   private val prisonService: PrisonService,
   private val prisonerAllocationService: PrisonerAllocationService,
+  private val prisonerRetryService: PrisonerRetryService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
 ) {
@@ -34,8 +36,8 @@ class PrisonAllocationService(
     var totalConvictedPrisonersFailedOrSkipped = 0
 
     for (prisoner in allPrisoners) {
-      val changeLogReference = prisonerAllocationService.processPrisonerAllocation(
-        prisonerId = prisoner.prisonerId,
+      val changeLogReference = processPrisoner(
+        prisoner = prisoner,
         jobReference = jobReference,
         allPrisonIncentiveAmounts = allIncentiveLevels,
       )
@@ -61,6 +63,30 @@ class PrisonAllocationService(
     )
 
     LOG.info("Finished AllocationService - processPrisonAllocation with prisonCode: $prisonId, total records processed : ${allPrisoners.size}")
+  }
+
+  private fun processPrisoner(
+    prisoner: AttributeSearchPrisonerDto,
+    jobReference: String,
+    allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>,
+  ): UUID? = try {
+    val prisonerDetails = prisonerSearchClient.getPrisonerById(prisoner.prisonerId)
+    val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisoner.prisonerId)
+    val prisonIncentiveAmounts = allPrisonIncentiveAmounts.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
+      ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisonerDetails.prisonId, prisonerIncentive.iepCode)
+
+    prisonerAllocationService.processPrisonerAllocation(
+      prisonerId = prisoner.prisonerId,
+      prisonIncentiveAmounts = prisonIncentiveAmounts,
+      prisonerIncentiveLevel = prisonerIncentive.iepCode,
+    )
+  } catch (e: Exception) {
+    LOG.error("Error processing prisoner - ${prisoner.prisonerId}, putting ${prisoner.prisonerId} on prisoner retry queue", e)
+    prisonerRetryService.sendMessageToPrisonerRetryQueue(
+      jobReference = jobReference,
+      prisonerId = prisoner.prisonerId,
+    )
+    null
   }
 
   private fun getConvictedPrisonersForPrison(jobReference: String, prisonId: String): List<AttributeSearchPrisonerDto> {

@@ -6,9 +6,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.transaction.interceptor.TransactionAspectSupport
-import uk.gov.justice.digital.hmpps.visitallocationapi.clients.IncentivesClient
-import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonerSearchClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.incentives.PrisonIncentiveAmountsDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.PrisonerSnap
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.snapshots.snapshot
@@ -24,15 +21,11 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.utils.PrisonerChangeTrack
 import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VisitOrdersUtil
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
+import java.util.UUID
 
-@Transactional
 @Service
 class PrisonerAllocationService(
-  private val prisonerSearchClient: PrisonerSearchClient,
-  private val incentivesClient: IncentivesClient,
   private val prisonerDetailsService: PrisonerDetailsService,
-  private val prisonerRetryService: PrisonerRetryService,
   private val changeLogService: ChangeLogService,
   private val visitOrderHistoryService: VisitOrderHistoryService,
   private val visitOrdersUtil: VisitOrdersUtil,
@@ -43,60 +36,42 @@ class PrisonerAllocationService(
   }
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun processPrisonerAllocation(prisonerId: String, jobReference: String, allPrisonIncentiveAmounts: List<PrisonIncentiveAmountsDto>, fromRetryQueue: Boolean? = false): UUID? {
-    LOG.info("Entered PrisonerAllocationService - processPrisoner for prisoner - $prisonerId")
+  fun processPrisonerAllocation(
+    prisonerId: String,
+    prisonIncentiveAmounts: PrisonIncentiveAmountsDto,
+    prisonerIncentiveLevel: String,
+  ): UUID? {
+    val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
+      ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
 
-    try {
-      // Get prisoner on DPS (or create if they're new).
-      val dpsPrisonerDetails: PrisonerDetails = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
-        ?: prisonerDetailsService.createPrisonerDetails(prisonerId, LocalDate.now().minusDays(14), null)
+    val dpsPrisonerDetailsBefore = dpsPrisonerDetails.snapshot()
 
-      // Get the incentive amount for the prison given the prisoners incentive level
-      val prisonerPrisonId = prisonerSearchClient.getPrisonerById(dpsPrisonerDetails.prisonerId).prisonId
-      val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(dpsPrisonerDetails.prisonerId)
-      val prisonIncentiveAmounts = allPrisonIncentiveAmounts.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
-        ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisonerPrisonId, prisonerIncentive.iepCode)
+    processPrisonerAccumulation(dpsPrisonerDetails, dpsPrisonerDetailsBefore, prisonIncentiveAmounts)
 
-      // Capture the before details, used at the end to track if changes have been made. If so, a change_log entry will be generated.
-      val dpsPrisonerDetailsBefore = dpsPrisonerDetails.snapshot()
+    val dpsPrisonerDetailsAfterAccumulation = dpsPrisonerDetails.snapshot()
+    processPrisonerAllocation(dpsPrisonerDetails, prisonIncentiveAmounts)
+    logAllocationBatchProcess(
+      dpsPrisonerDetailsAfter = dpsPrisonerDetails,
+      dpsPrisonerDetailsBefore = dpsPrisonerDetailsAfterAccumulation,
+      prisonIncentiveLevel = prisonerIncentiveLevel,
+    )
 
-      processPrisonerAccumulation(dpsPrisonerDetails, dpsPrisonerDetailsBefore, prisonIncentiveAmounts)
+    val dpsPrisonerDetailsAfterAllocation = dpsPrisonerDetails.snapshot()
+    processPrisonerExpiration(dpsPrisonerDetails)
+    logExpirationBatchProcess(
+      dpsPrisonerDetailsAfter = dpsPrisonerDetails,
+      dpsPrisonerDetailsBefore = dpsPrisonerDetailsAfterAllocation,
+    )
 
-      val dpsPrisonerDetailsAfterAccumulation = dpsPrisonerDetails.snapshot()
-      processPrisonerAllocation(dpsPrisonerDetails, prisonIncentiveAmounts)
-      logAllocationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsAfterAccumulation, prisonerIncentive.iepCode)
-
-      val dpsPrisonerDetailsAfterAllocation = dpsPrisonerDetails.snapshot()
-      processPrisonerExpiration(dpsPrisonerDetails)
-      logExpirationBatchProcess(dpsPrisonerDetailsAfter = dpsPrisonerDetails, dpsPrisonerDetailsBefore = dpsPrisonerDetailsAfterAllocation)
-
-      val changeLog: ChangeLog? = if (PrisonerChangeTrackingUtil.hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
-        changeLogService.createLogBatchProcess(dpsPrisonerDetails).also {
-          dpsPrisonerDetails.changeLogs.add(it)
-        }
-      } else {
-        null
+    val changeLog: ChangeLog? = if (PrisonerChangeTrackingUtil.hasChangeOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetails)) {
+      changeLogService.createLogBatchProcess(dpsPrisonerDetails).also {
+        dpsPrisonerDetails.changeLogs.add(it)
       }
-
-      return changeLog?.reference
-    } catch (e: Exception) {
-      // When a prisoner is processed from the retry queue, we don't want to add them back if an exception happens.
-      // Instead, it should go onto the DLQ.
-      TransactionAspectSupport.currentTransactionStatus().setRollbackOnly()
-
-      if (fromRetryQueue == false) {
-        LOG.error("Error processing prisoner - $prisonerId, putting $prisonerId on prisoner retry queue", e)
-        prisonerRetryService.sendMessageToPrisonerRetryQueue(
-          jobReference = jobReference,
-          prisonerId = prisonerId,
-        )
-      } else {
-        LOG.error("Error processing prisoner - $prisonerId from retry queue", e)
-        throw e
-      }
+    } else {
+      null
     }
 
-    return null
+    return changeLog?.reference
   }
 
   private fun processPrisonerAllocation(dpsPrisoner: PrisonerDetails, prisonIncentiveAmounts: PrisonIncentiveAmountsDto) {
@@ -106,9 +81,7 @@ class PrisonerAllocationService(
     visitOrders.addAll(generateVos(dpsPrisoner, prisonIncentiveAmounts))
     visitOrders.addAll(generatePVos(dpsPrisoner, prisonIncentiveAmounts))
 
-    // Capture the VO / PVOs created, to see if we need to update allocation dates.
     updateLastAllocatedDates(dpsPrisoner, visitOrders)
-
     dpsPrisoner.visitOrders.addAll(visitOrders)
 
     LOG.info("Successfully generated ${visitOrders.size} visit orders for prisoner ${dpsPrisoner.prisonerId}: " + "${visitOrders.count { it.type == VisitOrderType.PVO }} PVOs and ${visitOrders.count { it.type == VisitOrderType.VO }} VOs")
@@ -117,7 +90,6 @@ class PrisonerAllocationService(
   private fun processPrisonerAccumulation(dpsPrisonerDetailsAfter: PrisonerDetails, dpsPrisonerDetailsBefore: PrisonerSnap, prisonIncentiveAmounts: PrisonIncentiveAmountsDto) {
     LOG.info("Entered PrisonerAllocationService - processPrisonerAccumulation with prisonerId: ${dpsPrisonerDetailsAfter.prisonerId}")
 
-    // Move any VOs in status of 'AVAILABLE' older than 28 days, to 'ACCUMULATED'.
     dpsPrisonerDetailsAfter.visitOrders.filter { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.AVAILABLE && it.createdTimestamp.isBefore(LocalDateTime.now().minusDays(28)) }.forEach { it.status = VisitOrderStatus.ACCUMULATED }
 
     if (PrisonerChangeTrackingUtil.hasAccumulationOccurred(dpsPrisonerDetailsBefore, dpsPrisonerDetailsAfter)) {
@@ -126,7 +98,6 @@ class PrisonerAllocationService(
     }
 
     if (isDueVO(dpsPrisonerDetailsAfter)) {
-      // Capture all 'AVAILABLE' and 'ACCUMULATED' VOs, we will use these to check if 'ACCUMULATED' VOs need expiring to make room for new 'AVAILABLE' VOs during allocation
       val currentVOs = dpsPrisonerDetailsAfter.visitOrders.filter {
         it.type == VisitOrderType.VO && (it.status == VisitOrderStatus.AVAILABLE || it.status == VisitOrderStatus.ACCUMULATED)
       }
@@ -143,7 +114,6 @@ class PrisonerAllocationService(
             accumulatedVo.expiryDate = LocalDate.now()
           }
 
-        // we also tend to expire VOs (not PVOs) when we accumulate, so adding an expiry entry
         if (PrisonerChangeTrackingUtil.hasVoExpirationOccurred(dpsPrisonerDetailsBeforeExpiration, dpsPrisonerDetailsAfter)) {
           LOG.debug("logging expiration (in accumulation) batch process completed for prisoner ${dpsPrisonerDetailsAfter.prisonerId}")
           visitOrderHistoryService.logBatchProcess(dpsPrisonerDetailsAfter, AllocationBatchProcessType.EXPIRATION, setOf(VisitOrderType.VO))
@@ -157,7 +127,6 @@ class PrisonerAllocationService(
   private fun processPrisonerExpiration(dpsPrisoner: PrisonerDetails) {
     LOG.info("Entered PrisonerAllocationService - processPrisonerExpiration with prisonerId: ${dpsPrisoner.prisonerId}")
 
-    // Expire all VOs over the maximum accumulation cap.
     val currentAccumulatedVoCount = dpsPrisoner.visitOrders.count { it.type == VisitOrderType.VO && it.status == VisitOrderStatus.ACCUMULATED }
     LOG.info("prisoner ${dpsPrisoner.prisonerId}, has $currentAccumulatedVoCount accumulated VOs. Checking if it's more than allowed maximum $maxAccumulatedVisitOrders")
     if (currentAccumulatedVoCount > maxAccumulatedVisitOrders) {
@@ -174,7 +143,6 @@ class PrisonerAllocationService(
         }
     }
 
-    // Expire all PVOs older than 28 days.
     dpsPrisoner.visitOrders
       .filter {
         it.type == VisitOrderType.PVO &&
@@ -190,7 +158,6 @@ class PrisonerAllocationService(
   }
 
   private fun updateLastAllocatedDates(dpsPrisoner: PrisonerDetails, visitOrders: MutableList<VisitOrder>) {
-    // Only update the lastVoAllocatedDate and lastPvoAllocatedDate if VOs and PVOs have been generated or repaid.
     if (visitOrders.any { it.type == VisitOrderType.VO } || dpsPrisoner.negativeVisitOrders.any { it.type == VisitOrderType.VO && it.repaidDate == LocalDate.now() && it.repaidReason == NegativeRepaymentReason.ALLOCATION }) {
       dpsPrisoner.lastVoAllocatedDate = LocalDate.now()
     }
@@ -226,10 +193,7 @@ class PrisonerAllocationService(
       it.type == VisitOrderType.VO && (it.status == VisitOrderStatus.AVAILABLE || it.status == VisitOrderStatus.ACCUMULATED)
     }
 
-    // Don't go past 0 as a safeguard
     val remainingVoAllowance = (maxAccumulatedVisitOrders - currentVOs).coerceAtLeast(0)
-
-    // Return the maximum they can be allocated without breaching the hard cap maxAccumulatedVisitOrders
     return incentiveLevelAllocation.coerceAtMost(remainingVoAllowance)
   }
 
