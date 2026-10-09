@@ -1,8 +1,8 @@
 plugins {
-  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.11"
-  kotlin("plugin.spring") version "2.4.20"
-  kotlin("plugin.jpa") version "2.4.20"
-  kotlin("plugin.allopen") version "2.4.20"
+  id("uk.gov.justice.hmpps.gradle-spring-boot") version "11.0.12"
+  kotlin("plugin.spring") version "2.4.21"
+  kotlin("plugin.jpa") version "2.4.21"
+  kotlin("plugin.allopen") version "2.4.21"
   id("org.owasp.dependencycheck") version "13.0.0"
 }
 
@@ -21,7 +21,7 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
   implementation("io.opentelemetry:opentelemetry-extension-kotlin")
 
-  runtimeOnly("org.postgresql:postgresql:42.7.13")
+  runtimeOnly("org.postgresql:postgresql:42.7.14")
   runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
   testImplementation("uk.gov.justice.service.hmpps:hmpps-kotlin-spring-boot-starter-test:3.0.3")
