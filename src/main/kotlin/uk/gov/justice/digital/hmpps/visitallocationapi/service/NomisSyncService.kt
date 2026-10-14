@@ -4,9 +4,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.PrisonerBalanceDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.dto.nomis.VisitAllocationPrisonerSyncDto
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.VisitBalancesDto
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.NegativeVisitOrderStatus
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.TelemetryEventType
@@ -22,20 +22,19 @@ import uk.gov.justice.digital.hmpps.visitallocationapi.utils.VOBalancesUtil
 import java.time.LocalDate
 import kotlin.math.abs
 
-@Transactional
 @Service
 class NomisSyncService(
   private val prisonerDetailsService: PrisonerDetailsService,
   private val telemetryService: TelemetryClientService,
   private val changeLogService: ChangeLogService,
   private val visitOrderHistoryService: VisitOrderHistoryService,
-  private val prisonApiClient: PrisonApiClient,
   private val voBalancesUtil: VOBalancesUtil,
 ) {
   companion object {
     val LOG: Logger = LoggerFactory.getLogger(this::class.java)
   }
 
+  @Transactional
   fun syncPrisonerAdjustmentChanges(syncDto: VisitAllocationPrisonerSyncDto) {
     LOG.info("Entered NomisSyncService - syncPrisoner with sync dto {}", syncDto)
 
@@ -86,10 +85,14 @@ class NomisSyncService(
     LOG.info("Saving prisoner info - ${dpsPrisoner.prisonerId}, VOs ${dpsPrisoner.visitOrders.size}, NVOs ${dpsPrisoner.negativeVisitOrders.size}")
   }
 
-  fun syncPrisonerBalanceFromEventChange(prisonerId: String, domainEventType: DomainEventType) {
+  @Transactional
+  fun syncPrisonerBalanceFromEventChange(
+    prisonerId: String,
+    domainEventType: DomainEventType,
+    prisonerNomisBalance: VisitBalancesDto?,
+  ) {
     LOG.info("Entered NomisSyncService - syncPrisonerBalanceFromEventChange for prisoner {}", prisonerId)
 
-    val prisonerNomisBalance = prisonApiClient.getBookingVisitBalances(prisonerId)
     if (prisonerNomisBalance == null) {
       LOG.warn("Prisoner $prisonerId balance not found on NOMIS. Checking if prisoner exists in DPS allocation service")
       val dpsPrisoner = prisonerDetailsService.getPrisonerDetailsWithLock(prisonerId)
@@ -132,6 +135,7 @@ class NomisSyncService(
     }
   }
 
+  @Transactional
   fun syncPrisonerRemoved(prisonerId: String) {
     LOG.info("Entered NomisSyncService - syncPrisonerRemoved for prisoner {}", prisonerId)
     prisonerDetailsService.removePrisonerDetails(prisonerId)

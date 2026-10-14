@@ -1,85 +1,25 @@
 package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
-import org.springframework.transaction.annotation.Transactional
 import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
-import uk.gov.justice.digital.hmpps.visitallocationapi.dto.jobs.VisitAllocationEventJobDto
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationJob
-import uk.gov.justice.digital.hmpps.visitallocationapi.model.entity.VisitOrderAllocationPrisonJob
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationJobRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.repository.VisitOrderAllocationPrisonJobRepository
-import uk.gov.justice.digital.hmpps.visitallocationapi.service.sqs.VisitAllocationEventJobSqsService
-import java.time.LocalDateTime
+import uk.gov.justice.digital.hmpps.visitallocationapi.dto.prison.api.ServicePrisonDto
 
-@Transactional
 @Service
 class PrisonService(
   private val prisonApiClient: PrisonApiClient,
-  private val visitOrderAllocationJobRepository: VisitOrderAllocationJobRepository,
-  private val visitOrderAllocationPrisonJobRepository: VisitOrderAllocationPrisonJobRepository,
-  private val visitAllocationEventJobSqsService: VisitAllocationEventJobSqsService,
 ) {
   companion object {
-    val log: Logger = LoggerFactory.getLogger(this::class.java)
     const val ALL_PRISON_CODE = "*ALL*"
   }
 
   fun getPrisonEnabledForDpsByCode(prisonCode: String): Boolean = prisonApiClient.getPrisonEnabledForDps(prisonCode)
 
-  fun triggerVisitAllocationForActivePrisons(): VisitAllocationEventJobDto {
-    log.info("Trigger allocation by prison started")
-    var activePrisons = prisonApiClient.getAllServicePrisonsEnabledForDps()
-    if (activePrisons.any { it.agencyId == ALL_PRISON_CODE }) {
-      activePrisons = prisonApiClient.getAllActivePrisons() // If ALL code is found, we get the full list of active prisons.
-    }
-    log.info("Total active prisons for visit allocation job = ${activePrisons.size}")
-
-    val allocationJobReference = auditOrderAllocationJob(totalActivePrisons = activePrisons.size).reference
-
-    activePrisons.forEach {
-      val prisonCode = it.agencyId
-      auditOrderAllocationPrisonJob(allocationJobReference, prisonCode)
-      sendSqsMessageForPrison(allocationJobReference, prisonCode)
-    }
-
-    return VisitAllocationEventJobDto(allocationJobReference, totalActivePrisons = activePrisons.size)
-  }
-
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun setVisitOrderAllocationPrisonJobStartTime(jobReference: String, prisonCode: String) {
-    visitOrderAllocationPrisonJobRepository.updateStartTimestamp(jobReference, prisonCode, LocalDateTime.now())
-  }
-
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun setVisitOrderAllocationPrisonJobEndTimeAndFailureMessage(jobReference: String, prisonCode: String, failureMessage: String) {
-    visitOrderAllocationPrisonJobRepository.updateFailureMessageAndEndTimestamp(allocationJobReference = jobReference, prisonCode = prisonCode, failureMessage, LocalDateTime.now())
-  }
-
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  fun setVisitOrderAllocationPrisonJobEndTimeAndStats(jobReference: String, prisonCode: String, totalConvictedPrisoners: Int, totalPrisonersProcessed: Int, totalPrisonersFailedOrSkipped: Int) {
-    visitOrderAllocationPrisonJobRepository.updateEndTimestampAndStats(allocationJobReference = jobReference, prisonCode = prisonCode, LocalDateTime.now(), totalPrisoners = totalConvictedPrisoners, processedPrisoners = totalPrisonersProcessed, failedOrSkippedPrisoners = totalPrisonersFailedOrSkipped)
-  }
-
-  private fun auditOrderAllocationJob(totalActivePrisons: Int): VisitOrderAllocationJob {
-    val visitOrderAllocationJob = VisitOrderAllocationJob(totalPrisons = totalActivePrisons)
-    return visitOrderAllocationJobRepository.save(visitOrderAllocationJob)
-  }
-
-  private fun auditOrderAllocationPrisonJob(allocationJobReference: String, prisonCode: String) {
-    val visitOrderAllocationPrisonJob = VisitOrderAllocationPrisonJob(allocationJobReference, prisonCode)
-    visitOrderAllocationPrisonJobRepository.save(visitOrderAllocationPrisonJob)
-  }
-
-  private fun sendSqsMessageForPrison(allocationJobReference: String, prisonCode: String) {
-    log.info("Adding message to event job queue for prisonCode: $prisonCode")
-
-    try {
-      visitAllocationEventJobSqsService.sendVisitAllocationEventToAllocationJobQueue(allocationJobReference, prisonCode)
-    } catch (e: RuntimeException) {
-      log.error("Sending message to event job queue for prisonCode: $prisonCode failed with error message - ${e.message}")
+  fun getActivePrisonsForAllocation(): List<ServicePrisonDto> {
+    val prisonsEnabledForDps = prisonApiClient.getAllServicePrisonsEnabledForDps()
+    return if (prisonsEnabledForDps.any { it.agencyId == ALL_PRISON_CODE }) {
+      prisonApiClient.getAllActivePrisons()
+    } else {
+      prisonsEnabledForDps
     }
   }
 }

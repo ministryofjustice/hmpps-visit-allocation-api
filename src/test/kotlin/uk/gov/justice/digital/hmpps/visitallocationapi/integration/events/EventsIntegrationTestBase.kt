@@ -211,29 +211,11 @@ abstract class EventsIntegrationTestBase {
 
   fun createDomainEventJson(eventType: String, additionalInformation: String): String = "{\"eventType\":\"$eventType\",\"additionalInformation\":$additionalInformation}"
 
-  fun createPrisonerConvictionStatusChangedAdditionalInformationJson(prisonerId: String, convictedStatus: String): String {
-    val jsonValues = HashMap<String, String>()
-
-    jsonValues["nomsNumber"] = prisonerId
-    jsonValues["convictedStatus"] = convictedStatus
-
-    return createAdditionalInformationJson(jsonValues)
-  }
-
   fun createPrisonerMergedAdditionalInformationJson(prisonerId: String, removedPrisonerId: String): String {
     val jsonValues = HashMap<String, String>()
 
     jsonValues["nomsNumber"] = prisonerId
     jsonValues["removedNomsNumber"] = removedPrisonerId
-
-    return createAdditionalInformationJson(jsonValues)
-  }
-
-  fun createPrisonerBookingMovedAdditionalInformationJson(movedFromPrisonerId: String, movedToPrisonerId: String): String {
-    val jsonValues = HashMap<String, String>()
-
-    jsonValues["movedFromNomsNumber"] = movedFromPrisonerId
-    jsonValues["movedToNomsNumber"] = movedToPrisonerId
 
     return createAdditionalInformationJson(jsonValues)
   }

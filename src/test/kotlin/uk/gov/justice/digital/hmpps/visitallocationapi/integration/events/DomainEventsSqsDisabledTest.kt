@@ -22,10 +22,10 @@ class DomainEventsSqsDisabledTest : EventsIntegrationTestBase() {
   fun `when domain event processing is set to disabled no domain events are processed`() {
     // Given
     val domainEvent = createDomainEventJson(
-      DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value,
-      createPrisonerConvictionStatusChangedAdditionalInformationJson("TEST", "Convicted"),
+      DomainEventType.VISIT_BOOKED_EVENT_TYPE.value,
+      createVisitBookedAdditionalInformationJson("TEST"),
     )
-    val publishRequest = createDomainEventPublishRequest(DomainEventType.CONVICTION_STATUS_UPDATED_EVENT_TYPE.value, domainEvent)
+    val publishRequest = createDomainEventPublishRequest(DomainEventType.VISIT_BOOKED_EVENT_TYPE.value, domainEvent)
 
     // When
     awsSnsClient.publish(publishRequest).get()

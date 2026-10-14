@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import tools.jackson.databind.ObjectMapper
+import uk.gov.justice.digital.hmpps.visitallocationapi.clients.PrisonApiClient
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.DomainEventType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType
 import uk.gov.justice.digital.hmpps.visitallocationapi.enums.nomis.PrisonerReceivedReasonType.NEW_ADMISSION
@@ -23,6 +24,7 @@ class PrisonerReceivedEventHandler(
   @param:Qualifier("objectMapper")
   private val objectMapper: ObjectMapper,
   private val prisonService: PrisonService,
+  private val prisonApiClient: PrisonApiClient,
   private val nomisSyncService: NomisSyncService,
   private val prisonerReceivedResetBalanceService: PrisonerReceivedResetBalanceService,
   private val snsService: SnsService,
@@ -73,7 +75,12 @@ class PrisonerReceivedEventHandler(
   }
 
   private fun processNomis(info: PrisonerReceivedInfo) {
-    nomisSyncService.syncPrisonerBalanceFromEventChange(info.prisonerId, DomainEventType.PRISONER_RECEIVED_EVENT_TYPE)
+    val prisonerNomisBalance = prisonApiClient.getBookingVisitBalances(info.prisonerId)
+    nomisSyncService.syncPrisonerBalanceFromEventChange(
+      prisonerId = info.prisonerId,
+      domainEventType = DomainEventType.PRISONER_RECEIVED_EVENT_TYPE,
+      prisonerNomisBalance = prisonerNomisBalance,
+    )
   }
 
   private fun shouldWipePrisonerBalance(reason: PrisonerReceivedReasonType): Boolean = reason in listOf(POST_MERGE_ADMISSION, NEW_ADMISSION, READMISSION_SWITCH_BOOKING, READMISSION)

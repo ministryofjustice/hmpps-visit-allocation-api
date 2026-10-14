@@ -2,7 +2,6 @@ package uk.gov.justice.digital.hmpps.visitallocationapi.service
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
@@ -16,7 +15,6 @@ class PrisonerRetryService(
   private val visitAllocationPrisonerRetrySqsService: VisitAllocationPrisonerRetrySqsService,
   private val incentivesClient: IncentivesClient,
   private val prisonerSearchClient: PrisonerSearchClient,
-  @param:Lazy
   private val prisonerAllocationService: PrisonerAllocationService,
   private val snsService: SnsService,
   private val changeLogService: ChangeLogService,
@@ -37,10 +35,17 @@ class PrisonerRetryService(
 
   @Transactional(propagation = Propagation.NOT_SUPPORTED, readOnly = true)
   fun handlePrisonerRetry(jobReference: String, prisonerId: String) {
-    logger.info("handle prisoner - $prisonerId on retry queue")
+    logger.info("handle prisoner - $prisonerId on retry queue, jobReference - $jobReference")
     val prisoner = prisonerSearchClient.getPrisonerById(prisonerId)
     val allIncentiveLevels = getIncentiveLevelsForPrison(prisonId = prisoner.prisonId)
-    val changeLogReference = prisonerAllocationService.processPrisonerAllocation(prisonerId, jobReference, allIncentiveLevels, fromRetryQueue = true)
+    val prisonerIncentive = incentivesClient.getPrisonerIncentiveReviewHistory(prisonerId)
+    val prisonIncentiveAmounts = allIncentiveLevels.firstOrNull { it.levelCode == prisonerIncentive.iepCode }
+      ?: incentivesClient.getPrisonIncentiveLevelByLevelCode(prisoner.prisonId, prisonerIncentive.iepCode)
+    val changeLogReference = prisonerAllocationService.processPrisonerAllocation(
+      prisonerId = prisonerId,
+      prisonIncentiveAmounts = prisonIncentiveAmounts,
+      prisonerIncentiveLevel = prisonerIncentive.iepCode,
+    )
     if (changeLogReference != null) {
       val changeLog = changeLogService.findChangeLogForPrisonerByReference(prisonerId, changeLogReference)
       if (changeLog != null) {

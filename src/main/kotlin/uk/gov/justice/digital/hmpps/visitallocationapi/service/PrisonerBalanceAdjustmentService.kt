@@ -131,6 +131,7 @@ class PrisonerBalanceAdjustmentService(
       "pvoAdjusted" to (balanceAdjustmentDto.pvoAmount ?: 0).toString(),
       "adjustmentReasonType" to balanceAdjustmentDto.adjustmentReasonType.name,
       "userName" to balanceAdjustmentDto.userName,
+      "caseloadId" to balanceAdjustmentDto.caseloadId.orEmpty(),
     )
 
     telemetryClientService.trackEvent(

@@ -55,7 +55,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
+    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any(), any()) }
     await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerRemoved(any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
@@ -163,7 +163,7 @@ class DomainEventsPrisonerMergedTest : EventsIntegrationTestBase() {
     // Then
     await untilAsserted { verify(domainEventListenerSpy, times(1)).processMessage(any()) }
     await untilAsserted { verify(domainEventListenerServiceSpy, times(1)).handleMessage(any()) }
-    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any()) }
+    await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerBalanceFromEventChange(any(), any(), any()) }
     await untilAsserted { verify(nomisSyncService, times(1)).syncPrisonerRemoved(any()) }
     await untilAsserted { verify(changeLogService, times(1)).createLogSyncEventChange(any(), any()) }
     await untilCallTo { domainEventsSqsClient.countMessagesOnQueue(domainEventsQueueUrl).get() } matches { it == 0 }
