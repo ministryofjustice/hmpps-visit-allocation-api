@@ -37,6 +37,11 @@ class VisitBookedEventHandler(
     LOG.info("VisitBookedEventHandler called for event prison.visit-booked")
     val additionalInfo = objectMapper.readValue(domainEvent.additionalInformation, VisitBookedInfo::class.java)
 
+    if (additionalInfo.visitType == "SOCIAL_VIDEO") {
+      LOG.info("Visit {} is SOCIAL_VIDEO, skipping processing", additionalInfo.reference)
+      return
+    }
+
     LOG.info("Getting visit using reference - ${additionalInfo.reference}")
     val visit = visitSchedulerClient.getVisitByReference(additionalInfo.reference)
     val prisoner = prisonerSearchClient.getPrisonerById(visit.prisonerId)
