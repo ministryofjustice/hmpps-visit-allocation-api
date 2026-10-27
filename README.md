@@ -171,6 +171,12 @@ cloud-platform-environments repository, under our namespace.
 
 The queue processes domain events from other DPS APIs and NOMIS.
 
+For `prison-visit.booked` and `prison-visit.cancelled`, events with
+`additionalInformation.visitType` set to `SOCIAL_VIDEO` are acknowledged without downstream calls,
+visit-order deductions, refunds, history changes, or allocation adjustment events. Social video visits
+are externally managed. Explicit `SOCIAL` events and legacy events without `visitType` retain their
+existing processing.
+
 ##### Batch Jobs
 This queue has a custom batch job configured to allow for DLQ retries. This allows us to reprocess messages that
 failed due to transient errors without needing to rely on a robust retry/visibility timeout mechanism in the main queue.

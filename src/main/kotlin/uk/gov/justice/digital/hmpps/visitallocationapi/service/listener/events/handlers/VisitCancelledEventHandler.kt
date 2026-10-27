@@ -39,6 +39,11 @@ class VisitCancelledEventHandler(
     LOG.info("VisitCancelledEventHandler called for event prison.visit-cancelled")
     val additionalInfo = objectMapper.readValue(domainEvent.additionalInformation, VisitCancelledInfo::class.java)
 
+    if (additionalInfo.visitType == "SOCIAL_VIDEO") {
+      LOG.info("Visit {} is SOCIAL_VIDEO, skipping processing", additionalInfo.reference)
+      return
+    }
+
     LOG.info("Getting visit using reference - ${additionalInfo.reference}")
     val visit = visitSchedulerClient.getVisitByReference(additionalInfo.reference)
     val prisoner = getPrisonerOrHandleMergedPrisoner(visit.prisonerId)
