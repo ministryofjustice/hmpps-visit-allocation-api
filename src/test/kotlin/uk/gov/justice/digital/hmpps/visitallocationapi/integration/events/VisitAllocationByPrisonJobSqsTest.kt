@@ -274,8 +274,9 @@ class VisitAllocationByPrisonJobSqsTest : EventsIntegrationTestBase() {
     val visitOrderAllocationPrisonJobs = visitOrderAllocationPrisonJobRepository.findAll()
     assertVisitOrderAllocationPrisonJob(visitOrderAllocationPrisonJobs[0], null, convictedPrisoners = 3, processedPrisoners = 3, failedOrSkippedPrisoners = 0)
 
-    val visitOrderHistoryList = visitOrderHistoryRepository.findAll()
+    var visitOrderHistoryList = visitOrderHistoryRepository.findAll()
     assertThat(visitOrderHistoryList.size).isEqualTo(3)
+    visitOrderHistoryList = visitOrderHistoryList.sortedBy { it.prisoner.prisonerId }
     assertVisitOrderHistory(visitOrderHistoryList[0], prisonerId = prisoner1.prisonerId, comment = null, voBalance = 1, pvoBalance = 0, userName = "SYSTEM", type = VisitOrderHistoryType.VO_ALLOCATION, attributes = mapOf(INCENTIVE_LEVEL to "STD"))
     assertVisitOrderHistory(visitOrderHistoryList[1], prisonerId = prisoner2.prisonerId, comment = null, voBalance = 2, pvoBalance = 1, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf(INCENTIVE_LEVEL to "ENH"))
     assertVisitOrderHistory(visitOrderHistoryList[2], prisonerId = prisoner3.prisonerId, comment = null, voBalance = 3, pvoBalance = 2, userName = "SYSTEM", type = VisitOrderHistoryType.VO_AND_PVO_ALLOCATION, attributes = mapOf(INCENTIVE_LEVEL to "ENH2"))
